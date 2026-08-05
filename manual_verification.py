@@ -28,6 +28,9 @@ async def main():
     from src.domains.operations.models.tax_invoice import TaxInvoiceModel
     from src.domains.operations.models.payment import PaymentModel
     from src.domains.operations.models.settlement import SettlementModel
+    from src.domains.matching.models.job import MatchJobModel
+    from src.domains.matching.models.relationship import MatchRelationshipModel
+    from src.domains.matching.models.exception import MatchExceptionModel
     
     test_engine = create_async_engine(TEST_DATABASE_URL, echo=False)
     TestingSessionLocal = async_sessionmaker(bind=test_engine, class_=AsyncSession, expire_on_commit=False)
@@ -114,7 +117,18 @@ async def main():
             if commit_res.status_code != 200:
                 logger.error(f"Failed to commit job {job_id}: {commit_res.text}")
                 
-    # 6. Database Verification
+        # 6. Run Matching Engine
+        logger.info("=== Running Matching Engine ===")
+        matching_res = await client.post("/api/v1/matching/jobs")
+        if matching_res.status_code == 201:
+            match_data = matching_res.json()["data"]
+            logger.info(f"Matching Job Completed: {match_data['id']}")
+            logger.info(f"Successful Matches: {match_data['successful_matches']}")
+            logger.info(f"Exceptions Generated: {match_data['exceptions_generated']}")
+        else:
+            logger.error(f"Failed to run matching job: {matching_res.text}")
+                
+    # 7. Database Verification
     logger.info("=== Database Verification ===")
     async with TestingSessionLocal() as session:
         # Check Import Records
@@ -142,6 +156,13 @@ async def main():
         
         payments = await session.execute(text("SELECT COUNT(*) FROM operations_payments"))
         logger.info(f"Payments Created: {payments.scalar()}")
+        
+        # Check Matching tables
+        matched_invoices = await session.execute(text("SELECT COUNT(*) FROM operations_tax_invoices WHERE order_id IS NOT NULL"))
+        logger.info(f"Invoices Matched to Orders: {matched_invoices.scalar()}")
+        
+        matched_payments = await session.execute(text("SELECT COUNT(*) FROM operations_payments WHERE settlement_id IS NOT NULL"))
+        logger.info(f"Payments Matched to Settlements: {matched_payments.scalar()}")
 
 if __name__ == "__main__":
     asyncio.run(main())
