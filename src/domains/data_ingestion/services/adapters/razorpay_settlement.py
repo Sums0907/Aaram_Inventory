@@ -67,7 +67,7 @@ class RazorpaySettlementMapper:
             "external_settlement_id": row.get("settlement_id", "").strip(),
             "payment_method": row.get("payment_method", "").strip(),
             "gross_amount": self._parse_float(row.get("amount", "")),
-            "gateway_fee": self._parse_float(row.get("fee (exclusive tax)", "")) + self._parse_float(row.get("tax", "")),
+            "gateway_fee": self._parse_float(row.get("fee (exclusive tax)", "")),
             "net_amount": self._parse_float(row.get("credit", "")),
             "payment_captured_at": self._parse_datetime(row.get("payment_captured_at", "")),
             "utr_number": row.get("settlement_utr", "").strip()
@@ -87,6 +87,8 @@ class RazorpaySettlementAdapter:
         
         records_to_create = []
         errors_to_log = []
+        
+        unique_settlements = {}
         
         for raw_row in raw_rows:
             validation_errors = self.validator.validate(raw_row)
@@ -111,6 +113,36 @@ class RazorpaySettlementAdapter:
                     normalized_data=normalized
                 )
             )
+            
+            setl_id = normalized.get("external_settlement_id")
+            if setl_id:
+                if setl_id not in unique_settlements:
+                    unique_settlements[setl_id] = {
+                        "settlement_id": setl_id,
+                        "cycle_date": normalized["payment_captured_at"][:10] if normalized["payment_captured_at"] else "",
+                        "settlement_date": normalized["payment_captured_at"][:10] if normalized["payment_captured_at"] else "",
+                        "status": "COMPLETED",
+                        "gross_amount": 0.0,
+                        "fees": 0.0,
+                        "net_amount": 0.0,
+                        "utr_number": normalized.get("utr_number", ""),
+                        "bank_account": "RAZORPAY"
+                    }
+                
+                unique_settlements[setl_id]["gross_amount"] += normalized.get("gross_amount", 0.0)
+                unique_settlements[setl_id]["fees"] += normalized.get("gateway_fee", 0.0)
+                unique_settlements[setl_id]["net_amount"] += normalized.get("net_amount", 0.0)
+
+        for setl_id, setl_data in unique_settlements.items():
+            records_to_create.append(
+                ImportRecordCreate(
+                    import_job_id=job_id,
+                    record_type="SETTLEMENT",
+                    raw_data={"aggregated_from_payments": True},
+                    status="VALID",
+                    normalized_data=setl_data
+                )
+            )
 
         if records_to_create:
             batch_size = 500
@@ -120,11 +152,12 @@ class RazorpaySettlementAdapter:
         if errors_to_log:
             await self.error_service.log_errors_batch(errors_to_log, created_by)
 
-        await self.summary_service.generate_initial_summary(job_id=job_id, total_records=len(raw_rows), created_by=created_by)
+        total_imported = len(raw_rows) + len(unique_settlements)
+        await self.summary_service.generate_initial_summary(job_id=job_id, total_records=total_imported, created_by=created_by)
         await self.summary_service.update_summary_stats(
             job_id=job_id,
             successful=len(records_to_create),
-            failed=len(raw_rows) - len(records_to_create),
+            failed=total_imported - len(records_to_create),
             duplicate=0,
             updated_by=created_by
         )

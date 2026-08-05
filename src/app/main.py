@@ -11,6 +11,7 @@ from src.domains.masters.api import router as masters_router
 from src.domains.data_ingestion.api import router as data_ingestion_router
 from src.domains.matching.api import router as matching_router
 from src.app.api.setup import router as setup_router
+from src.api.v1.read_api_router import read_api_router
 
 def create_app() -> FastAPI:
     settings = get_settings()
@@ -35,6 +36,9 @@ def create_app() -> FastAPI:
     domains_container.operations().wire(packages=["src.domains.operations"])
     domains_container.data_ingestion().wire(packages=["src.domains.data_ingestion"])
     domains_container.matching().wire(packages=["src.domains.matching"])
+    domains_container.inventory().wire(packages=["src.domains.inventory", "src.api.v1"])
+    domains_container.accounting().wire(packages=["src.domains.accounting", "src.api.v1"])
+    domains_container.wire(modules=["src.api.v1.read_api_router", "src.domains.matching.api.router"])
     
     # CORS Middleware (Frozen Strategy: explicit origins, never "*")
     app.add_middleware(
@@ -64,6 +68,7 @@ def create_app() -> FastAPI:
     api_v1_router.include_router(masters_router, prefix="/masters")
     api_v1_router.include_router(data_ingestion_router, prefix="/data-ingestion")
     api_v1_router.include_router(matching_router, prefix="/matching")
+    api_v1_router.include_router(read_api_router)
     
     app.include_router(api_v1_router)
     

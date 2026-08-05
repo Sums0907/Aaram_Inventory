@@ -1,0 +1,58 @@
+[
+  {
+    "Date":"30-04-2026",
+    "Voucher Type":"Journal",
+    "Ledger":"Axis Bank Current Account",
+    "Debit":125795.15,
+    "Credit":0.0,
+    "Narration":"Monthly Settlement"
+  },
+  {
+    "Date":"30-04-2026",
+    "Voucher Type":"Journal",
+    "Ledger":"Payment Gateway Charges",
+    "Debit":364.55,
+    "Credit":0.0,
+    "Narration":"Gateway Charges"
+  },
+  {
+    "Date":"30-04-2026",
+    "Voucher Type":"Journal",
+    "Ledger":"Input CGST",
+    "Debit":31.15,
+    "Credit":0.0,
+    "Narration":"GST on Gateway Charges"
+  },
+  {
+    "Date":"30-04-2026",
+    "Voucher Type":"Journal",
+    "Ledger":"Input SGST",
+    "Debit":31.15,
+    "Credit":0.0,
+    "Narration":"GST on Gateway Charges"
+  },
+  {
+    "Date":"30-04-2026",
+    "Voucher Type":"Journal",
+    "Ledger":"Razorpay Receivable",
+    "Debit":0.0,
+    "Credit":44519.0,
+    "Narration":"Razorpay Settlement"
+  },
+  {
+    "Date":"30-04-2026",
+    "Voucher Type":"Journal",
+    "Ledger":"ShopDeck Receivable",
+    "Debit":0.0,
+    "Credit":81703.0,
+    "Narration":"COD Settlement"
+  },
+  {
+    "Date":"30-04-2026",
+    "Voucher Type":"Journal",
+    "Ledger":"Round Off",
+    "Debit":0.0,
+    "Credit":0.0,
+    "Narration":"Round Off"
+  }
+]

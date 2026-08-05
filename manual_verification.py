@@ -31,6 +31,9 @@ async def main():
     from src.domains.matching.models.job import MatchJobModel
     from src.domains.matching.models.relationship import MatchRelationshipModel
     from src.domains.matching.models.exception import MatchExceptionModel
+    from src.domains.inventory.models.movement import InventoryMovementModel
+    from src.domains.accounting.models.ledger import LedgerModel
+    from src.domains.accounting.models.journal import JournalEntryModel, JournalLineModel
     
     test_engine = create_async_engine(TEST_DATABASE_URL, echo=False)
     TestingSessionLocal = async_sessionmaker(bind=test_engine, class_=AsyncSession, expire_on_commit=False)
@@ -38,6 +41,26 @@ async def main():
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
+        
+    # Seed Ledgers
+    async with TestingSessionLocal() as session:
+        LEDGER_NAMES = [
+            "Sales - ShopDeck",
+            "Sales Return - ShopDeck",
+            "Razorpay Receivable",
+            "ShopDeck Receivable",
+            "Output CGST",
+            "Output SGST",
+            "Output IGST",
+            "Round Off",
+            "Axis Bank Current Account",
+            "Payment Gateway Charges",
+            "Input CGST",
+            "Input SGST"
+        ]
+        ledgers = [LedgerModel(ledger_code=name.upper().replace(" ", "_"), ledger_name=name, account_type="REVENUE" if "Sales" in name else "ASSET") for name in LEDGER_NAMES]
+        session.add_all(ledgers)
+        await session.commit()
     
     # 2. Boot App
     from src.app.main import app
@@ -127,6 +150,18 @@ async def main():
             logger.info(f"Exceptions Generated: {match_data['exceptions_generated']}")
         else:
             logger.error(f"Failed to run matching job: {matching_res.text}")
+            
+        # 7. Verification Stage
+        logger.info("=== Running Verification Stage ===")
+        # TestingSessionLocal can be injected manually or we can expose a route.
+        # But we can just run the VerificationService directly
+        from src.app.services.verification import VerificationService
+        async with TestingSessionLocal() as verification_session:
+            verifier = VerificationService(session=verification_session)
+            verification_results = await verifier.verify_all()
+            logger.info(f"Verification Results: {verification_results}")
+            if verification_results['status'] != 'PASS':
+                logger.error("VERIFICATION FAILED. Review the logs.")
                 
     # 7. Database Verification
     logger.info("=== Database Verification ===")
@@ -163,6 +198,16 @@ async def main():
         
         matched_payments = await session.execute(text("SELECT COUNT(*) FROM operations_payments WHERE settlement_id IS NOT NULL"))
         logger.info(f"Payments Matched to Settlements: {matched_payments.scalar()}")
+
+        # Check Inventory & Accounting
+        movements = await session.execute(text("SELECT COUNT(*) FROM inventory_movements"))
+        logger.info(f"Inventory Movements Created: {movements.scalar()}")
+        
+        journals = await session.execute(text("SELECT COUNT(*) FROM accounting_journal_entries"))
+        logger.info(f"Journal Entries Created: {journals.scalar()}")
+        
+        journal_lines = await session.execute(text("SELECT COUNT(*) FROM accounting_journal_lines"))
+        logger.info(f"Journal Lines Created: {journal_lines.scalar()}")
 
 if __name__ == "__main__":
     asyncio.run(main())

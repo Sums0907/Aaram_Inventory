@@ -110,6 +110,30 @@ class ShopDeckCODSettlementAdapter:
                     normalized_data=normalized
                 )
             )
+            
+            # Create a synthetic PAYMENT so the orchestrator can process it
+            payment_normalized = {
+                "transaction_id": f"cod_pay_{normalized['settlement_id']}",
+                "transaction_type": "payment",
+                "order_reference": "",
+                "external_settlement_id": normalized["settlement_id"],
+                "payment_method": "COD",
+                "gross_amount": normalized["gross_amount"],
+                "gateway_fee": normalized["fees"],
+                "net_amount": normalized["net_amount"],
+                "payment_captured_at": None,
+                "utr_number": normalized["utr_number"]
+            }
+            
+            records_to_create.append(
+                ImportRecordCreate(
+                    import_job_id=job_id,
+                    record_type="PAYMENT",
+                    raw_data={"synthetic_from_settlement": True},
+                    status="VALID",
+                    normalized_data=payment_normalized
+                )
+            )
 
         if records_to_create:
             batch_size = 500

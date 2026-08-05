@@ -9,12 +9,12 @@ class TaxInvoiceItemBase(BaseSchema):
     sku_id: Optional[UUID] = None
     hsn_code: str = Field(..., max_length=50)
     
-    base_price: float = Field(..., ge=0)
-    tax_percent: float = Field(..., ge=0)
-    igst: float = Field(..., ge=0)
-    cgst: float = Field(..., ge=0)
-    sgst: float = Field(..., ge=0)
-    selling_price: float = Field(..., ge=0)
+    base_price: float = Field(...)
+    tax_percent: float = Field(...)
+    igst: float = Field(...)
+    cgst: float = Field(...)
+    sgst: float = Field(...)
+    selling_price: float = Field(...)
 
 class TaxInvoiceItemCreate(TaxInvoiceItemBase):
     pass
@@ -34,11 +34,11 @@ class TaxInvoiceBase(BaseSchema):
     invoice_date: date
     customer_state: str = Field(..., max_length=100)
     
-    total_base_price: float = Field(..., ge=0)
-    total_tax: float = Field(..., ge=0)
-    total_igst: float = Field(..., ge=0)
-    total_cgst: float = Field(..., ge=0)
-    total_sgst: float = Field(..., ge=0)
+    total_base_price: float = Field(...)
+    total_tax: float = Field(...)
+    total_igst: float = Field(...)
+    total_cgst: float = Field(...)
+    total_sgst: float = Field(...)
 
 class TaxInvoiceCreate(TaxInvoiceBase):
     items: List[TaxInvoiceItemCreate]

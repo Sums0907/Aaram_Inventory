@@ -9,16 +9,20 @@ from src.foundation.api.responses import SuccessResponse
 from src.domains.matching.services.engine import MatchingEngineService
 from src.domains.matching.repositories.exception import MatchExceptionRepository
 from src.domains.matching.dependency_injection import MatchingContainer
+from src.app.services.pipeline_orchestrator import PipelineOrchestratorService
+from src.app.container import DomainsContainer
 
 router = APIRouter(tags=["matching"])
 
 @router.post("/jobs", response_model=SuccessResponse[MatchJobResponse], status_code=status.HTTP_201_CREATED)
 @inject
 async def create_matching_job(
-    engine_service: MatchingEngineService = Depends(Provide[MatchingContainer.engine_service])
+    orchestrator_service: PipelineOrchestratorService = Depends(Provide[DomainsContainer.pipeline_orchestrator])
 ):
     job_id = uuid4()
-    job = await engine_service.run_matching_job(job_id)
+    # Assume user_id is the default one for manual runs
+    user_id = UUID("00000000-0000-0000-0000-000000000001")
+    job = await orchestrator_service.run_pipeline(job_id, user_id)
     return SuccessResponse(data=MatchJobResponse.model_validate(job, from_attributes=True))
 
 @router.get("/exceptions", response_model=SuccessResponse[List[MatchExceptionResponse]])

@@ -12,15 +12,7 @@ class TaxInvoiceRepository:
         self.session = session
         
     async def create_invoice(self, data: TaxInvoiceCreate, created_by: UUID) -> TaxInvoiceModel:
-        # Resolve order_id if not provided but external_order_id is
-        order_id = data.order_id
-        if not order_id and data.external_order_id:
-            stmt = select(SalesOrderModel.id).where(SalesOrderModel.external_order_id == data.external_order_id)
-            result = await self.session.execute(stmt)
-            order_id = result.scalar_one_or_none()
-            
         invoice_dict = data.model_dump(exclude={"items"})
-        invoice_dict["order_id"] = order_id
         invoice_dict["created_by"] = created_by
         invoice_dict["updated_by"] = created_by
         
