@@ -6,7 +6,7 @@ from src.foundation.authentication.dependencies import get_current_user, Current
 from src.foundation.api.responses import SuccessResponse
 from src.domains.masters.schemas.warehouse import WarehouseCreate, WarehouseUpdate, WarehouseResponse
 from src.domains.masters.services.warehouse import WarehouseService
-from src.app.container import DomainsContainer
+from src.domains.masters.dependency_injection import MastersContainer
 
 router = APIRouter(prefix="/warehouses", tags=["Warehouse"])
 
@@ -16,7 +16,7 @@ async def list_warehouses(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     current_user: CurrentUser = Depends(get_current_user),
-    service: WarehouseService = Depends(Provide[DomainsContainer.masters.warehouse_service])
+    service: WarehouseService = Depends(Provide[MastersContainer.warehouse_service])
 ):
     warehouses = await service.list_warehouses(skip=skip, limit=limit)
     response_data = [WarehouseResponse.model_validate(w, from_attributes=True) for w in warehouses]
@@ -27,7 +27,7 @@ async def list_warehouses(
 async def get_warehouse(
     warehouse_id: UUID,
     current_user: CurrentUser = Depends(get_current_user),
-    service: WarehouseService = Depends(Provide[DomainsContainer.masters.warehouse_service])
+    service: WarehouseService = Depends(Provide[MastersContainer.warehouse_service])
 ):
     warehouse = await service.get_warehouse(warehouse_id)
     return SuccessResponse(data=WarehouseResponse.model_validate(warehouse, from_attributes=True))
@@ -37,7 +37,7 @@ async def get_warehouse(
 async def create_warehouse(
     schema: WarehouseCreate,
     current_user: CurrentUser = Depends(get_current_user),
-    service: WarehouseService = Depends(Provide[DomainsContainer.masters.warehouse_service])
+    service: WarehouseService = Depends(Provide[MastersContainer.warehouse_service])
 ):
     from uuid import UUID
     user_uuid = UUID(current_user.id)
@@ -50,7 +50,7 @@ async def update_warehouse(
     warehouse_id: UUID,
     schema: WarehouseUpdate,
     current_user: CurrentUser = Depends(get_current_user),
-    service: WarehouseService = Depends(Provide[DomainsContainer.masters.warehouse_service])
+    service: WarehouseService = Depends(Provide[MastersContainer.warehouse_service])
 ):
     from uuid import UUID
     user_uuid = UUID(current_user.id)
@@ -62,7 +62,7 @@ async def update_warehouse(
 async def activate_warehouse(
     warehouse_id: UUID,
     current_user: CurrentUser = Depends(get_current_user),
-    service: WarehouseService = Depends(Provide[DomainsContainer.masters.warehouse_service])
+    service: WarehouseService = Depends(Provide[MastersContainer.warehouse_service])
 ):
     from uuid import UUID
     user_uuid = UUID(current_user.id)
@@ -74,7 +74,7 @@ async def activate_warehouse(
 async def deactivate_warehouse(
     warehouse_id: UUID,
     current_user: CurrentUser = Depends(get_current_user),
-    service: WarehouseService = Depends(Provide[DomainsContainer.masters.warehouse_service])
+    service: WarehouseService = Depends(Provide[MastersContainer.warehouse_service])
 ):
     from uuid import UUID
     user_uuid = UUID(current_user.id)
@@ -86,7 +86,7 @@ async def deactivate_warehouse(
 async def archive_warehouse(
     warehouse_id: UUID,
     current_user: CurrentUser = Depends(get_current_user),
-    service: WarehouseService = Depends(Provide[DomainsContainer.masters.warehouse_service])
+    service: WarehouseService = Depends(Provide[MastersContainer.warehouse_service])
 ):
     from uuid import UUID
     user_uuid = UUID(current_user.id)

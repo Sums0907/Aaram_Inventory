@@ -1,5 +1,5 @@
 import pytest
-from uuid import uuid7
+from uuid_extensions import uuid7
 from pydantic import ValidationError
 from src.domains.masters.schemas.sku import SKUCreate, SKUUpdate
 

@@ -1,3 +1,5 @@
+import uuid
+from datetime import datetime
 from typing import Optional
 from pydantic import Field, field_validator, model_validator
 from src.foundation.validation.base import BaseSchema
@@ -61,10 +63,7 @@ class CompanyUpdate(CompanyBase):
     # Company Code is immutable, so it is absent in the Update schema
     pass
 
-class CompanyResponse(CompanyCreate):
-    import uuid
-    from datetime import datetime
-    
+class CompanyResponse(CompanyCreate):    
     id: uuid.UUID
     status: GenericStatus
     created_on: datetime

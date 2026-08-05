@@ -16,36 +16,36 @@ from src.domains.masters.repositories.sku import SKURepository
 from src.domains.masters.services.sku import SKUService
 
 class MastersContainer(containers.DeclarativeContainer):
-    core = providers.DependenciesContainer()
+    db = providers.Dependency()
 
     # Repositories
     company_repository = providers.Factory(
         CompanyRepository,
-        session=core.db.provided.session,
+        session=db.provided._session_factory.call(),
     )
     unit_of_measure_repository = providers.Factory(
         UnitOfMeasureRepository,
-        session=core.db.provided.session,
+        session=db.provided._session_factory.call(),
     )
     warehouse_repository = providers.Factory(
         WarehouseRepository,
-        session=core.db.provided.session,
+        session=db.provided._session_factory.call(),
     )
     category_repository = providers.Factory(
         CategoryRepository,
-        session=core.db.provided.session,
+        session=db.provided._session_factory.call(),
     )
     product_attribute_repository = providers.Factory(
         ProductAttributeRepository,
-        session=core.db.provided.session,
+        session=db.provided._session_factory.call(),
     )
     inventory_item_repository = providers.Factory(
         InventoryItemRepository,
-        session=core.db.provided.session,
+        session=db.provided._session_factory.call(),
     )
     sku_repository = providers.Factory(
         SKURepository,
-        session=core.db.provided.session,
+        session=db.provided._session_factory.call(),
     )
 
     # Services

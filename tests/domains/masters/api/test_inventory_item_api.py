@@ -7,7 +7,7 @@ async def test_api_create_inventory_item(async_client: AsyncClient):
     cat_res = await async_client.post("/api/v1/masters/categories", json={"category_code": "API-CAT", "category_name": "API Cat"})
     cat_id = cat_res.json()["data"]["id"]
     
-    uom_res = await async_client.post("/api/v1/masters/units-of-measure", json={"unit_code": "API-UOM", "unit_name": "API UOM"})
+    uom_res = await async_client.post("/api/v1/masters/units-of-measure", json={"unit_code": "API-UOM", "unit_name": "API UOM", "short_name": "apiuom"})
     uom_id = uom_res.json()["data"]["id"]
     
     attr_res = await async_client.post("/api/v1/masters/product-attributes", json={"attribute_code": "API-ATTR", "attribute_name": "API Attr"})

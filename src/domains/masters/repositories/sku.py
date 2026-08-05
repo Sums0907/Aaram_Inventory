@@ -2,8 +2,7 @@ from typing import Optional, List, Dict, Any
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy import cast
+from sqlalchemy import cast, JSON
 from src.domains.masters.models.sku import SKUModel
 
 class SKURepository:
@@ -27,7 +26,7 @@ class SKURepository:
         result = await self.session.execute(
             select(SKUModel).filter(
                 SKUModel.inventory_item_id == item_id,
-                cast(SKUModel.attribute_values, JSONB) == cast(attributes, JSONB)
+                SKUModel.attribute_values == attributes
             )
         )
         return result.scalars().first()

@@ -1,5 +1,5 @@
 import pytest
-from uuid import uuid7
+from uuid_extensions import uuid7
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.domains.masters.repositories.sku import SKURepository
 from src.domains.masters.repositories.inventory_item import InventoryItemRepository
@@ -22,9 +22,9 @@ async def test_service_create_success_and_unique_attributes(db_session: AsyncSes
     user_id = uuid7()
     
     cat = await cat_repo.create(CategoryModel(category_code="CAT-SVC", category_name="SVC Cat"))
-    uom = await uom_repo.create(UnitOfMeasureModel(unit_code="UOM-SVC", unit_name="SVC Uom"))
+    uom = await uom_repo.create(UnitOfMeasureModel(unit_code="UOM-SVC", unit_name="SVC Uom", short_name="SVC"))
     item = await item_repo.create(InventoryItemModel(
-        item_code="ITM-SVC", item_name="SVC Item", category_id=cat.id, unit_of_measure_id=uom.id, gst_rate=12.0
+        item_code="ITM-SVC", item_name="SVC Item", category_id=cat.id, unit_of_measure_id=uom.id, gst_rate=18.0
     ))
     
     schema = SKUCreate(

@@ -17,7 +17,7 @@ async def test_repository_create_and_get(db_session: AsyncSession):
     item_repo = InventoryItemRepository(db_session)
     
     cat = await cat_repo.create(CategoryModel(category_code="C1", category_name="Cat1"))
-    uom = await uom_repo.create(UnitOfMeasureModel(unit_code="U1", unit_name="Unit1"))
+    uom = await uom_repo.create(UnitOfMeasureModel(unit_code="U1", unit_name="Unit1", short_name="U1"))
     attr = await attr_repo.create(ProductAttributeModel(attribute_code="A1", attribute_name="Attr1"))
     
     item = InventoryItemModel(

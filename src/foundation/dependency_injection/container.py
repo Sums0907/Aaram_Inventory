@@ -6,8 +6,6 @@ class CoreContainer(containers.DeclarativeContainer):
     """
     Core dependency injection container for the foundation layer.
     """
-    wiring_config = containers.WiringConfiguration(packages=["src.app", "src.domains"])
-    
     # Configuration
     config = providers.Configuration()
     

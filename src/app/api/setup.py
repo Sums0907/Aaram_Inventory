@@ -3,6 +3,9 @@ from fastapi import APIRouter, Depends, status
 from dependency_injector.wiring import Provide, inject
 from src.foundation.authentication.dependencies import get_current_user, CurrentUser
 from src.foundation.api.responses import SuccessResponse
+from src.foundation.api.health import router as health_router
+from src.domains.masters.api import router as masters_router
+from src.domains.data_ingestion.api import router as data_ingestion_router
 from src.domains.masters.schemas.company import CompanyCreate, CompanyResponse
 from src.domains.masters.services.company import CompanyService
 from src.app.container import DomainsContainer

@@ -1,5 +1,5 @@
 import pytest
-from uuid import uuid7
+from uuid_extensions import uuid7
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.domains.masters.models.sku import SKUModel
 from src.domains.masters.models.inventory_item import InventoryItemModel
@@ -18,7 +18,7 @@ async def test_repository_create_and_get(db_session: AsyncSession):
     sku_repo = SKURepository(db_session)
     
     cat = await cat_repo.create(CategoryModel(category_code="C1", category_name="Cat1"))
-    uom = await uom_repo.create(UnitOfMeasureModel(unit_code="U1", unit_name="Unit1"))
+    uom = await uom_repo.create(UnitOfMeasureModel(unit_code="U1", unit_name="Unit1", short_name="U1"))
     
     item = await item_repo.create(InventoryItemModel(
         item_code="ITM-1",

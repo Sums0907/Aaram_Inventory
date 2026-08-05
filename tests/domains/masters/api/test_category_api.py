@@ -14,7 +14,7 @@ async def test_api_create_category(async_client: AsyncClient):
     assert response.status_code == 201
     data = response.json()["data"]
     assert data["category_code"] == "PIL"
-    assert data["status"] == "ACTIVE"
+    assert data["status"] == "active"
     assert "id" in data
 
 @pytest.mark.asyncio

@@ -15,7 +15,7 @@ async def test_api_create_unit(async_client: AsyncClient):
     
     data = response.json()["data"]
     assert data["unit_code"] == "PKT"
-    assert data["status"] == "ACTIVE"
+    assert data["status"] == "active"
     assert "id" in data
 
 @pytest.mark.asyncio

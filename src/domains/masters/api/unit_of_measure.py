@@ -6,7 +6,7 @@ from src.foundation.authentication.dependencies import get_current_user, Current
 from src.foundation.api.responses import SuccessResponse
 from src.domains.masters.schemas.unit_of_measure import UnitOfMeasureCreate, UnitOfMeasureUpdate, UnitOfMeasureResponse
 from src.domains.masters.services.unit_of_measure import UnitOfMeasureService
-from src.app.container import DomainsContainer
+from src.domains.masters.dependency_injection import MastersContainer
 
 router = APIRouter(prefix="/units-of-measure", tags=["Unit of Measure"])
 
@@ -16,7 +16,7 @@ async def list_units(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     current_user: CurrentUser = Depends(get_current_user),
-    service: UnitOfMeasureService = Depends(Provide[DomainsContainer.masters.unit_of_measure_service])
+    service: UnitOfMeasureService = Depends(Provide[MastersContainer.unit_of_measure_service])
 ):
     units = await service.list_units(skip=skip, limit=limit)
     response_data = [UnitOfMeasureResponse.model_validate(unit, from_attributes=True) for unit in units]
@@ -27,7 +27,7 @@ async def list_units(
 async def get_unit(
     unit_id: UUID,
     current_user: CurrentUser = Depends(get_current_user),
-    service: UnitOfMeasureService = Depends(Provide[DomainsContainer.masters.unit_of_measure_service])
+    service: UnitOfMeasureService = Depends(Provide[MastersContainer.unit_of_measure_service])
 ):
     unit = await service.get_unit(unit_id)
     return SuccessResponse(data=UnitOfMeasureResponse.model_validate(unit, from_attributes=True))
@@ -37,7 +37,7 @@ async def get_unit(
 async def create_unit(
     schema: UnitOfMeasureCreate,
     current_user: CurrentUser = Depends(get_current_user),
-    service: UnitOfMeasureService = Depends(Provide[DomainsContainer.masters.unit_of_measure_service])
+    service: UnitOfMeasureService = Depends(Provide[MastersContainer.unit_of_measure_service])
 ):
     from uuid import UUID
     user_uuid = UUID(current_user.id)
@@ -50,7 +50,7 @@ async def update_unit(
     unit_id: UUID,
     schema: UnitOfMeasureUpdate,
     current_user: CurrentUser = Depends(get_current_user),
-    service: UnitOfMeasureService = Depends(Provide[DomainsContainer.masters.unit_of_measure_service])
+    service: UnitOfMeasureService = Depends(Provide[MastersContainer.unit_of_measure_service])
 ):
     from uuid import UUID
     user_uuid = UUID(current_user.id)
@@ -62,7 +62,7 @@ async def update_unit(
 async def activate_unit(
     unit_id: UUID,
     current_user: CurrentUser = Depends(get_current_user),
-    service: UnitOfMeasureService = Depends(Provide[DomainsContainer.masters.unit_of_measure_service])
+    service: UnitOfMeasureService = Depends(Provide[MastersContainer.unit_of_measure_service])
 ):
     from uuid import UUID
     user_uuid = UUID(current_user.id)
@@ -74,7 +74,7 @@ async def activate_unit(
 async def deactivate_unit(
     unit_id: UUID,
     current_user: CurrentUser = Depends(get_current_user),
-    service: UnitOfMeasureService = Depends(Provide[DomainsContainer.masters.unit_of_measure_service])
+    service: UnitOfMeasureService = Depends(Provide[MastersContainer.unit_of_measure_service])
 ):
     from uuid import UUID
     user_uuid = UUID(current_user.id)
@@ -86,7 +86,7 @@ async def deactivate_unit(
 async def archive_unit(
     unit_id: UUID,
     current_user: CurrentUser = Depends(get_current_user),
-    service: UnitOfMeasureService = Depends(Provide[DomainsContainer.masters.unit_of_measure_service])
+    service: UnitOfMeasureService = Depends(Provide[MastersContainer.unit_of_measure_service])
 ):
     from uuid import UUID
     user_uuid = UUID(current_user.id)

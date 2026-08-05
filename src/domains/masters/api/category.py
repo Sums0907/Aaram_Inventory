@@ -6,7 +6,7 @@ from src.foundation.authentication.dependencies import get_current_user, Current
 from src.foundation.api.responses import SuccessResponse
 from src.domains.masters.schemas.category import CategoryCreate, CategoryUpdate, CategoryResponse
 from src.domains.masters.services.category import CategoryService
-from src.app.container import DomainsContainer
+from src.domains.masters.dependency_injection import MastersContainer
 
 router = APIRouter(prefix="/categories", tags=["Category"])
 
@@ -16,7 +16,7 @@ async def list_categories(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     current_user: CurrentUser = Depends(get_current_user),
-    service: CategoryService = Depends(Provide[DomainsContainer.masters.category_service])
+    service: CategoryService = Depends(Provide[MastersContainer.category_service])
 ):
     categories = await service.list_categories(skip=skip, limit=limit)
     response_data = [CategoryResponse.model_validate(c, from_attributes=True) for c in categories]
@@ -27,7 +27,7 @@ async def list_categories(
 async def get_category(
     category_id: UUID,
     current_user: CurrentUser = Depends(get_current_user),
-    service: CategoryService = Depends(Provide[DomainsContainer.masters.category_service])
+    service: CategoryService = Depends(Provide[MastersContainer.category_service])
 ):
     category = await service.get_category(category_id)
     return SuccessResponse(data=CategoryResponse.model_validate(category, from_attributes=True))
@@ -37,7 +37,7 @@ async def get_category(
 async def create_category(
     schema: CategoryCreate,
     current_user: CurrentUser = Depends(get_current_user),
-    service: CategoryService = Depends(Provide[DomainsContainer.masters.category_service])
+    service: CategoryService = Depends(Provide[MastersContainer.category_service])
 ):
     from uuid import UUID
     user_uuid = UUID(current_user.id)
@@ -50,7 +50,7 @@ async def update_category(
     category_id: UUID,
     schema: CategoryUpdate,
     current_user: CurrentUser = Depends(get_current_user),
-    service: CategoryService = Depends(Provide[DomainsContainer.masters.category_service])
+    service: CategoryService = Depends(Provide[MastersContainer.category_service])
 ):
     from uuid import UUID
     user_uuid = UUID(current_user.id)
@@ -62,7 +62,7 @@ async def update_category(
 async def activate_category(
     category_id: UUID,
     current_user: CurrentUser = Depends(get_current_user),
-    service: CategoryService = Depends(Provide[DomainsContainer.masters.category_service])
+    service: CategoryService = Depends(Provide[MastersContainer.category_service])
 ):
     from uuid import UUID
     user_uuid = UUID(current_user.id)
@@ -74,7 +74,7 @@ async def activate_category(
 async def deactivate_category(
     category_id: UUID,
     current_user: CurrentUser = Depends(get_current_user),
-    service: CategoryService = Depends(Provide[DomainsContainer.masters.category_service])
+    service: CategoryService = Depends(Provide[MastersContainer.category_service])
 ):
     from uuid import UUID
     user_uuid = UUID(current_user.id)
@@ -86,7 +86,7 @@ async def deactivate_category(
 async def archive_category(
     category_id: UUID,
     current_user: CurrentUser = Depends(get_current_user),
-    service: CategoryService = Depends(Provide[DomainsContainer.masters.category_service])
+    service: CategoryService = Depends(Provide[MastersContainer.category_service])
 ):
     from uuid import UUID
     user_uuid = UUID(current_user.id)

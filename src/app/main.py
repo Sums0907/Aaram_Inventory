@@ -8,6 +8,7 @@ from src.foundation.logging import setup_logging
 from src.foundation.dependency_injection import CoreContainer
 from src.app.container import DomainsContainer
 from src.domains.masters.api import router as masters_router
+from src.domains.data_ingestion.api import router as data_ingestion_router
 from src.app.api.setup import router as setup_router
 
 def create_app() -> FastAPI:
@@ -23,13 +24,15 @@ def create_app() -> FastAPI:
     )
     
     # Initialize Dependency Injection Container
-    core_container = CoreContainer()
-    core_container.config.from_pydantic(settings)
-    
-    domains_container = DomainsContainer(core=core_container)
-    
-    app.core_container = core_container
+    domains_container = DomainsContainer()
+    domains_container.core.config.from_dict(settings.model_dump())
+    app.core_container = domains_container.core
     app.domains_container = domains_container
+    
+    domains_container.core().wire(packages=["src.app", "src.foundation"])
+    domains_container.masters().wire(packages=["src.domains.masters"])
+    domains_container.operations().wire(packages=["src.domains.operations"])
+    domains_container.data_ingestion().wire(packages=["src.domains.data_ingestion"])
     
     # CORS Middleware (Frozen Strategy: explicit origins, never "*")
     app.add_middleware(
@@ -57,6 +60,7 @@ def create_app() -> FastAPI:
     
     # Domains
     api_v1_router.include_router(masters_router, prefix="/masters")
+    api_v1_router.include_router(data_ingestion_router, prefix="/data-ingestion")
     
     app.include_router(api_v1_router)
     

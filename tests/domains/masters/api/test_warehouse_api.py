@@ -19,7 +19,7 @@ async def test_api_create_warehouse(async_client: AsyncClient):
     assert response.status_code == 201
     data = response.json()["data"]
     assert data["warehouse_code"] == "BOM-01"
-    assert data["status"] == "ACTIVE"
+    assert data["status"] == "active"
     assert "id" in data
 
 @pytest.mark.asyncio

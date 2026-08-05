@@ -1,3 +1,5 @@
+import uuid
+from datetime import datetime
 from typing import Optional
 from pydantic import Field, field_validator
 from src.foundation.validation.base import BaseSchema
@@ -33,9 +35,6 @@ class WarehouseUpdate(WarehouseBase):
     pass
 
 class WarehouseResponse(WarehouseCreate):
-    import uuid
-    from datetime import datetime
-    
     id: uuid.UUID
     status: GenericStatus
     created_on: datetime

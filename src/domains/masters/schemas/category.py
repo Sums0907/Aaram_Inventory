@@ -1,3 +1,5 @@
+import uuid
+from datetime import datetime
 from typing import Optional
 from pydantic import Field
 from src.foundation.validation.base import BaseSchema
@@ -16,9 +18,6 @@ class CategoryUpdate(CategoryBase):
     pass
 
 class CategoryResponse(CategoryCreate):
-    import uuid
-    from datetime import datetime
-    
     id: uuid.UUID
     status: GenericStatus
     created_on: datetime

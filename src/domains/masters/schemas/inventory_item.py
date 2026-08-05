@@ -1,6 +1,7 @@
 from typing import Optional, List
 from uuid import UUID
-from pydantic import Field, validator
+from datetime import datetime
+from pydantic import Field, field_validator
 from src.foundation.validation.base import BaseSchema
 from src.foundation.enums.status import GenericStatus
 
@@ -21,8 +22,6 @@ class InventoryItemUpdate(InventoryItemBase):
     pass
 
 class InventoryItemResponse(InventoryItemCreate):
-    from datetime import datetime
-    
     id: UUID
     status: GenericStatus
     created_on: datetime

@@ -1,4 +1,6 @@
 from typing import Optional
+import uuid
+from datetime import datetime
 from pydantic import Field
 from src.foundation.validation.base import BaseSchema
 from src.foundation.enums.status import GenericStatus
@@ -16,9 +18,6 @@ class ProductAttributeUpdate(ProductAttributeBase):
     pass
 
 class ProductAttributeResponse(ProductAttributeCreate):
-    import uuid
-    from datetime import datetime
-    
     id: uuid.UUID
     status: GenericStatus
     created_on: datetime

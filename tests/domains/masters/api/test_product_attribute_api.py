@@ -14,7 +14,7 @@ async def test_api_create_attribute(async_client: AsyncClient):
     assert response.status_code == 201
     data = response.json()["data"]
     assert data["attribute_code"] == "SIZ"
-    assert data["status"] == "ACTIVE"
+    assert data["status"] == "active"
     assert "id" in data
 
 @pytest.mark.asyncio

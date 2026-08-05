@@ -7,7 +7,7 @@ async def test_api_create_sku(async_client: AsyncClient):
     cat_res = await async_client.post("/api/v1/masters/categories", json={"category_code": "SKU-CAT", "category_name": "SKU Cat"})
     cat_id = cat_res.json()["data"]["id"]
     
-    uom_res = await async_client.post("/api/v1/masters/units-of-measure", json={"unit_code": "SKU-UOM", "unit_name": "SKU UOM"})
+    uom_res = await async_client.post("/api/v1/masters/units-of-measure", json={"unit_code": "SKU-UOM", "unit_name": "SKU UOM", "short_name": "skuuom"})
     uom_id = uom_res.json()["data"]["id"]
     
     item_res = await async_client.post("/api/v1/masters/inventory-items", json={

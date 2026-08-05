@@ -6,7 +6,7 @@ from src.foundation.authentication.dependencies import get_current_user, Current
 from src.foundation.api.responses import SuccessResponse
 from src.domains.masters.schemas.sku import SKUCreate, SKUUpdate, SKUResponse
 from src.domains.masters.services.sku import SKUService
-from src.app.container import DomainsContainer
+from src.domains.masters.dependency_injection import MastersContainer
 
 router = APIRouter(prefix="/skus", tags=["SKU"])
 
@@ -16,7 +16,7 @@ async def list_skus(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     current_user: CurrentUser = Depends(get_current_user),
-    service: SKUService = Depends(Provide[DomainsContainer.masters.sku_service])
+    service: SKUService = Depends(Provide[MastersContainer.sku_service])
 ):
     skus = await service.list_skus(skip=skip, limit=limit)
     response_data = [SKUResponse.model_validate(sku, from_attributes=True) for sku in skus]
@@ -27,7 +27,7 @@ async def list_skus(
 async def get_sku(
     sku_id: UUID,
     current_user: CurrentUser = Depends(get_current_user),
-    service: SKUService = Depends(Provide[DomainsContainer.masters.sku_service])
+    service: SKUService = Depends(Provide[MastersContainer.sku_service])
 ):
     sku = await service.get_sku(sku_id)
     return SuccessResponse(data=SKUResponse.model_validate(sku, from_attributes=True))
@@ -37,7 +37,7 @@ async def get_sku(
 async def create_sku(
     schema: SKUCreate,
     current_user: CurrentUser = Depends(get_current_user),
-    service: SKUService = Depends(Provide[DomainsContainer.masters.sku_service])
+    service: SKUService = Depends(Provide[MastersContainer.sku_service])
 ):
     from uuid import UUID
     user_uuid = UUID(current_user.id)
@@ -50,7 +50,7 @@ async def update_sku(
     sku_id: UUID,
     schema: SKUUpdate,
     current_user: CurrentUser = Depends(get_current_user),
-    service: SKUService = Depends(Provide[DomainsContainer.masters.sku_service])
+    service: SKUService = Depends(Provide[MastersContainer.sku_service])
 ):
     from uuid import UUID
     user_uuid = UUID(current_user.id)
@@ -62,7 +62,7 @@ async def update_sku(
 async def activate_sku(
     sku_id: UUID,
     current_user: CurrentUser = Depends(get_current_user),
-    service: SKUService = Depends(Provide[DomainsContainer.masters.sku_service])
+    service: SKUService = Depends(Provide[MastersContainer.sku_service])
 ):
     from uuid import UUID
     user_uuid = UUID(current_user.id)
@@ -74,7 +74,7 @@ async def activate_sku(
 async def deactivate_sku(
     sku_id: UUID,
     current_user: CurrentUser = Depends(get_current_user),
-    service: SKUService = Depends(Provide[DomainsContainer.masters.sku_service])
+    service: SKUService = Depends(Provide[MastersContainer.sku_service])
 ):
     from uuid import UUID
     user_uuid = UUID(current_user.id)
@@ -86,7 +86,7 @@ async def deactivate_sku(
 async def archive_sku(
     sku_id: UUID,
     current_user: CurrentUser = Depends(get_current_user),
-    service: SKUService = Depends(Provide[DomainsContainer.masters.sku_service])
+    service: SKUService = Depends(Provide[MastersContainer.sku_service])
 ):
     from uuid import UUID
     user_uuid = UUID(current_user.id)

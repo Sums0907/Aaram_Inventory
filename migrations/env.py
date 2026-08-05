@@ -18,6 +18,16 @@ from src.domains.masters.models.category import CategoryModel
 from src.domains.masters.models.product_attribute import ProductAttributeModel
 from src.domains.masters.models.inventory_item import InventoryItemModel
 from src.domains.masters.models.sku import SKUModel
+from src.domains.data_ingestion.models.integration import IntegrationModel
+from src.domains.data_ingestion.models.import_job import ImportJobModel
+from src.domains.data_ingestion.models.import_file import ImportFileModel
+from src.domains.data_ingestion.models.import_record import ImportRecordModel
+from src.domains.data_ingestion.models.import_error import ImportErrorModel
+from src.domains.data_ingestion.models.import_summary import ImportSummaryModel
+from src.domains.operations.models.sales_order import SalesOrderModel, SalesOrderItemModel
+from src.domains.operations.models.tax_invoice import TaxInvoiceModel, TaxInvoiceItemModel
+from src.domains.operations.models.payment import PaymentModel
+from src.domains.operations.models.settlement import SettlementModel
 
 config = context.config
 settings = get_settings()

@@ -16,6 +16,7 @@ async def test_repository_create_and_get(db_session: AsyncSession):
     
     assert created_uom.id is not None
     assert created_uom.unit_code == "BOX"
+    assert created_uom.short_name == "box"
     
     fetched_uom = await repo.get_by_code("BOX")
     assert fetched_uom is not None

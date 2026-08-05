@@ -1,5 +1,5 @@
 import pytest
-from uuid import uuid7
+from uuid_extensions import uuid7
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.domains.masters.repositories.unit_of_measure import UnitOfMeasureRepository
 from src.domains.masters.services.unit_of_measure import UnitOfMeasureService

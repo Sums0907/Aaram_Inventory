@@ -1,4 +1,5 @@
 from typing import Optional, Dict
+from datetime import datetime
 from uuid import UUID
 from pydantic import Field
 from src.foundation.validation.base import BaseSchema
@@ -20,8 +21,6 @@ class SKUUpdate(SKUBase):
     pass
 
 class SKUResponse(SKUCreate):
-    from datetime import datetime
-    
     id: UUID
     status: GenericStatus
     created_on: datetime

@@ -5,7 +5,7 @@ from src.foundation.authentication.dependencies import get_current_user, Current
 from src.foundation.api.responses import SuccessResponse
 from src.domains.masters.schemas.company import CompanyCreate, CompanyUpdate, CompanyResponse
 from src.domains.masters.services.company import CompanyService
-from src.app.container import DomainsContainer
+from src.domains.masters.dependency_injection import MastersContainer
 
 router = APIRouter(prefix="/companies", tags=["Company"])
 
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/companies", tags=["Company"])
 async def get_company(
     company_id: UUID,
     current_user: CurrentUser = Depends(get_current_user),
-    service: CompanyService = Depends(Provide[DomainsContainer.masters.company_service])
+    service: CompanyService = Depends(Provide[MastersContainer.company_service])
 ):
     company = await service.get_company(company_id)
     return SuccessResponse(data=CompanyResponse.model_validate(company, from_attributes=True))
@@ -25,7 +25,7 @@ async def update_company(
     company_id: UUID,
     schema: CompanyUpdate,
     current_user: CurrentUser = Depends(get_current_user),
-    service: CompanyService = Depends(Provide[DomainsContainer.masters.company_service])
+    service: CompanyService = Depends(Provide[MastersContainer.company_service])
 ):
     from uuid import UUID
     user_uuid = UUID(current_user.id)
@@ -37,7 +37,7 @@ async def update_company(
 async def activate_company(
     company_id: UUID,
     current_user: CurrentUser = Depends(get_current_user),
-    service: CompanyService = Depends(Provide[DomainsContainer.masters.company_service])
+    service: CompanyService = Depends(Provide[MastersContainer.company_service])
 ):
     from uuid import UUID
     user_uuid = UUID(current_user.id)
@@ -49,7 +49,7 @@ async def activate_company(
 async def deactivate_company(
     company_id: UUID,
     current_user: CurrentUser = Depends(get_current_user),
-    service: CompanyService = Depends(Provide[DomainsContainer.masters.company_service])
+    service: CompanyService = Depends(Provide[MastersContainer.company_service])
 ):
     from uuid import UUID
     user_uuid = UUID(current_user.id)

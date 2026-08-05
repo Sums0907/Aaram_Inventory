@@ -6,7 +6,7 @@ from src.foundation.authentication.dependencies import get_current_user, Current
 from src.foundation.api.responses import SuccessResponse
 from src.domains.masters.schemas.inventory_item import InventoryItemCreate, InventoryItemUpdate, InventoryItemResponse
 from src.domains.masters.services.inventory_item import InventoryItemService
-from src.app.container import DomainsContainer
+from src.domains.masters.dependency_injection import MastersContainer
 
 router = APIRouter(prefix="/inventory-items", tags=["Inventory Item"])
 
@@ -16,7 +16,7 @@ async def list_items(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     current_user: CurrentUser = Depends(get_current_user),
-    service: InventoryItemService = Depends(Provide[DomainsContainer.masters.inventory_item_service])
+    service: InventoryItemService = Depends(Provide[MastersContainer.inventory_item_service])
 ):
     items = await service.list_items(skip=skip, limit=limit)
     
@@ -34,7 +34,7 @@ async def list_items(
 async def get_item(
     item_id: UUID,
     current_user: CurrentUser = Depends(get_current_user),
-    service: InventoryItemService = Depends(Provide[DomainsContainer.masters.inventory_item_service])
+    service: InventoryItemService = Depends(Provide[MastersContainer.inventory_item_service])
 ):
     item = await service.get_item(item_id)
     resp_model = InventoryItemResponse.model_validate(item, from_attributes=True)
@@ -46,7 +46,7 @@ async def get_item(
 async def create_item(
     schema: InventoryItemCreate,
     current_user: CurrentUser = Depends(get_current_user),
-    service: InventoryItemService = Depends(Provide[DomainsContainer.masters.inventory_item_service])
+    service: InventoryItemService = Depends(Provide[MastersContainer.inventory_item_service])
 ):
     from uuid import UUID
     user_uuid = UUID(current_user.id)
@@ -61,7 +61,7 @@ async def update_item(
     item_id: UUID,
     schema: InventoryItemUpdate,
     current_user: CurrentUser = Depends(get_current_user),
-    service: InventoryItemService = Depends(Provide[DomainsContainer.masters.inventory_item_service])
+    service: InventoryItemService = Depends(Provide[MastersContainer.inventory_item_service])
 ):
     from uuid import UUID
     user_uuid = UUID(current_user.id)
@@ -75,7 +75,7 @@ async def update_item(
 async def activate_item(
     item_id: UUID,
     current_user: CurrentUser = Depends(get_current_user),
-    service: InventoryItemService = Depends(Provide[DomainsContainer.masters.inventory_item_service])
+    service: InventoryItemService = Depends(Provide[MastersContainer.inventory_item_service])
 ):
     from uuid import UUID
     user_uuid = UUID(current_user.id)
@@ -89,7 +89,7 @@ async def activate_item(
 async def deactivate_item(
     item_id: UUID,
     current_user: CurrentUser = Depends(get_current_user),
-    service: InventoryItemService = Depends(Provide[DomainsContainer.masters.inventory_item_service])
+    service: InventoryItemService = Depends(Provide[MastersContainer.inventory_item_service])
 ):
     from uuid import UUID
     user_uuid = UUID(current_user.id)
@@ -103,7 +103,7 @@ async def deactivate_item(
 async def archive_item(
     item_id: UUID,
     current_user: CurrentUser = Depends(get_current_user),
-    service: InventoryItemService = Depends(Provide[DomainsContainer.masters.inventory_item_service])
+    service: InventoryItemService = Depends(Provide[MastersContainer.inventory_item_service])
 ):
     from uuid import UUID
     user_uuid = UUID(current_user.id)
