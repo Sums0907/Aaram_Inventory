@@ -1,278 +1,282 @@
-# Inventory Engine
+# Inventory Engine Vision
 
-## Purpose
+## Primary Objective
 
-The Inventory Engine is responsible for maintaining the physical stock position of every SKU across all warehouses.
+The primary objective of the AaramBooks Inventory Engine is to ensure that, for every SKU, AaramBooks can produce a complete, accurate, and fully auditable Inventory Ledger that explains the current stock balance from the opening stock to the present date.
 
-Unlike traditional ERP systems that directly update stock quantities, the Inventory Engine treats every inventory change as an immutable business event called an **Inventory Movement**.
+Unlike traditional inventory systems that simply maintain stock quantities, AaramBooks must be able to explain **why** the current inventory exists by recording every business event that changed it.
 
-Current stock is always derived from these movements, ensuring complete traceability, auditability, and consistency.
-
-The Inventory Engine is the authoritative source for inventory information within AaramBooks.
+Every inventory balance should be completely traceable to its underlying inventory movements.
 
 ---
 
-# Position in System Architecture
+# Design Constraints
 
-```
-External Platforms
-        │
-        ▼
-Data Ingestion
-        │
-        ▼
-Operations Domain
-        │
-        ▼
-Matching Domain
-        │
-        ▼
-=====================
- Inventory Engine
-=====================
-        │
-        ├────────► Accounting Engine
-        ├────────► Reporting Engine
-        └────────► Future Automation
-```
+The Inventory Engine shall achieve this objective while addressing the operational realities of Indian e-commerce businesses identified during the initial design of AaramBooks.
+
+These include, but are not limited to:
+
+* Marketplace inventory is not the source of truth for physical inventory.
+* Purchase invoices are frequently delayed, consolidated, or lack SKU-level details.
+* Physical inventory may exist before accounting documents are received.
+* Multiple sales channels (ShopDeck, offline sales, future marketplaces) must share a single inventory source of truth.
+* Inventory changes occur due to numerous operational events beyond sales and purchases, including returns, replacements, damages, transfers, quality checks, and manual adjustments.
+* Physical stock, accounting records, and marketplace listings may temporarily diverge and must be reconciled without compromising auditability.
+* Every inventory movement must remain traceable to its originating business document wherever possible.
+* The system must support gradual reconciliation of imperfect real-world data instead of assuming ideal business processes.
 
 ---
 
-# Responsibilities
+# Guiding Philosophy
 
-The Inventory Engine is responsible for:
+AaramBooks does not attempt to model an ideal warehouse.
 
-* Maintaining inventory balances
-* Recording inventory movements
-* Managing warehouse-wise stock
-* Managing stock reservations
-* Recording stock adjustments
-* Recording warehouse transfers
-* Maintaining complete inventory history
-* Providing real-time inventory availability
+It models the real operational behaviour of Indian e-commerce businesses.
 
-The Inventory Engine is NOT responsible for:
+The Inventory Engine must therefore prioritise:
 
-* Importing CSV files
-* Matching business documents
-* Customer management
-* Supplier management
-* Accounting journals
-* GST calculations
-* Payment reconciliation
+* Accuracy over assumptions.
+* Auditability over convenience.
+* Explainability over simple quantity tracking.
+* Deterministic business rules over manual corrections.
+* Progressive reconciliation of imperfect business data.
 
 ---
 
-# Core Principles
+# Success Criteria
 
-The Inventory Engine follows five fundamental principles.
+The Inventory Engine will be considered successful when, for any SKU and any date, it can answer the following questions with complete confidence:
 
-## 1. Inventory is Event Driven
+* What is the current physical stock?
+* Why is this the current stock?
+* Which business events created every inventory movement?
+* Which source documents support those movements?
+* Which movements remain provisional due to missing or delayed documentation?
+* What differences exist between physical inventory, marketplace inventory, and accounting records, and why?
+* Can the complete inventory history be reconstructed from the Inventory Ledger without ambiguity?
 
-Inventory never changes directly.
+Only when these questions can be answered consistently and deterministically should the Inventory Engine be considered the authoritative source of inventory truth within AaramBooks.
 
-Every stock change must originate from an Inventory Movement.
 
-Examples:
+# Inventory Engine (Version 1)
 
-* Opening Stock
-* Sale
-* Purchase
-* Customer Return
-* Supplier Return
-* Warehouse Transfer
-* Stock Adjustment
-* Manufacturing
-* Stock Reservation Release
+## Vision
 
----
+The Inventory Engine is the operational heart of AaramBooks.
 
-## 2. Inventory Movements are Immutable
+Its objective is **not** to maintain inventory quantities. Its objective is to establish the **authoritative truth of physical inventory** for an Indian e-commerce business operating under imperfect real-world conditions.
 
-Once created, an Inventory Movement cannot be modified.
-
-Corrections must always be recorded as new movements.
-
-This guarantees complete auditability.
+Unlike conventional inventory systems that assume perfect purchasing, warehousing, and accounting processes, AaramBooks acknowledges that inventory data is often incomplete, delayed, or inconsistent. The Inventory Engine is therefore designed to progressively reconcile these realities while maintaining complete auditability.
 
 ---
 
-## 3. Inventory Balance is Calculated
+# Primary Objective
 
-Current stock is never manually maintained.
+For every SKU, AaramBooks shall produce a complete, accurate, and fully auditable **Inventory Ledger** that explains the current stock balance from the opening stock to the present date.
 
-It is always calculated from all historical inventory movements.
+The Inventory Engine must answer not only **"How much stock exists?"** but also **"Why does this stock exist?"**
 
-```
+Every inventory balance must be traceable back to the business events that created it.
+
+---
+
+# Core Philosophy
+
+Inventory should never be managed as a simple quantity.
+
+Instead, inventory should be managed as a history of business events.
+
+Just as Accounting derives Ledger Balances from Journal Entries, Inventory derives Inventory Balances from Inventory Movements.
+
+```text
+Journal Entries
+        ↓
+Ledger Balance
+
+Inventory Movements
+        ↓
 Inventory Balance
-
-=
-
-Opening Stock
-
-+
-
-Purchases
-
-+
-
-Returns
-
--
-
-Sales
-
--
-
-Transfers Out
-
-+
-
-Transfers In
-
-± Adjustments
 ```
 
----
-
-## 4. Warehouse is Mandatory
-
-Every inventory movement belongs to exactly one warehouse.
-
-Inventory is always maintained warehouse-wise.
-
-Global inventory is derived by summing warehouse balances.
+Inventory Balance is therefore a **projection**, never the primary source of truth.
 
 ---
 
-## 5. SKU is Mandatory
+# Real-World Design Constraints
 
-Every inventory movement references exactly one SKU.
+The Inventory Engine has been designed specifically around the operational realities of Indian e-commerce businesses.
 
-Inventory is never maintained at the Product level.
+## Marketplace Inventory is not Physical Inventory
 
-The SKU is the smallest inventory unit.
+Marketplace inventory exists only to facilitate selling.
+
+It is not the source of truth.
+
+Examples:
+
+* ShopDeck
+* Amazon
+* Future marketplaces
+
+must all consume inventory rather than define it.
 
 ---
 
-# Business Objects
+## Purchase Documentation is Imperfect
 
-## Inventory Movement
+Suppliers frequently:
 
-Represents one immutable stock transaction.
+* deliver inventory before invoices,
+* raise consolidated invoices,
+* omit SKU-level information,
+* use generic descriptions.
+
+The Inventory Engine must therefore allow inventory to exist before accounting documents arrive.
+
+---
+
+## Physical Inventory and Accounting are Independent
+
+Inventory answers:
+
+* What physically exists?
+
+Accounting answers:
+
+* What financially happened?
+
+Both systems must remain synchronized without becoming dependent upon one another.
+
+---
+
+## Inventory Changes for Many Reasons
+
+Inventory movements are created by far more than purchases and sales.
+
+Examples include:
+
+* Purchase
+* Sale
+* Customer Return
+* Replacement
+* Damage
+* Transfer
+* Manual Adjustment
+* Stock Correction
+* Quality Check
+* Write-Off
+
+Every movement must remain auditable.
+
+---
+
+# Guiding Principles
+
+## Movement First
+
+Inventory quantities are never updated directly.
+
+Every stock change is represented by an Inventory Movement.
+
+Inventory Balance is calculated from those movements.
+
+---
+
+## Explainability
+
+Every inventory figure should be explainable.
+
+The system must always answer:
+
+* Why is this stock available?
+* Which document created it?
+* Which movement reduced it?
+* Which adjustment changed it?
+
+---
+
+## Auditability
+
+Every movement should reference its originating business document whenever possible.
+
+Examples:
+
+* Purchase Invoice
+* Sales Order
+* Tax Invoice
+* Return
+* Adjustment Note
+
+---
+
+## Progressive Reconciliation
+
+The Inventory Engine must gracefully handle delayed documentation rather than assuming perfect business processes.
+
+Missing information should reduce confidence—not corrupt inventory.
+
+---
+
+# Central Business Object
+
+The entire Inventory Engine revolves around one immutable business object.
+
+```
+Inventory Movement
+```
 
 Examples:
 
 * Opening Stock
-* Sale
 * Purchase
+* Sale
 * Return
-* Transfer
+* Replacement
+* Damage
 * Adjustment
-* Reservation
-* Reservation Release
+* Transfer
+* QC Release
+
+Nothing should bypass Inventory Movement.
 
 ---
 
-## Inventory Balance
+# Inventory Ledger
 
-Represents the current calculated stock position.
+Every SKU shall maintain a complete Inventory Ledger.
 
-Fields:
+Example:
 
-* Warehouse
-* SKU
-* Quantity On Hand
-* Reserved Quantity
-* Available Quantity
-* Last Updated
+```text
+Blue Bay Stripes
 
-Inventory Balance may be stored as a materialized view or cache for performance, but Inventory Movement remains the system of record.
+Opening Stock       +100
 
----
+Purchase             +50
 
-## Stock Reservation
+Sale                 -12
 
-Represents inventory temporarily reserved for an order.
+Sale                 -5
 
-Reserved stock is unavailable for other orders until released or fulfilled.
+Customer Return      +2
 
----
+Adjustment           -1
 
-## Stock Transfer
+--------------------------------
 
-Represents movement of inventory between warehouses.
-
-A transfer creates two inventory movements:
-
-* Transfer Out
-* Transfer In
-
-The total inventory remains unchanged.
-
----
-
-## Stock Adjustment
-
-Represents manual corrections to inventory.
-
-Examples:
-
-* Physical stock count
-* Damaged goods
-* Lost inventory
-* Excess inventory
-
-Every adjustment requires:
-
-* Reason
-* User
-* Timestamp
-
----
-
-# Inventory Movement Types
-
-The engine supports the following movement types.
-
-```
-OPENING_STOCK
-
-PURCHASE
-
-PURCHASE_RETURN
-
-SALE
-
-CUSTOMER_RETURN
-
-TRANSFER_IN
-
-TRANSFER_OUT
-
-STOCK_ADJUSTMENT
-
-RESERVATION
-
-RESERVATION_RELEASE
-
-MANUFACTURING_IN
-
-MANUFACTURING_OUT
+Closing Stock       134
 ```
 
-Additional movement types may be introduced without changing the overall architecture.
+This ledger becomes the inventory equivalent of a General Ledger.
 
 ---
 
-# Inventory Workflow
+# Inventory Balance
+
+Inventory Balance is a projection generated from Inventory Movements.
 
 ```
-Business Event
-
-↓
-
-Inventory Movement
+Inventory Movements
 
 ↓
 
@@ -281,447 +285,347 @@ Inventory Ledger
 ↓
 
 Inventory Balance
-
-↓
-
-Inventory Availability
 ```
+
+Inventory Balance must never be manually edited.
 
 ---
 
-# Inventory Status
+# Inventory Verification
 
-Each Inventory Movement may have one of the following statuses.
-
-```
-PENDING
-
-POSTED
-
-CANCELLED
-```
-
-Only POSTED movements affect inventory balances.
-
----
-
-# Reservation Workflow
-
-```
-Sales Order
-
-↓
-
-Reserve Stock
-
-↓
-
-Inventory Reserved
-
-↓
-
-Invoice Generated
-
-↓
-
-Dispatch
-
-↓
-
-Reservation Released
-
-↓
-
-Sale Movement Posted
-```
-
----
-
-# Warehouse Transfers
-
-```
-Warehouse A
-
-↓
-
-Transfer Out
-
-↓
-
-In Transit
-
-↓
-
-Transfer In
-
-↓
-
-Warehouse B
-```
-
-Both movements must reference the same transfer document.
-
----
-
-# Stock Availability
-
-Available Quantity is calculated as:
-
-```
-Available Quantity
-
-=
-
-Quantity On Hand
-
--
-
-Reserved Quantity
-```
-
-Users should always see Available Quantity when allocating inventory.
-
----
-
-# Inventory Reports
-
-The Inventory Engine provides the following reports:
-
-* Current Inventory
-* Warehouse Stock Summary
-* SKU Stock Summary
-* Inventory Ledger
-* Inventory Movement History
-* Reserved Stock Report
-* Low Stock Report
-* Negative Stock Report
-* Stock Adjustment Report
-* Transfer Report
-
----
-
-# Events
-
-The Inventory Engine publishes business events.
+The Inventory Engine must continuously verify inventory correctness.
 
 Examples:
 
-```
-InventoryMovementCreated
+Accounting Purchased      500
 
-InventoryReserved
+Inventory Received        480
 
-InventoryReleased
-
-InventoryTransferred
-
-InventoryAdjusted
-
-InventoryBalanceUpdated
-```
-
-Future domains subscribe to these events.
-
-* Accounting Engine
-* Reporting Engine
-* Automation Engine
+Difference                20
 
 ---
 
-# Design Principles
+Marketplace Stock         125
 
-The Inventory Engine must always be:
+Inventory Stock           120
 
-* Deterministic
-* Auditable
-* Event Driven
-* Idempotent
-* Warehouse Aware
-* SKU Centric
-* Immutable
-
-Inventory quantities must never be edited directly.
-
-Every inventory change must be traceable back to an Inventory Movement.
+Difference                 5
 
 ---
 
-# Future Roadmap
+Physical Count            118
 
-## Version 1
+Inventory Balance         121
 
-* Inventory Movements
-* Inventory Balance
-* Reservations
-* Transfers
-* Adjustments
+Difference                 3
 
-## Version 2
-
-* Purchase Receipts
-* Batch Tracking
-* Serial Number Tracking
-* Multi-location Fulfilment
-
-## Version 3
-
-* Manufacturing
-* Bill of Materials (BOM)
-* Production Orders
-* Work Orders
-
-## Version 4
-
-* Demand Forecasting
-* Auto Reorder Suggestions
-* Warehouse Optimization
-
-## Version 5
-
-* AI-powered Inventory Planning
-* Predictive Stock Allocation
-* Smart Procurement Recommendations
-
-
-# Domain Lifecycle
-
-The Inventory Engine does not operate independently. It consumes business events from upstream domains and produces inventory events that are consumed by downstream domains.
-
-The lifecycle below illustrates how a customer order ultimately affects inventory.
+Differences should generate Inventory Exceptions rather than silently modifying stock.
 
 ---
 
-## Standard Sales Flow
+# Inventory Reconciliation
 
-```text
-Customer Places Order
-            │
-            ▼
-     Sales Order Created
-      (Operations Domain)
-            │
-            ▼
-     Documents Matched
-      (Matching Domain)
-            │
-            ▼
-     Inventory Reserved
-     (Inventory Engine)
-            │
-            ▼
-      Order Dispatched
-            │
-            ▼
- Inventory Movement Created
-        (SALE)
-            │
-            ▼
- Reservation Released
-            │
-            ▼
- Inventory Balance Updated
-            │
-            ▼
- Accounting Event Generated
-     (Accounting Engine)
-            │
-            ▼
-     Journal Exported
-      (Vyapar Export)
-```
+Inventory and Accounting may legitimately diverge temporarily.
+
+Example:
+
+Supplier delivers goods
+
+↓
+
+Inventory Received
+
+↓
+
+Goods Sold
+
+↓
+
+Supplier Invoice Received Later
+
+↓
+
+Accounting Updated
+
+The system must reconcile these differences over time without compromising auditability.
 
 ---
 
-## Customer Return Flow
+# Inventory States
+
+Inventory is more than simply "Available."
+
+Every unit may exist in one of several operational states.
+
+Examples:
+
+* Available
+* Reserved
+* Allocated
+* Packed
+* Shipped
+* Delivered
+* Returned
+* Under Inspection
+* Damaged
+* Blocked
+* Lost
+
+State transitions occur through Inventory Movements.
+
+---
+
+# Reservations
+
+Reserved stock should reduce sellable inventory without reducing physical inventory.
+
+Examples:
+
+* Website Order
+* Instagram Order
+* Wholesale Order
+* Replacement Order
+
+---
+
+# Returns Workflow
+
+Returns should not immediately increase sellable inventory.
+
+Workflow:
 
 ```text
 Customer Return
-        │
-        ▼
-Return Approved
-        │
-        ▼
-Inventory Movement Created
-   (CUSTOMER_RETURN)
-        │
-        ▼
-Inventory Balance Updated
-        │
-        ▼
-Credit Note Generated
-(Accounting Engine)
+
+↓
+
+Inspection
+
+↓
+
+Quality Check
+
+↓
+
+Available
+
+or
+
+↓
+
+Damaged
 ```
 
 ---
 
-## Purchase Flow (Future)
+# Multi-Location Design
 
-```text
-Purchase Receipt
-        │
-        ▼
-Goods Received
-        │
-        ▼
-Inventory Movement Created
-     (PURCHASE)
-        │
-        ▼
-Inventory Balance Updated
-        │
-        ▼
-Purchase Accounting
-```
-
----
-
-## Warehouse Transfer Flow
-
-```text
-Warehouse Transfer Requested
-              │
-              ▼
-Transfer Out Movement
-              │
-              ▼
-Inventory In Transit
-              │
-              ▼
-Transfer In Movement
-              │
-              ▼
-Destination Warehouse Updated
-```
-
----
-
-## Stock Adjustment Flow
-
-```text
-Physical Stock Count
-          │
-          ▼
-Difference Identified
-          │
-          ▼
-Stock Adjustment Created
-          │
-          ▼
-Inventory Movement Posted
-          │
-          ▼
-Inventory Balance Updated
-```
-
----
-
-# Inventory Event Pipeline
-
-Every inventory change follows the same internal pipeline.
-
-```text
-Business Event
-      │
-      ▼
-Business Validation
-      │
-      ▼
-Inventory Movement
-      │
-      ▼
-Inventory Ledger
-      │
-      ▼
-Inventory Balance
-      │
-      ▼
-Inventory Availability
-      │
-      ▼
-Business Events Published
-```
-
-The Inventory Engine never updates stock quantities directly.
-
-Every stock change must first become an Inventory Movement.
-
-Inventory Balance is always derived from the Inventory Ledger.
-
----
-
-# Interaction with Other Domains
-
-## Operations Domain
-
-Produces business documents that may create inventory movements.
+Inventory belongs to Locations rather than hardcoded warehouses.
 
 Examples:
 
-* Sales Order
-* Sales Return
-* Purchase Receipt (Future)
+* Main Warehouse
+* Secondary Warehouse
+* Job Worker
+* Retail Store
+* Third-Party Logistics
+
+The architecture should remain location-agnostic.
 
 ---
 
-## Matching Domain
+# Batch Support
 
-Confirms relationships between business documents before inventory is affected.
+The Inventory Engine should support batch-level tracking.
 
-Examples:
+Benefits include:
 
-* Sales Order matched to Tax Invoice
-* Payment matched to Settlement
+* Supplier Traceability
+* Manufacturing Tracking
+* Batch Recall
+* Batch Profitability
+
+Serial numbers are intentionally excluded as they are unnecessary for home textile products.
 
 ---
 
-## Inventory Domain
+# Inventory Confidence
 
-Creates and maintains:
+Inventory Confidence is a core business metric representing how trustworthy the inventory balance is for a given SKU, warehouse, or the entire business.
 
-* Inventory Movements
+Unlike traditional systems that only report stock quantities, AaramBooks reports both the quantity and the confidence in that quantity.
+
+Example:
+
+```text
+Blue Bay Stripes
+
+Current Stock
+
+128
+
+Inventory Confidence
+
+96%
+```
+
+---
+
+## Confidence Principles
+
+Inventory Confidence should be rule-based rather than purely mathematical.
+
+Typical positive indicators include:
+
+* All purchases verified.
+* All sales reconciled.
+* Marketplace synchronized.
+* Recent physical verification completed.
+* No unresolved adjustments.
+
+Typical negative indicators include:
+
+* Purchase invoice pending.
+* Physical verification overdue.
+* Pending Quality Control.
+* Manual adjustments awaiting approval.
+* Inventory variances.
+* Marketplace discrepancies.
+
+The system must always explain the confidence score rather than displaying only a percentage.
+
+Example:
+
+```text
+Inventory Confidence
+
+92%
+
+Reasons
+
+✓ Sales reconciled
+
+✓ Purchases verified
+
+✓ Marketplace synchronized
+
+⚠ Physical verification overdue
+
+⚠ Two returned units awaiting QC
+```
+
+---
+
+# Inventory Truth Engine
+
+The first release of the Inventory Engine is not an Inventory Management System.
+
+It is an **Inventory Truth Engine**.
+
+Its purpose is to explain every unit of inventory.
+
+For every SKU, the system must answer:
+
+* What is the current stock?
+* Why is this the current stock?
+* Which movements created this balance?
+* Which documents support those movements?
+* Which movements remain provisional?
+* What differences exist between physical inventory, marketplace inventory, and accounting?
+* How confident are we that this inventory is correct?
+
+Only after these questions can be answered consistently should advanced inventory functionality be introduced.
+
+---
+
+# Implementation Roadmap
+
+## RC1 — Inventory Truth Engine
+
+Objective:
+
+Explain every SKU's closing stock.
+
+Deliverables:
+
+* Inventory Movement
 * Inventory Ledger
-* Inventory Balances
-* Stock Reservations
-* Warehouse Transfers
-* Stock Adjustments
+* Inventory Balance
+* Inventory Verification
+
+Success Criteria:
+
+Every unit of inventory is explainable.
 
 ---
 
-## Accounting Domain
+## RC2 — Inventory Ledger
 
-Consumes inventory events to generate accounting entries.
+Objective:
 
-Examples:
+Maintain a complete movement history for every SKU.
 
-* Cost of Goods Sold (COGS)
-* Inventory Asset Adjustments
-* Stock Loss
-* Stock Gain
+Success Criteria:
 
----
-
-## Reporting Domain
-
-Reads inventory data without modifying it.
-
-Examples:
-
-* Current Stock Report
-* Inventory Ledger
-* Warehouse Stock Report
-* Low Stock Report
-* Inventory Valuation
-* Slow Moving Inventory
-* Dead Stock Analysis
+Every inventory change is traceable.
 
 ---
 
-# Design Principle
+## RC3 — Inventory Verification
 
-Every business process eventually becomes an Inventory Movement.
+Objective:
 
-The Inventory Movement is the single source of truth for all stock changes.
+Automatically detect and explain inventory inconsistencies.
 
-Inventory Balance is a calculated result—not a manually maintained value.
+Success Criteria:
 
-This event-driven approach guarantees complete auditability, deterministic calculations, and a scalable foundation for future capabilities such as manufacturing, demand forecasting, and AI-powered inventory optimization.
+Inventory Exceptions generated instead of silent corrections.
+
+---
+
+## RC4 — Inventory Reconciliation
+
+Objective:
+
+Support temporary divergence between inventory and accounting while preserving correctness.
+
+Success Criteria:
+
+Delayed documentation reconciles cleanly.
+
+---
+
+## RC5 — Operational Inventory
+
+Objective:
+
+Support reservations, operational states, and fulfillment lifecycle.
+
+---
+
+## Version 2
+
+Advanced capabilities:
+
+* Multi-Warehouse
+* Batch Management
+* Transfers
+* Bundle Handling
+* Forecasting
+* Reorder Planning
+* Inventory Analytics
+* Profitability by SKU
+
+---
+
+# Success Criteria
+
+The Inventory Engine will be considered successful when, for any SKU and any point in time, AaramBooks can produce an Inventory Ledger that completely explains the current stock balance while accurately reflecting the realities of Indian business operations.
+
+The final outcome is not merely inventory management.
+
+It is **Inventory Truth**.
+
+Just as the Accounting Engine explains every rupee through journals and ledger entries, the Inventory Engine must explain every single unit of stock through Inventory Movements and the Inventory Ledger.
+
+This is the defining principle of the AaramBooks Inventory Engine.

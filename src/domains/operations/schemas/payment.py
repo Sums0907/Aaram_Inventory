@@ -13,10 +13,10 @@ class PaymentCreate(BaseSchema):
     
     payment_method: str = Field(..., max_length=100)
     
-    gross_amount: float
-    gateway_fee: float
-    net_amount: float
-    
+    gross_amount: float = 0.0
+    gateway_fee: float = 0.0
+    gateway_tax: float = 0.0
+    net_amount: float = 0.0   
     payment_captured_at: Optional[datetime] = None
     
     settlement_id: Optional[UUID] = None

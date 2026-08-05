@@ -6,10 +6,12 @@ from src.domains.operations.dependency_injection import OperationsContainer
 from src.domains.matching.dependency_injection import MatchingContainer
 from src.domains.inventory.dependency_injection import InventoryContainer
 from src.domains.accounting.dependency_injection import AccountingContainer
+from src.domains.connectors.container import ConnectorsContainer
 from src.app.services.pipeline_orchestrator import PipelineOrchestratorService
 from src.app.services.verification import VerificationService
 
 class DomainsContainer(containers.DeclarativeContainer):
+    
     core = providers.Container(CoreContainer)
 
     masters = providers.Container(
@@ -41,6 +43,12 @@ class DomainsContainer(containers.DeclarativeContainer):
         db=core.db
     )
     
+    connectors = providers.Container(
+        ConnectorsContainer,
+        db_session=core.db.provided.session,
+        import_job_service=data_ingestion.import_job_service
+    )
+    
     pipeline_orchestrator = providers.Factory(
         PipelineOrchestratorService,
         session=core.db.provided._session_factory.call(),
@@ -52,4 +60,11 @@ class DomainsContainer(containers.DeclarativeContainer):
     verification_service = providers.Factory(
         VerificationService,
         session=core.db.provided._session_factory.call()
+    )
+    
+    from src.app.services.business_summary import BusinessSummaryService
+    business_summary_service = providers.Factory(
+        BusinessSummaryService,
+        session=core.db.provided._session_factory.call(),
+        verification_service=verification_service
     )

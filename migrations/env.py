@@ -28,9 +28,15 @@ from src.domains.operations.models.sales_order import SalesOrderModel, SalesOrde
 from src.domains.operations.models.tax_invoice import TaxInvoiceModel, TaxInvoiceItemModel
 from src.domains.operations.models.payment import PaymentModel
 from src.domains.operations.models.settlement import SettlementModel
+from src.domains.matching.models.job import MatchJobModel
+from src.domains.matching.models.relationship import MatchRelationshipModel
+from src.domains.matching.models.exception import MatchExceptionModel
 from src.domains.inventory.models.movement import InventoryMovementModel
+from src.domains.inventory.models.balance import InventoryBalanceModel
+from src.domains.inventory.models.exception import InventoryExceptionModel
 from src.domains.accounting.models.ledger import LedgerModel
 from src.domains.accounting.models.journal import JournalEntryModel, JournalLineModel
+from src.domains.connectors.models.report import DownloadedReportModel
 
 config = context.config
 settings = get_settings()

@@ -12,12 +12,13 @@ class PaymentModel(BaseModel):
     transaction_type: Mapped[str] = mapped_column(String(100), nullable=False)
     
     order_reference: Mapped[str] = mapped_column(String(255), nullable=False, index=True) # E.g., order_receipt. Unmatched initially.
-    matched_order_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("operations_sales_orders.id"), nullable=True)
+    matched_order_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("operations_sales_orders.id"), nullable=True, index=True)
     
     payment_method: Mapped[str] = mapped_column(String(100), nullable=False)
     
     gross_amount: Mapped[float] = mapped_column(Numeric(15, 2), nullable=False, default=0.0)
     gateway_fee: Mapped[float] = mapped_column(Numeric(15, 2), nullable=False, default=0.0)
+    gateway_tax: Mapped[float] = mapped_column(Numeric(15, 2), nullable=False, default=0.0)
     net_amount: Mapped[float] = mapped_column(Numeric(15, 2), nullable=False, default=0.0)
     
     payment_captured_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)

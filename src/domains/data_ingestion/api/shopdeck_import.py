@@ -65,7 +65,8 @@ async def upload_shopdeck_orders(
         await job_service.update_job_status(job.id, "COMPLETED", user_uuid)
     except Exception as e:
         await job_service.update_job_status(job.id, "FAILED", user_uuid)
-        raise e
+        from src.foundation.exceptions.base import BadRequestException
+        raise BadRequestException(message=f"Failed to process file. Ensure it is a valid CSV. Detail: {str(e)}")
     
     return SuccessResponse(data=ImportJobResponse.model_validate(job, from_attributes=True))
 
@@ -95,7 +96,8 @@ async def upload_shopdeck_tax_invoices(
         await job_service.update_job_status(job.id, "COMPLETED", user_uuid)
     except Exception as e:
         await job_service.update_job_status(job.id, "FAILED", user_uuid)
-        raise e
+        from src.foundation.exceptions.base import BadRequestException
+        raise BadRequestException(message=f"Failed to process file. Ensure it is a valid CSV. Detail: {str(e)}")
     
     return SuccessResponse(data=ImportJobResponse.model_validate(job, from_attributes=True))
 
@@ -125,7 +127,8 @@ async def upload_shopdeck_cod_settlements(
         await job_service.update_job_status(job.id, "COMPLETED", user_uuid)
     except Exception as e:
         await job_service.update_job_status(job.id, "FAILED", user_uuid)
-        raise e
+        from src.foundation.exceptions.base import BadRequestException
+        raise BadRequestException(message=f"Failed to process file. Ensure it is a valid CSV. Detail: {str(e)}")
     
     return SuccessResponse(data=ImportJobResponse.model_validate(job, from_attributes=True))
 
@@ -155,6 +158,7 @@ async def upload_razorpay_settlements(
         await job_service.update_job_status(job.id, "COMPLETED", user_uuid)
     except Exception as e:
         await job_service.update_job_status(job.id, "FAILED", user_uuid)
-        raise e
+        from src.foundation.exceptions.base import BadRequestException
+        raise BadRequestException(message=f"Failed to process file. Ensure it is a valid CSV. Detail: {str(e)}")
     
     return SuccessResponse(data=ImportJobResponse.model_validate(job, from_attributes=True))

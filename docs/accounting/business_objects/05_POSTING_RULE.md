@@ -168,6 +168,16 @@ Rules may only be marked as Inactive.
 
 ---
 
+## Rule 9
+
+Authoritative external financial data always takes precedence over internally derived estimates.
+
+Gateway GST must be sourced directly from the payment gateway's authoritative records (e.g., Razorpay's `tax` column).
+
+The Accounting Engine must never estimate gateway GST if the source system provides the exact value.
+
+---
+
 # Relationships
 
 Posting Rule relates to:

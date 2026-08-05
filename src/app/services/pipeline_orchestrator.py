@@ -132,11 +132,28 @@ class PipelineOrchestratorService:
         if is_online and payment.transaction_type.lower() != "payment":
             return
             
+        # Authoritative external financial data always takes precedence
+        cgst_val = 0.0
+        sgst_val = 0.0
+        if is_online:
+            has_tax = hasattr(payment, "gateway_tax")
+            tax_val = getattr(payment, "gateway_tax", None)
+            
+            # Since we added gateway_tax to the model, we should use it unconditionally for new records.
+            # If we needed strict backward compatibility, we would check if tax_val is None, 
+            # but since server_default=0.00, we'll just trust the DB value.
+            if has_tax and tax_val is not None:
+                cgst_val = float(tax_val) / 2.0
+                sgst_val = float(tax_val) / 2.0
+            else:
+                cgst_val = float(payment.gateway_fee) * 0.18 / 2.0
+                sgst_val = float(payment.gateway_fee) * 0.18 / 2.0
+            
         amounts = {
             "bank_amount": float(payment.net_amount) if is_online else float(payment.gross_amount),
             "gateway_fee": float(payment.gateway_fee) if is_online else 0.0,
-            "input_cgst": float(payment.gateway_fee) * 0.18 / 2.0 if is_online else 0.0, # simplified tax logic
-            "input_sgst": float(payment.gateway_fee) * 0.18 / 2.0 if is_online else 0.0,
+            "input_cgst": cgst_val,
+            "input_sgst": sgst_val,
             "online_settled": float(payment.gross_amount) if is_online else 0.0,
             "cod_settled": float(payment.gross_amount) if not is_online else 0.0
         }

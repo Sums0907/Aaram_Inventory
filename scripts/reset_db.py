@@ -1,0 +1,57 @@
+import asyncio
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from src.foundation.database.session import Base
+from src.domains.accounting.models.ledger import LedgerModel
+import os
+
+TEST_DATABASE_URL = "sqlite+aiosqlite:///./test_manual.db"
+
+# Import all models to register them with Base.metadata
+from src.domains.masters.models import CategoryModel, UnitOfMeasureModel, ProductAttributeModel, InventoryItemModel, SKUModel, CompanyModel, WarehouseModel
+from src.domains.data_ingestion.models.integration import IntegrationModel
+from src.domains.data_ingestion.models.import_job import ImportJobModel
+from src.domains.data_ingestion.models.import_file import ImportFileModel
+from src.domains.data_ingestion.models.import_record import ImportRecordModel
+from src.domains.operations.models.sales_order import SalesOrderModel
+from src.domains.operations.models.tax_invoice import TaxInvoiceModel
+from src.domains.operations.models.payment import PaymentModel
+from src.domains.operations.models.settlement import SettlementModel
+from src.domains.matching.models.job import MatchJobModel
+from src.domains.matching.models.relationship import MatchRelationshipModel
+from src.domains.matching.models.exception import MatchExceptionModel
+from src.domains.inventory.models.movement import InventoryMovementModel
+from src.domains.accounting.models.ledger import LedgerModel
+from src.domains.accounting.models.journal import JournalEntryModel, JournalLineModel
+
+async def main():
+    print("Resetting database test_manual.db...")
+    test_engine = create_async_engine(TEST_DATABASE_URL, echo=False)
+    TestingSessionLocal = async_sessionmaker(bind=test_engine, class_=AsyncSession, expire_on_commit=False)
+    
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+        
+    print("Seeding Ledgers...")
+    async with TestingSessionLocal() as session:
+        LEDGER_NAMES = [
+            "Sales - ShopDeck",
+            "Sales Return - ShopDeck",
+            "Razorpay Receivable",
+            "ShopDeck Receivable",
+            "Output CGST",
+            "Output SGST",
+            "Output IGST",
+            "Round Off",
+            "Axis Bank Current Account",
+            "Payment Gateway Charges",
+            "Input CGST",
+            "Input SGST"
+        ]
+        ledgers = [LedgerModel(ledger_code=name.upper().replace(" ", "_"), ledger_name=name, account_type="REVENUE" if "Sales" in name else "ASSET") for name in LEDGER_NAMES]
+        session.add_all(ledgers)
+        await session.commit()
+    print("Database reset complete.")
+
+if __name__ == "__main__":
+    asyncio.run(main())

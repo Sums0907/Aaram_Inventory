@@ -1,37 +1,32 @@
 [
-  {
-    "Ledger":"Sales Return - ShopDeck",
-    "Debit":87235.08,
-    "Credit":0.0
-  },
-  {
-    "Ledger":"Output CGST",
-    "Debit":482.99,
-    "Credit":0.0
-  },
-  {
-    "Ledger":"Output SGST",
-    "Debit":482.99,
-    "Credit":0.0
-  },
-  {
-    "Ledger":"Output IGST",
-    "Debit":3395.93,
-    "Credit":0.0
-  },
-  {
-    "Ledger":"Razorpay Receivable",
-    "Debit":0.0,
-    "Credit":1159.0
-  },
-  {
-    "Ledger":"ShopDeck Receivable",
-    "Debit":0.0,
-    "Credit":90438.0
-  },
-  {
-    "Ledger":"Round Off",
-    "Debit":0.01,
-    "Credit":0.0
-  }
+    {
+        "Ledger": "Sales Return - ShopDeck",
+        "Debit": 87235.08,
+        "Credit": 0.0
+    },
+    {
+        "Ledger": "Output IGST",
+        "Debit": 3395.93,
+        "Credit": 0.0
+    },
+    {
+        "Ledger": "ShopDeck Receivable",
+        "Debit": 0.0,
+        "Credit": 90437.99
+    },
+    {
+        "Ledger": "Output CGST",
+        "Debit": 482.99,
+        "Credit": 0.0
+    },
+    {
+        "Ledger": "Output SGST",
+        "Debit": 482.99,
+        "Credit": 0.0
+    },
+    {
+        "Ledger": "Razorpay Receivable",
+        "Debit": 0.0,
+        "Credit": 1159.0
+    }
 ]

@@ -34,3 +34,15 @@ class InventoryMovementRepository:
         result = await self.session.execute(stmt)
         balance = result.scalar()
         return int(balance) if balance is not None else 0
+
+    async def get_movements_for_sku(self, sku_id: UUID) -> List[InventoryMovementModel]:
+        stmt = (
+            select(InventoryMovementModel)
+            .where(
+                InventoryMovementModel.sku_id == sku_id,
+                InventoryMovementModel.status == "POSTED"
+            )
+            .order_by(InventoryMovementModel.posting_date.asc(), InventoryMovementModel.created_on.asc())
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())

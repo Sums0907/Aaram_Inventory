@@ -10,6 +10,9 @@ from src.app.container import DomainsContainer
 from src.domains.masters.api import router as masters_router
 from src.domains.data_ingestion.api import router as data_ingestion_router
 from src.domains.matching.api import router as matching_router
+from src.domains.connectors.api.shopdeck_router import router as shopdeck_router
+from src.domains.accounting.api.export_router import router as accounting_export_router
+from src.app.api.dashboard import router as dashboard_router
 from src.app.api.setup import router as setup_router
 from src.api.v1.read_api_router import read_api_router
 
@@ -38,7 +41,15 @@ def create_app() -> FastAPI:
     domains_container.matching().wire(packages=["src.domains.matching"])
     domains_container.inventory().wire(packages=["src.domains.inventory", "src.api.v1"])
     domains_container.accounting().wire(packages=["src.domains.accounting", "src.api.v1"])
-    domains_container.wire(modules=["src.api.v1.read_api_router", "src.domains.matching.api.router"])
+    domains_container.connectors().wire(packages=["src.domains.connectors"])
+    domains_container.wire(modules=[
+        "src.api.v1.read_api_router", 
+        "src.domains.matching.api.router", 
+        "src.app.api.dashboard", 
+        "src.domains.accounting.api.export_router",
+        "src.domains.accounting.api.journal_router",
+        "src.domains.inventory.api.router"
+    ])
     
     # CORS Middleware (Frozen Strategy: explicit origins, never "*")
     app.add_middleware(
@@ -68,6 +79,13 @@ def create_app() -> FastAPI:
     api_v1_router.include_router(masters_router, prefix="/masters")
     api_v1_router.include_router(data_ingestion_router, prefix="/data-ingestion")
     api_v1_router.include_router(matching_router, prefix="/matching")
+    from src.domains.inventory.api.router import router as inv_router
+    api_v1_router.include_router(inv_router)
+    api_v1_router.include_router(shopdeck_router, prefix="/shopdeck")
+    api_v1_router.include_router(accounting_export_router, prefix="/accounting/export")
+    from src.domains.accounting.api.journal_router import router as jrn_router
+    api_v1_router.include_router(jrn_router, prefix="/accounting")
+    api_v1_router.include_router(dashboard_router, prefix="/dashboard")
     api_v1_router.include_router(read_api_router)
     
     app.include_router(api_v1_router)

@@ -68,6 +68,7 @@ class RazorpaySettlementMapper:
             "payment_method": row.get("payment_method", "").strip(),
             "gross_amount": self._parse_float(row.get("amount", "")),
             "gateway_fee": self._parse_float(row.get("fee (exclusive tax)", "")),
+            "gateway_tax": self._parse_float(row.get("tax", "")),
             "net_amount": self._parse_float(row.get("credit", "")),
             "payment_captured_at": self._parse_datetime(row.get("payment_captured_at", "")),
             "utr_number": row.get("settlement_utr", "").strip()

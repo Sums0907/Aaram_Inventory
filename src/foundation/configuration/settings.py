@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     # Logging
     LOG_LEVEL: str = Field(default="INFO")
 
+    # Connectors: ShopDeck
+    SHOPDECK_BASE_URL: str = Field(default="https://pro.shopdeck.com")
+    SHOPDECK_SESSION_COOKIE: str = Field(default="")
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
