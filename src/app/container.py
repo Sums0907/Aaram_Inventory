@@ -45,7 +45,7 @@ class DomainsContainer(containers.DeclarativeContainer):
     
     connectors = providers.Container(
         ConnectorsContainer,
-        db_session=core.db.provided.session,
+        db_session=core.db.provided._session_factory.call(),
         import_job_service=data_ingestion.import_job_service
     )
     
@@ -54,7 +54,8 @@ class DomainsContainer(containers.DeclarativeContainer):
         session=core.db.provided._session_factory.call(),
         matching_engine=matching.engine_service,
         inventory_movement=inventory.movement_service,
-        accounting_engine=accounting.engine_service
+        accounting_engine=accounting.engine_service,
+        balance_calculator=inventory.balance_calculator
     )
     
     verification_service = providers.Factory(

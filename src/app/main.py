@@ -48,7 +48,13 @@ def create_app() -> FastAPI:
         "src.app.api.dashboard", 
         "src.domains.accounting.api.export_router",
         "src.domains.accounting.api.journal_router",
-        "src.domains.inventory.api.router"
+        "src.domains.inventory.api.router",
+        "src.domains.inventory.api.movement_router",
+        "src.domains.inventory.api.dashboard_router",
+        "src.domains.inventory.api.goods_receipt",
+        "src.domains.inventory.api.purchase_return",
+        "src.domains.connectors.api.shopdeck_router",
+        "src.domains.masters.api.supplier"
     ])
     
     # CORS Middleware (Frozen Strategy: explicit origins, never "*")
@@ -80,7 +86,15 @@ def create_app() -> FastAPI:
     api_v1_router.include_router(data_ingestion_router, prefix="/data-ingestion")
     api_v1_router.include_router(matching_router, prefix="/matching")
     from src.domains.inventory.api.router import router as inv_router
+    from src.domains.inventory.api.movement_router import router as inv_mov_router
+    from src.domains.inventory.api.dashboard_router import router as inv_dash_router
+    from src.domains.inventory.api.goods_receipt import router as grn_router
+    from src.domains.inventory.api.purchase_return import router as pr_router
     api_v1_router.include_router(inv_router)
+    api_v1_router.include_router(inv_mov_router)
+    api_v1_router.include_router(inv_dash_router)
+    api_v1_router.include_router(grn_router, prefix="/inventory")
+    api_v1_router.include_router(pr_router, prefix="/inventory")
     api_v1_router.include_router(shopdeck_router, prefix="/shopdeck")
     api_v1_router.include_router(accounting_export_router, prefix="/accounting/export")
     from src.domains.accounting.api.journal_router import router as jrn_router

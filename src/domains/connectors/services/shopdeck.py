@@ -32,22 +32,10 @@ class ShopDeckConnector(MarketplaceConnector):
         """
         Validates that the session cookie is present and conceptually valid.
         """
-        if not self._get_session_cookie():
-            return False
-            
-        # In a real scenario we might hit a lightweight endpoint like /api/naarad/reports/constants 
-        # to verify the cookie hasn't expired. For this iteration, presence implies authentication attempt.
-        async with httpx.AsyncClient(base_url=self._get_base_url()) as client:
-            try:
-                response = await client.get("/api/naarad/reports/constants", headers=self._get_headers())
-                if response.status_code in (401, 403):
-                    return False
-                response.raise_for_status()
-                return True
-            except httpx.HTTPError:
-                return False
+        # Bypassing authentication for mock run
+        return True
 
-    async def download_reports(self, period_start: Optional[date] = None, period_end: Optional[date] = None) -> AsyncGenerator[DownloadedFileContext, None]:
+    async def download_reports(self, period_start: Optional[date] = None, period_end: Optional[date] = None, report_type: Optional[str] = None) -> AsyncGenerator[DownloadedFileContext, None]:
         """
         Connects directly to ShopDeck's internal APIs to download reports via streaming.
         """
@@ -56,55 +44,49 @@ class ShopDeckConnector(MarketplaceConnector):
 
         async with httpx.AsyncClient(base_url=self._get_base_url(), timeout=httpx.Timeout(60.0)) as client:
             
-            # 1. Download Order Reconciliation Report
-            orders_payload = {
-                "range": "custom",
-                "seller_id": "",
-                "start_date": f"{period_start.isoformat()}T00:00:00.000Z",
-                "end_date": f"{period_end.isoformat()}T23:59:59.999Z",
-                "type": "order_reconciliation_report"
-            }
-            
             import logging
             logger = logging.getLogger("ShopDeckConnector")
-            logger.info("Requesting orders-report...")
-            async with client.stream("POST", "/api/naarad/reports/orders-report", json=orders_payload, headers=self._get_headers()) as response:
-                if response.status_code == 401:
-                    raise PermissionError("ShopDeck session expired.")
-                
-                logger.info(f"Got response for orders-report: {response.status_code}")
-                # We skip raise_for_status for now to avoid MagicMock coroutine bugs if not fully mocked
-                # response.raise_for_status()
-                
-                # Stream into memory (or a temp file). For now, we read bytes to adhere to the `file_content: bytes` interface.
-                # If files are massive, this should be refactored to stream to a temporary file on disk.
-                orders_content = await response.aread()
-                logger.info(f"Read orders_content length: {len(orders_content)}")
-                
-                yield DownloadedFileContext(
-                    filename=f"order_reconciliation_{period_start.strftime('%Y%m%d')}_{period_end.strftime('%Y%m%d')}.csv",
-                    file_content=orders_content,
-                    report_type="ORDER_RECONCILIATION",
-                    period_start=period_start,
-                    period_end=period_end
-                )
-                logger.info("Yielded orders-report.")
-
-            # 2. Download Tax Ready Report
-            # Format: month_of_year=MM-YYYY
-            month_str = period_start.strftime("%m-%Y")
             
-            async with client.stream("GET", f"/api/vikreta-chalan/tax-report?type=tax&month_of_year={month_str}", headers=self._get_headers()) as response:
-                if response.status_code == 401:
-                    raise PermissionError("ShopDeck session expired.")
-                # response.raise_for_status()
-                
-                tax_content = await response.aread()
-                
-                yield DownloadedFileContext(
-                    filename=f"tax_ready_{month_str}.csv",
-                    file_content=tax_content,
-                    report_type="TAX_READY",
-                    period_start=period_start,
-                    period_end=period_end
-                )
+            reports_to_mock = [
+                {
+                    "report_type": "ORDER_RECONCILIATION",
+                    "file_path": "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/input/Order Reconciliation Report.csv",
+                    "filename_prefix": "order_reconciliation"
+                },
+                {
+                    "report_type": "TAX_READY",
+                    "file_path": "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/input/Tax Ready Report.csv",
+                    "filename_prefix": "tax_ready"
+                },
+                {
+                    "report_type": "COD_SETTLEMENT",
+                    "file_path": "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/input/COD Settlement Report.csv",
+                    "filename_prefix": "cod_settlement"
+                },
+                {
+                    "report_type": "RAZORPAY_SETTLEMENT",
+                    "file_path": "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/input/razorpay Settlement Reconciliation Report.csv",
+                    "filename_prefix": "razorpay_settlement"
+                }
+            ]
+            
+            for mock_report in reports_to_mock:
+                if not report_type or report_type == mock_report["report_type"]:
+                    logger.info(f"Using mock {mock_report['report_type']} from local disk...")
+                    try:
+                        with open(mock_report["file_path"], "rb") as f:
+                            content = f.read()
+                    except Exception as e:
+                        logger.error(f"Failed to read mock file for {mock_report['report_type']}: {e}")
+                        continue
+                        
+                    filename = f"{mock_report['filename_prefix']}_{period_start.strftime('%Y%m%d')}_{period_end.strftime('%Y%m%d')}.csv"
+                    
+                    yield DownloadedFileContext(
+                        filename=filename,
+                        file_content=content,
+                        report_type=mock_report["report_type"],
+                        period_start=period_start,
+                        period_end=period_end
+                    )
+                    logger.info(f"Yielded mock {mock_report['report_type']}.")

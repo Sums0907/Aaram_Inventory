@@ -1,16 +1,16 @@
 from typing import List
 from uuid import UUID
 from src.domains.masters.repositories.sku import SKURepository
-from src.domains.masters.repositories.inventory_item import InventoryItemRepository
+from src.domains.masters.repositories.product import ProductRepository
 from src.domains.masters.models.sku import SKUModel
 from src.domains.masters.schemas.sku import SKUCreate, SKUUpdate
 from src.foundation.exceptions.base import NotFoundException, ValidationException
 from src.foundation.enums.status import GenericStatus
 
 class SKUService:
-    def __init__(self, repository: SKURepository, item_repo: InventoryItemRepository):
+    def __init__(self, repository: SKURepository, product_repo: ProductRepository):
         self.repository = repository
-        self.item_repo = item_repo
+        self.product_repo = product_repo
 
     async def get_sku(self, sku_id: UUID) -> SKUModel:
         sku = await self.repository.get_by_id(sku_id)
@@ -22,8 +22,6 @@ class SKUService:
         return await self.repository.get_all(skip=skip, limit=limit)
         
     async def _validate_uniqueness(self, schema, sku_id: UUID = None):
-        # Attribute Combination Uniqueness
-        # For update, schema might not have inventory_item_id, so we would need to check that separately.
         pass
 
     async def create_sku(self, schema: SKUCreate, created_by: UUID) -> SKUModel:
@@ -33,13 +31,13 @@ class SKUService:
         if schema.barcode and await self.repository.get_by_barcode(schema.barcode):
             raise ValidationException(message="Barcode must be unique")
             
-        item = await self.item_repo.get_by_id(schema.inventory_item_id)
-        if not item or item.status != GenericStatus.ACTIVE:
-            raise ValidationException(message="Valid and Active Inventory Item is required")
+        product = await self.product_repo.get_by_id(schema.product_id)
+        if not product or product.status != GenericStatus.ACTIVE:
+            raise ValidationException(message="Valid and Active Product is required")
             
-        existing_attrs = await self.repository.get_by_item_and_attributes(schema.inventory_item_id, schema.attribute_values)
+        existing_attrs = await self.repository.get_by_product_and_attributes(schema.product_id, schema.attribute_values)
         if existing_attrs:
-            raise ValidationException(message="Attribute combination must be unique within an Inventory Item")
+            raise ValidationException(message="Attribute combination must be unique within a Product")
 
         sku = SKUModel(
             **schema.model_dump(),
@@ -55,9 +53,9 @@ class SKUService:
             if await self.repository.get_by_barcode(schema.barcode):
                 raise ValidationException(message="Barcode must be unique")
                 
-        existing_attrs = await self.repository.get_by_item_and_attributes(sku.inventory_item_id, schema.attribute_values)
+        existing_attrs = await self.repository.get_by_product_and_attributes(sku.product_id, schema.attribute_values)
         if existing_attrs and existing_attrs.id != sku.id:
-            raise ValidationException(message="Attribute combination must be unique within an Inventory Item")
+            raise ValidationException(message="Attribute combination must be unique within a Product")
             
         update_data = schema.model_dump(exclude_unset=True)
         for key, value in update_data.items():

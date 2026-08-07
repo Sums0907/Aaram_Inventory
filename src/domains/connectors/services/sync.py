@@ -27,7 +27,7 @@ class SyncService:
         result = await self.session.execute(stmt)
         return result.scalars().first() is not None
 
-    async def run_sync(self, user_id: uuid.UUID, period_start: Optional[date] = None, period_end: Optional[date] = None) -> Dict[str, Any]:
+    async def run_sync(self, user_id: uuid.UUID, period_start: Optional[date] = None, period_end: Optional[date] = None, report_type: Optional[str] = None) -> Dict[str, Any]:
         """
         Orchestrates the synchronization process.
         """
@@ -41,7 +41,7 @@ class SyncService:
         results = []
         
         try:
-            async for file_ctx in self.connector.download_reports(period_start=period_start, period_end=period_end):
+            async for file_ctx in self.connector.download_reports(period_start=period_start, period_end=period_end, report_type=report_type):
                 checksum = self.storage_manager.generate_checksum(file_ctx.file_content)
                 
                 # Check for duplicates

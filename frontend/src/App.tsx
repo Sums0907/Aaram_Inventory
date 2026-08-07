@@ -4,10 +4,21 @@ import { ErrorBoundary } from "react-error-boundary"
 import { Toaster } from "@/components/ui/toaster"
 
 import { AppLayout } from "@/components/layout/AppLayout"
+import { InventoryLayout } from "@/components/layout/InventoryLayout"
 import { DashboardPage } from "@/pages/DashboardPage"
 import { ImportsPage } from "@/pages/ImportsPage"
 import { MatchingPage } from "@/pages/MatchingPage"
-import { InventoryPage } from "@/pages/InventoryPage"
+import { InventoryExplorerDashboard } from "@/pages/inventory/InventoryExplorerDashboard"
+import { ProductsPage } from "@/pages/inventory/ProductsPage"
+import { SuppliersPage } from "@/pages/inventory/SuppliersPage"
+import { GoodsReceiptsPage } from "@/pages/inventory/GoodsReceiptsPage"
+import { PurchaseReturnsPage } from "@/pages/inventory/PurchaseReturnsPage"
+import { StockMovementsPage } from "@/pages/inventory/StockMovementsPage"
+import { PhysicalVerificationPage } from "@/pages/inventory/PhysicalVerificationPage"
+import { AdjustmentsPage } from "@/pages/inventory/AdjustmentsPage"
+import { ExceptionsPage } from "@/pages/inventory/ExceptionsPage"
+import { ConfidencePage } from "@/pages/inventory/ConfidencePage"
+import { DailyUpdatePage } from "@/pages/inventory/DailyUpdatePage"
 import { AccountingPage } from "@/pages/AccountingPage"
 import { ExportsPage } from "@/pages/ExportsPage"
 import { SettingsPage } from "@/pages/SettingsPage"
@@ -49,13 +60,29 @@ function App() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="imports" element={<ImportsPage />} />
               <Route path="matching" element={<MatchingPage />} />
-              <Route path="inventory" element={<InventoryPage />} />
+              
+              {/* Inventory Workspace */}
+              <Route path="inventory" element={<InventoryLayout />}>
+                <Route index element={<InventoryExplorerDashboard />} />
+                <Route path="daily-update" element={<DailyUpdatePage />} />
+                <Route path="products" element={<ProductsPage />} />
+                <Route path="suppliers" element={<SuppliersPage />} />
+                <Route path="goods-receipts" element={<GoodsReceiptsPage />} />
+                <Route path="purchase-returns" element={<PurchaseReturnsPage />} />
+                <Route path="movements" element={<StockMovementsPage />} />
+                <Route path="verification" element={<PhysicalVerificationPage />} />
+                <Route path="adjustments" element={<AdjustmentsPage />} />
+                <Route path="exceptions" element={<ExceptionsPage />} />
+                <Route path="confidence" element={<ConfidencePage />} />
+              </Route>
+
               <Route path="accounting" element={<AccountingPage />} />
               <Route path="exports" element={<ExportsPage />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>
+
         </ErrorBoundary>
         <Toaster />
       </BrowserRouter>

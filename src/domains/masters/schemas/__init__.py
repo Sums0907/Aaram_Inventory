@@ -3,8 +3,9 @@ from .unit_of_measure import UnitOfMeasureBase, UnitOfMeasureCreate, UnitOfMeasu
 from .warehouse import WarehouseBase, WarehouseCreate, WarehouseUpdate, WarehouseResponse
 from .category import CategoryBase, CategoryCreate, CategoryUpdate, CategoryResponse
 from .product_attribute import ProductAttributeBase, ProductAttributeCreate, ProductAttributeUpdate, ProductAttributeResponse
-from .inventory_item import InventoryItemBase, InventoryItemCreate, InventoryItemUpdate, InventoryItemResponse
+from .product import ProductBase, ProductCreate, ProductUpdate, ProductResponse
 from .sku import SKUBase, SKUCreate, SKUUpdate, SKUResponse
+from .supplier import SupplierBase, SupplierCreate, SupplierUpdate, SupplierResponse
 
 __all__ = [
     "CompanyBase", "CompanyCreate", "CompanyUpdate", "CompanyResponse",
@@ -12,6 +13,7 @@ __all__ = [
     "WarehouseBase", "WarehouseCreate", "WarehouseUpdate", "WarehouseResponse",
     "CategoryBase", "CategoryCreate", "CategoryUpdate", "CategoryResponse",
     "ProductAttributeBase", "ProductAttributeCreate", "ProductAttributeUpdate", "ProductAttributeResponse",
-    "InventoryItemBase", "InventoryItemCreate", "InventoryItemUpdate", "InventoryItemResponse",
-    "SKUBase", "SKUCreate", "SKUUpdate", "SKUResponse"
+    "ProductBase", "ProductCreate", "ProductUpdate", "ProductResponse",
+    "SKUBase", "SKUCreate", "SKUUpdate", "SKUResponse",
+    "SupplierBase", "SupplierCreate", "SupplierUpdate", "SupplierResponse"
 ]

@@ -7,7 +7,7 @@ import os
 TEST_DATABASE_URL = "sqlite+aiosqlite:///./test_manual.db"
 
 # Import all models to register them with Base.metadata
-from src.domains.masters.models import CategoryModel, UnitOfMeasureModel, ProductAttributeModel, InventoryItemModel, SKUModel, CompanyModel, WarehouseModel
+from src.domains.masters.models import CategoryModel, UnitOfMeasureModel, ProductAttributeModel, ProductModel, SKUModel, CompanyModel, WarehouseModel, PricingModel, PackagingModel, ProductImageModel
 from src.domains.data_ingestion.models.integration import IntegrationModel
 from src.domains.data_ingestion.models.import_job import ImportJobModel
 from src.domains.data_ingestion.models.import_file import ImportFileModel
@@ -22,6 +22,7 @@ from src.domains.matching.models.exception import MatchExceptionModel
 from src.domains.inventory.models.movement import InventoryMovementModel
 from src.domains.accounting.models.ledger import LedgerModel
 from src.domains.accounting.models.journal import JournalEntryModel, JournalLineModel
+import uuid
 
 async def main():
     print("Resetting database test_manual.db...")
@@ -51,6 +52,24 @@ async def main():
         ledgers = [LedgerModel(ledger_code=name.upper().replace(" ", "_"), ledger_name=name, account_type="REVENUE" if "Sales" in name else "ASSET") for name in LEDGER_NAMES]
         session.add_all(ledgers)
         await session.commit()
+        
+    print("Seeding Main Warehouse...")
+    async with TestingSessionLocal() as session:
+        warehouse_id = uuid.UUID("96c6b20c-d119-4f97-b635-c8e5ef87fd52")
+        new_w = WarehouseModel(
+            id=warehouse_id,
+            warehouse_code="MAIN",
+            warehouse_name="Main Warehouse",
+            description="Default Main Warehouse",
+            address_line_1="123 Main St",
+            city="Delhi",
+            state="Delhi",
+            country="India",
+            pin_code="110001"
+        )
+        session.add(new_w)
+        await session.commit()
+
     print("Database reset complete.")
 
 if __name__ == "__main__":

@@ -24,3 +24,12 @@ class ImportJobResponse(ImportJobCreate):
     updated_on: datetime
     created_by: Optional[UUID]
     updated_by: Optional[UUID]
+    file_path: Optional[str] = None
+
+class ImportJobPreviewResponse(BaseSchema):
+    report_date_min: Optional[str] = None
+    report_date_max: Optional[str] = None
+    total_orders: int = 0
+    total_skus: int = 0
+    units_sold: int = 0
+    units_returned: int = 0

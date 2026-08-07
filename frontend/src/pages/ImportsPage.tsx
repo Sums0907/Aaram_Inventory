@@ -1,23 +1,48 @@
+import { useState } from "react"
 import { useImportJobs } from "@/api/imports"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { formatDistanceToNow } from "date-fns"
-import { UploadCloud, CheckCircle2, AlertCircle, Clock, RefreshCw } from "lucide-react"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { formatDistanceToNow, format } from "date-fns"
+import { UploadCloud, CheckCircle2, AlertCircle, Clock, RefreshCw, FileText, Download } from "lucide-react"
+import { ShopDeckSyncDialog } from "@/components/imports/ShopDeckSyncDialog"
 
 export function ImportsPage() {
+  const [isShopDeckSyncOpen, setIsShopDeckSyncOpen] = useState(false)
   const { data: jobs, isLoading } = useImportJobs()
 
   // Find latest job for each platform
   const latestShopdeck = jobs?.find(j => j.job_type.startsWith('SHOPDECK'))
   const latestRazorpay = jobs?.find(j => j.job_type.startsWith('RAZORPAY'))
 
+  const handleDownload = async (filename: string) => {
+    try {
+      const { apiClient } = await import('@/api/client');
+      const response = await apiClient.get(`/shopdeck/reports/${filename}/download`, {
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response as any]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Failed to download file:", err);
+    }
+  }
+
   const renderIntegrationCard = (
     title: string, 
     description: string, 
     latestJob: any, 
     statusColor: string, 
-    logoText: string
+    logoText: string,
+    onSyncClick?: () => void
   ) => (
     <Card className="border-slate-200 shadow-sm transition-all hover:shadow-md overflow-hidden relative">
       <div className={`absolute top-0 left-0 w-1 h-full ${statusColor}`} />
@@ -52,7 +77,7 @@ export function ImportsPage() {
               : 'Never synced'
             }
           </div>
-          <Button variant="outline" className="gap-2 shadow-sm">
+          <Button variant="outline" className="gap-2 shadow-sm" onClick={onSyncClick}>
             <RefreshCw className="h-4 w-4" />
             Sync Now
           </Button>
@@ -88,7 +113,8 @@ export function ImportsPage() {
             "Sync orders, inventory, and tax invoices.", 
             latestShopdeck, 
             "bg-blue-500",
-            "SD"
+            "SD",
+            () => setIsShopDeckSyncOpen(true)
           )}
           
           {renderIntegrationCard(
@@ -100,6 +126,90 @@ export function ImportsPage() {
           )}
         </div>
       )}
+
+      {/* Synced Files Table */}
+      <div className="pt-8">
+        <h2 className="text-xl font-bold tracking-tight text-slate-900 mb-4">Synced Files</h2>
+        <Card className="border-slate-200 shadow-sm overflow-hidden">
+          <Table>
+            <TableHeader className="bg-slate-50">
+              <TableRow>
+                <TableHead className="w-[300px]">File</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead className="text-right">Action</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-24 text-center text-slate-500">
+                    Loading files...
+                  </TableCell>
+                </TableRow>
+              ) : jobs?.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-24 text-center text-slate-500">
+                    No files have been synced yet.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                jobs?.map((job) => (
+                  <TableRow key={job.id}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2 max-w-xs sm:max-w-md truncate">
+                        <FileText className="h-4 w-4 text-slate-400 shrink-0" />
+                        <span className="truncate" title={job.file_path ? job.file_path.split('/').pop() : 'Unknown file'}>
+                          {job.file_path ? job.file_path.split('/').pop() : 'Unknown file'}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-slate-600 bg-slate-50">
+                        {job.job_type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {job.status === 'COMMITTED' || job.status === 'COMPLETED' ? (
+                        <span className="inline-flex items-center gap-1.5 py-1 px-2 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Success
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 py-1 px-2 rounded-md text-xs font-medium bg-slate-100 text-slate-700">
+                          {job.status}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-slate-500 text-sm">
+                      {job.created_on ? format(new Date(job.created_on), 'MMM d, yyyy HH:mm') : '-'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {job.file_path && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                          onClick={() => handleDownload(job.file_path!.split('/').pop()!)}
+                        >
+                          <Download className="h-4 w-4 mr-1" />
+                          Download
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </Card>
+      </div>
+
+      <ShopDeckSyncDialog 
+        open={isShopDeckSyncOpen} 
+        onOpenChange={setIsShopDeckSyncOpen} 
+      />
     </div>
   )
 }

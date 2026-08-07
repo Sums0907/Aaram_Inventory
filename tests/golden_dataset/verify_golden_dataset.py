@@ -105,6 +105,51 @@ def _compare_journal(golden_file, actual_df, name):
         print(actual_df)
         return False
 
+def verify_inventory_math(conn):
+    """
+    Proves that the Inventory Engine produces mathematically correct inventory balances.
+    Sums the quantity from inventory_movements per SKU and asserts it matches the projected quantity_on_hand in inventory_balances.
+    """
+    cursor = conn.cursor()
+    
+    # 1. Sum movements per SKU
+    cursor.execute('''
+        SELECT sku_id, SUM(quantity) as calculated_qty 
+        FROM inventory_movements 
+        GROUP BY sku_id
+    ''')
+    movement_sums = {row[0]: row[1] for row in cursor.fetchall()}
+    
+    # 2. Get projected balances
+    cursor.execute('''
+        SELECT sku_id, quantity_on_hand 
+        FROM inventory_balances
+    ''')
+    balances = {row[0]: row[1] for row in cursor.fetchall()}
+    
+    if not movement_sums and not balances:
+        print("⚠️  No inventory data found to verify.")
+        return True
+        
+    all_matched = True
+    for sku_id, calc_qty in movement_sums.items():
+        proj_qty = balances.get(sku_id, 0)
+        if calc_qty != proj_qty:
+            print(f"❌ INVENTORY MATH MISMATCH for SKU {sku_id}: Movements Sum = {calc_qty}, Projected Balance = {proj_qty}")
+            all_matched = False
+            
+    # Check if any balances exist that have no movements
+    for sku_id, proj_qty in balances.items():
+        if sku_id not in movement_sums:
+            if proj_qty != 0:
+                print(f"❌ INVENTORY MATH MISMATCH for SKU {sku_id}: No movements exist, but Projected Balance = {proj_qty}")
+                all_matched = False
+                
+    if all_matched:
+        print("✅ INVENTORY MATH: All SKU Movement Sums perfectly match Projected Balances!")
+        
+    return all_matched
+
 def main():
     print("="*60)
     print("GOLDEN DATASET VERIFICATION")
@@ -123,6 +168,7 @@ def main():
         "operations_payments": "payments.json",
         "operations_settlements": "settlements.json",
         "inventory_movements": "inventory_movements.json",
+        "inventory_balances": "inventory_balances.json",
         "accounting_journal_entries": "journal_entries.json",
         "accounting_journal_lines": "journal_lines.json"
     }
@@ -136,6 +182,10 @@ def main():
             
     # Verify aggregated accounting journals
     if not verify_accounting_aggregation(conn):
+        all_passed = False
+        
+    # Verify inventory mathematical correctness
+    if not verify_inventory_math(conn):
         all_passed = False
             
     conn.close()

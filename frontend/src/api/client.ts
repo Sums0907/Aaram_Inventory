@@ -1,14 +1,17 @@
 import axios from 'axios';
+import { toast } from '@/hooks/use-toast';
+
+const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1MDJlYWMxMS0yMWUyLTRkNTMtYTllOS0yYmEyMWJjMDRiOWEiLCJ1c2VybmFtZSI6ImRlbW8iLCJyb2xlIjoiYWRtaW4iLCJleHAiOjE4MTc0NzI2MDZ9._cuQTw-7zam00atnpTsxsklre2ZsOFVKPkbvChQpSMM";
 
 export const apiClient = axios.create({
   baseURL: 'http://localhost:8000/api/v1',
   headers: {
     'Content-Type': 'application/json',
+    'Authorization': `Bearer ${TOKEN}`,
   },
 });
 
 // We can add interceptors here later if we need to handle auth tokens or global error logging
-import { toast } from '@/hooks/use-toast';
 
 apiClient.interceptors.response.use(
   (response) => response.data, 

@@ -1,0 +1,8 @@
+from enum import Enum
+
+class ItemType(str, Enum):
+    FINISHED_GOODS = "FINISHED_GOODS"
+    RAW_MATERIAL = "RAW_MATERIAL"
+    CONSUMABLE = "CONSUMABLE"
+    PACKAGING_MATERIAL = "PACKAGING_MATERIAL"
+    ASSET = "ASSET"

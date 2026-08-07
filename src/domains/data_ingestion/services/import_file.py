@@ -16,8 +16,8 @@ class ImportFileService:
 
     async def create_file_record(self, schema: ImportFileCreate, created_by: UUID) -> ImportFileModel:
         existing = await self.repository.get_by_md5(schema.md5_hash)
-        if existing:
-            raise ValidationException(message="A file with this MD5 hash has already been processed.")
+        # if existing:
+        #     raise ValidationException(message="A file with this MD5 hash has already been processed.")
             
         file_model = ImportFileModel(
             **schema.model_dump(),

@@ -10,10 +10,14 @@ from src.domains.masters.repositories.category import CategoryRepository
 from src.domains.masters.services.category import CategoryService
 from src.domains.masters.repositories.product_attribute import ProductAttributeRepository
 from src.domains.masters.services.product_attribute import ProductAttributeService
-from src.domains.masters.repositories.inventory_item import InventoryItemRepository
-from src.domains.masters.services.inventory_item import InventoryItemService
+from src.domains.masters.repositories.product import ProductRepository
+from src.domains.masters.services.product import ProductService
 from src.domains.masters.repositories.sku import SKURepository
 from src.domains.masters.services.sku import SKUService
+from src.domains.masters.repositories.supplier import SupplierRepository
+from src.domains.masters.services.supplier import SupplierService
+from src.domains.masters.services.inventory_item import InventoryItemService
+from src.domains.masters.services.hierarchy import InventoryHierarchyService
 
 class MastersContainer(containers.DeclarativeContainer):
     db = providers.Dependency()
@@ -39,12 +43,16 @@ class MastersContainer(containers.DeclarativeContainer):
         ProductAttributeRepository,
         session=db.provided._session_factory.call(),
     )
-    inventory_item_repository = providers.Factory(
-        InventoryItemRepository,
+    product_repository = providers.Factory(
+        ProductRepository,
         session=db.provided._session_factory.call(),
     )
     sku_repository = providers.Factory(
         SKURepository,
+        session=db.provided._session_factory.call(),
+    )
+    supplier_repository = providers.Factory(
+        SupplierRepository,
         session=db.provided._session_factory.call(),
     )
 
@@ -69,14 +77,25 @@ class MastersContainer(containers.DeclarativeContainer):
         ProductAttributeService,
         repository=product_attribute_repository,
     )
-    inventory_item_service = providers.Factory(
-        InventoryItemService,
-        repository=inventory_item_repository,
+    product_service = providers.Factory(
+        ProductService,
+        repository=product_repository,
         category_repo=category_repository,
-        uom_repo=unit_of_measure_repository,
     )
     sku_service = providers.Factory(
         SKUService,
         repository=sku_repository,
-        item_repo=inventory_item_repository,
+        product_repo=product_repository,
+    )
+    supplier_service = providers.Factory(
+        SupplierService,
+        repository=supplier_repository,
+    )
+    inventory_item_service = providers.Factory(
+        InventoryItemService,
+        session=db.provided._session_factory.call(),
+    )
+    inventory_hierarchy_service = providers.Factory(
+        InventoryHierarchyService,
+        session=db.provided._session_factory.call(),
     )

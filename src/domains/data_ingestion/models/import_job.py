@@ -14,3 +14,5 @@ class ImportJobModel(BaseModel):
     
     started_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     finished_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    import_file = relationship("ImportFileModel", backref="import_job", uselist=False, lazy="selectin")

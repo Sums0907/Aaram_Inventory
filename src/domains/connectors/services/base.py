@@ -44,7 +44,7 @@ class MarketplaceConnector(abc.ABC):
         pass
 
     @abc.abstractmethod
-    async def download_reports(self, period_start: Optional[date] = None, period_end: Optional[date] = None) -> AsyncGenerator[DownloadedFileContext, None]:
+    async def download_reports(self, period_start: Optional[date] = None, period_end: Optional[date] = None, report_type: Optional[str] = None) -> AsyncGenerator[DownloadedFileContext, None]:
         """
         Downloads all relevant reports for the given time period.
         Yields DownloadedFileContext objects containing raw bytes and metadata.

@@ -61,6 +61,42 @@ async def main():
         ledgers = [LedgerModel(ledger_code=name.upper().replace(" ", "_"), ledger_name=name, account_type="REVENUE" if "Sales" in name else "ASSET") for name in LEDGER_NAMES]
         session.add_all(ledgers)
         await session.commit()
+        
+        # Seed Default Masters for Inventory Auto-Creation
+        from src.domains.masters.models.company import CompanyModel
+        from src.domains.masters.models.category import CategoryModel
+        from src.domains.masters.models.unit_of_measure import UnitOfMeasureModel
+        from src.domains.masters.models.warehouse import WarehouseModel
+        
+        company = CompanyModel(
+            id=uuid.uuid4(), 
+            company_code="AARAM", 
+            company_name="AaramBooks", 
+            legal_name="AaramBooks LLC", 
+            gstin="07AAAAA0000A1Z5", 
+            pan="AAAAA0000A", 
+            address_line_1="Delhi", 
+            city="Delhi", 
+            state="Delhi", 
+            pin_code="110001"
+        )
+        session.add(company)
+        await session.commit()
+        await session.refresh(company)
+
+        cat = CategoryModel(id=uuid.uuid4(), category_code="DEFAULT", category_name="Default Category")
+        uom = UnitOfMeasureModel(id=uuid.uuid4(), unit_code="PCS", unit_name="Pieces", short_name="Pcs")
+        wh = WarehouseModel(
+            id=uuid.uuid4(), 
+            warehouse_code="WH-MAIN", 
+            warehouse_name="Main Warehouse", 
+            address_line_1="Delhi", 
+            city="Delhi", 
+            state="Delhi", 
+            pin_code="110001"
+        )
+        session.add_all([cat, uom, wh])
+        await session.commit()
     
     # 2. Boot App
     from src.app.main import app

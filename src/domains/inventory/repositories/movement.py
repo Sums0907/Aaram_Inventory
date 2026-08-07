@@ -46,3 +46,12 @@ class InventoryMovementRepository:
         )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
+
+    async def get_manual_adjustments_today_count(self) -> int:
+        from datetime import date
+        stmt = select(func.count(InventoryMovementModel.id)).where(
+            InventoryMovementModel.movement_type == "MANUAL_ADJUSTMENT",
+            InventoryMovementModel.movement_date == date.today()
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar() or 0

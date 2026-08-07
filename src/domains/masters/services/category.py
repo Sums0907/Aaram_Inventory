@@ -16,10 +16,14 @@ class CategoryService:
             raise NotFoundException(message="Category not found")
         return category
         
-    async def list_categories(self, skip: int = 0, limit: int = 100) -> List[CategoryModel]:
-        return await self.repository.get_all(skip=skip, limit=limit)
+    async def list_categories(self, skip: int = 0, limit: int = 100, item_type: str = None) -> List[CategoryModel]:
+        return await self.repository.get_all(skip=skip, limit=limit, item_type=item_type)
         
     async def create_category(self, schema: CategoryCreate, created_by: UUID) -> CategoryModel:
+        import uuid
+        if not schema.category_code:
+            schema.category_code = f"CAT-{uuid.uuid4().hex[:6].upper()}"
+
         # Business Validation: Uniqueness
         if await self.repository.get_by_code(schema.category_code):
             raise ValidationException(message="Category Code must be unique")
@@ -27,11 +31,16 @@ class CategoryService:
             raise ValidationException(message="Category Name must be unique")
             
         category = CategoryModel(
-            **schema.model_dump(),
+            **schema.model_dump(exclude={"attributes"}),
             created_by=created_by,
             updated_by=created_by
         )
-        return await self.repository.create(category)
+        category = await self.repository.create(category)
+
+        if schema.attributes is not None:
+            await self.repository.set_category_attributes(category.id, schema.attributes)
+
+        return await self.get_category(category.id)
 
     async def update_category(self, category_id: UUID, schema: CategoryUpdate, updated_by: UUID) -> CategoryModel:
         category = await self.get_category(category_id)
@@ -42,12 +51,17 @@ class CategoryService:
             raise ValidationException(message="Category Name must be unique")
 
         # Apply updates
-        update_data = schema.model_dump(exclude_unset=True)
+        update_data = schema.model_dump(exclude_unset=True, exclude={"attributes"})
         for key, value in update_data.items():
             setattr(category, key, value)
             
         category.updated_by = updated_by
-        return await self.repository.update(category)
+        await self.repository.update(category)
+
+        if schema.attributes is not None:
+            await self.repository.set_category_attributes(category.id, schema.attributes)
+
+        return await self.get_category(category.id)
         
     async def activate_category(self, category_id: UUID, updated_by: UUID) -> CategoryModel:
         category = await self.get_category(category_id)

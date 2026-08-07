@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, status, Query
 from dependency_injector.wiring import Provide, inject
@@ -15,10 +15,11 @@ router = APIRouter(prefix="/categories", tags=["Category"])
 async def list_categories(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
+    item_type: Optional[str] = Query(None, description="Filter by Item Type"),
     current_user: CurrentUser = Depends(get_current_user),
     service: CategoryService = Depends(Provide[MastersContainer.category_service])
 ):
-    categories = await service.list_categories(skip=skip, limit=limit)
+    categories = await service.list_categories(skip=skip, limit=limit, item_type=item_type)
     response_data = [CategoryResponse.model_validate(c, from_attributes=True) for c in categories]
     return SuccessResponse(data=response_data)
 

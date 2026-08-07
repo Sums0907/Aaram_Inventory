@@ -20,6 +20,13 @@ class InventoryExceptionRepository:
         )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
+
+    async def get_all_open_exceptions(self, limit: int = 50) -> List[InventoryExceptionModel]:
+        stmt = select(InventoryExceptionModel).where(
+            InventoryExceptionModel.status == "OPEN"
+        ).order_by(InventoryExceptionModel.exception_date.desc()).limit(limit)
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
         
     async def save(self, exception: InventoryExceptionModel) -> InventoryExceptionModel:
         self.session.add(exception)

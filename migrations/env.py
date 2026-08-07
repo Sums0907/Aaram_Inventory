@@ -16,7 +16,8 @@ from src.domains.masters.models.unit_of_measure import UnitOfMeasureModel
 from src.domains.masters.models.warehouse import WarehouseModel
 from src.domains.masters.models.category import CategoryModel
 from src.domains.masters.models.product_attribute import ProductAttributeModel
-from src.domains.masters.models.inventory_item import InventoryItemModel
+from src.domains.masters.models.category_attribute import CategoryAttributeModel
+from src.domains.masters.models.product import ProductModel
 from src.domains.masters.models.sku import SKUModel
 from src.domains.data_ingestion.models.integration import IntegrationModel
 from src.domains.data_ingestion.models.import_job import ImportJobModel
@@ -59,7 +60,7 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 def do_run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(connection=connection, target_metadata=target_metadata, render_as_batch=True)
     with context.begin_transaction():
         context.run_migrations()
 

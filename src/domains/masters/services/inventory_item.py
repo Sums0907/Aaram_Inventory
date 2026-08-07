@@ -1,101 +1,103 @@
-from typing import List
-from uuid import UUID
-from src.domains.masters.repositories.inventory_item import InventoryItemRepository
-from src.domains.masters.repositories.category import CategoryRepository
-from src.domains.masters.repositories.unit_of_measure import UnitOfMeasureRepository
-from src.domains.masters.models.inventory_item import InventoryItemModel
-from src.domains.masters.schemas.inventory_item import InventoryItemCreate, InventoryItemUpdate
-from src.foundation.exceptions.base import NotFoundException, ValidationException
-from src.foundation.enums.status import GenericStatus
+import uuid
+from typing import Optional
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from src.domains.masters.schemas.inventory_item import InventoryItemCreate
+from src.domains.masters.models.category import CategoryModel
+from src.domains.masters.models.product import ProductModel
+from src.domains.masters.models.sku import SKUModel
+from src.foundation.exceptions.base import ValidationException
 
 class InventoryItemService:
-    def __init__(self, 
-                 repository: InventoryItemRepository,
-                 category_repo: CategoryRepository,
-                 uom_repo: UnitOfMeasureRepository):
-        self.repository = repository
-        self.category_repo = category_repo
-        self.uom_repo = uom_repo
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
-    async def get_item(self, item_id: UUID) -> InventoryItemModel:
-        item = await self.repository.get_by_id(item_id)
-        if not item:
-            raise NotFoundException(message="Inventory Item not found")
-        return item
-        
-    async def list_items(self, skip: int = 0, limit: int = 100) -> List[InventoryItemModel]:
-        return await self.repository.get_all(skip=skip, limit=limit)
-        
-    async def _validate_references(self, category_id: UUID, unit_of_measure_id: UUID):
-        category = await self.category_repo.get_by_id(category_id)
-        if not category or category.status != GenericStatus.ACTIVE:
-            raise ValidationException(message="Valid and Active Category is required")
+    async def _get_or_create_category(self, schema: InventoryItemCreate, user_id: uuid.UUID) -> Optional[uuid.UUID]:
+        if schema.category_id:
+            return schema.category_id
+        if schema.new_category_name:
+            # Check if exists
+            result = await self.session.execute(
+                select(CategoryModel).filter(CategoryModel.category_name == schema.new_category_name)
+            )
+            cat = result.scalars().first()
+            if cat:
+                return cat.id
             
-        uom = await self.uom_repo.get_by_id(unit_of_measure_id)
-        if not uom or uom.status != GenericStatus.ACTIVE:
-            raise ValidationException(message="Valid and Active Unit of Measure is required")
-        
-    async def create_item(self, schema: InventoryItemCreate, created_by: UUID) -> InventoryItemModel:
-        if await self.repository.get_by_code(schema.item_code):
-            raise ValidationException(message="Item Code must be unique")
-            
-        await self._validate_references(schema.category_id, schema.unit_of_measure_id)
-        
-        attributes = await self.repository.get_product_attributes_by_ids(schema.product_attribute_ids or [])
-        if len(attributes) != len(schema.product_attribute_ids or []):
-            raise ValidationException(message="One or more Product Attributes are invalid")
-            
-        # Ensure only Active attributes are assigned
-        for attr in attributes:
-            if attr.status != GenericStatus.ACTIVE:
-                raise ValidationException(message=f"Product Attribute {attr.attribute_name} is not active")
+            # Generate code (e.g. CAT-RAW-001)
+            cat = CategoryModel(
+                category_code=f"CAT-{uuid.uuid4().hex[:6].upper()}",
+                category_name=schema.new_category_name,
+                item_type=schema.item_type,
+                created_by=user_id,
+                updated_by=user_id
+            )
+            self.session.add(cat)
+            await self.session.flush()
+            return cat.id
+        return None
 
-        model_data = schema.model_dump(exclude={"product_attribute_ids"})
-        item = InventoryItemModel(
-            **model_data,
-            product_attributes=attributes,
-            created_by=created_by,
-            updated_by=created_by
-        )
-        return await self.repository.create(item)
+    async def _get_or_create_product(self, schema: InventoryItemCreate, category_id: Optional[uuid.UUID], user_id: uuid.UUID) -> uuid.UUID:
+        if schema.product_id:
+            return schema.product_id
+        if schema.new_product_name:
+            # Create product
+            prod = ProductModel(
+                product_code=f"PRD-{uuid.uuid4().hex[:6].upper()}",
+                product_name=schema.new_product_name,
+                item_type=schema.item_type,
+                category_id=category_id,
+                created_by=user_id,
+                updated_by=user_id
+            )
+            self.session.add(prod)
+            await self.session.flush()
+            return prod.id
+        
+        raise ValidationException("Must provide product_id or new_product_name")
 
-    async def update_item(self, item_id: UUID, schema: InventoryItemUpdate, updated_by: UUID) -> InventoryItemModel:
-        item = await self.get_item(item_id)
-        
-        await self._validate_references(schema.category_id, schema.unit_of_measure_id)
-        
-        attributes = await self.repository.get_product_attributes_by_ids(schema.product_attribute_ids or [])
-        if len(attributes) != len(schema.product_attribute_ids or []):
-            raise ValidationException(message="One or more Product Attributes are invalid")
+    async def create_inventory_item(self, schema: InventoryItemCreate, user_id: uuid.UUID) -> SKUModel:
+        async with self.session.begin_nested():
+            # 1. Resolve Category
+            category_id = await self._get_or_create_category(schema, user_id)
             
-        update_data = schema.model_dump(exclude_unset=True, exclude={"product_attribute_ids"})
-        for key, value in update_data.items():
-            setattr(item, key, value)
+            # 2. Resolve Master Item (Product)
+            product_id = await self._get_or_create_product(schema, category_id, user_id)
             
-        item.product_attributes = attributes
-        item.updated_by = updated_by
-        return await self.repository.update(item)
-        
-    async def activate_item(self, item_id: UUID, updated_by: UUID) -> InventoryItemModel:
-        item = await self.get_item(item_id)
-        if item.status == GenericStatus.ACTIVE:
-            raise ValidationException(message="Item is already active")
-        item.status = GenericStatus.ACTIVE
-        item.updated_by = updated_by
-        return await self.repository.update(item)
+            # 3. Ensure Item Code uniqueness
+            result = await self.session.execute(
+                select(SKUModel).filter(SKUModel.item_code == schema.item_code)
+            )
+            if result.scalars().first():
+                raise ValidationException(f"Item Code {schema.item_code} is already in use.")
 
-    async def deactivate_item(self, item_id: UUID, updated_by: UUID) -> InventoryItemModel:
-        item = await self.get_item(item_id)
-        if item.status == GenericStatus.INACTIVE:
-            raise ValidationException(message="Item is already inactive")
-        item.status = GenericStatus.INACTIVE
-        item.updated_by = updated_by
-        return await self.repository.update(item)
-        
-    async def archive_item(self, item_id: UUID, updated_by: UUID) -> InventoryItemModel:
-        item = await self.get_item(item_id)
-        if item.status == GenericStatus.ARCHIVED:
-            raise ValidationException(message="Item is already archived")
-        item.status = GenericStatus.ARCHIVED
-        item.updated_by = updated_by
-        return await self.repository.update(item)
+            # 4. Ensure SKU Code uniqueness (if provided)
+            if schema.sku_code:
+                result = await self.session.execute(
+                    select(SKUModel).filter(SKUModel.sku_code == schema.sku_code)
+                )
+                if result.scalars().first():
+                    raise ValidationException(f"SKU Code {schema.sku_code} is already in use.")
+            
+            # 5. Create Variant (SKU)
+            barcode = schema.barcode if schema.barcode else None
+            sku_code = schema.sku_code if schema.sku_code else None
+
+            sku = SKUModel(
+                item_code=schema.item_code,
+                sku_code=sku_code,
+                product_id=product_id,
+                size=schema.size,
+                color=schema.color,
+                pattern=schema.pattern,
+                material=schema.material,
+                thread_count=schema.thread_count,
+                attribute_values=schema.attribute_values,
+                barcode=schema.barcode,
+                created_by=user_id,
+                updated_by=user_id
+            )
+            self.session.add(sku)
+            await self.session.flush()
+            
+            return sku

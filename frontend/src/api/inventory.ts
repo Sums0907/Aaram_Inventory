@@ -1,11 +1,13 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from './client';
 
 export interface InventoryBalanceResponse {
+  sku_id: string;
   warehouse: string;
   sku_code: string;
   sku_name: string;
   balance: number;
+  confidence_score: number;
   in_transit: number;
 }
 
@@ -14,16 +16,125 @@ interface ListBalancesResponse {
   data: InventoryBalanceResponse[];
 }
 
-const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0IiwidXNlcm5hbWUiOiJkZW1vIiwicm9sZSI6ImFkbWluIiwiZXhwIjoxODE3NDcyNjA2fQ.J4sb028IFN8h3OBlYq1RatBHZKs0SH6p8eGuKVXKp_c";
+export interface InventoryMovementResponse {
+  id: string;
+  movement_date: string;
+  movement_type: string;
+  quantity: number;
+  reference_type: string;
+  reference_number: string;
+}
+
+export interface InventoryLedgerEntry {
+  movement: InventoryMovementResponse;
+  running_balance: number;
+}
+
+export interface InventoryLedgerResponse {
+  sku_id: string;
+  opening_balance: number;
+  entries: InventoryLedgerEntry[];
+  closing_balance: number;
+  generated_at: string;
+}
+
+export interface InventoryConfidenceResponse {
+  sku_id: string;
+  confidence_score: number;
+  positive_signals: string[];
+  negative_signals: string[];
+}
+
+const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1MDJlYWMxMS0yMWUyLTRkNTMtYTllOS0yYmEyMWJjMDRiOWEiLCJ1c2VybmFtZSI6ImRlbW8iLCJyb2xlIjoiYWRtaW4iLCJleHAiOjE4MTc0NzI2MDZ9._cuQTw-7zam00atnpTsxsklre2ZsOFVKPkbvChQpSMM";
 
 export function useInventoryBalances() {
   return useQuery({
     queryKey: ['inventory-balances'],
     queryFn: async () => {
-      const response = await apiClient.get<ListBalancesResponse>('/inventory/balances', {
+      // apiClient interceptor unwraps AxiosResponse into the JSON body { success, data }
+      const payload = await apiClient.get<any>('/inventory/balances', {
+        headers: { Authorization: `Bearer ${TOKEN}` }
+      }) as any;
+      return payload?.data || [];
+    },
+  });
+}
+
+export function useInventoryLedger(skuId: string | null) {
+  return useQuery({
+    queryKey: ['inventory-ledger', skuId],
+    queryFn: async () => {
+      if (!skuId) return null;
+      const payload = await apiClient.get<any>(`/inventory/ledger/${skuId}`, {
+        headers: { Authorization: `Bearer ${TOKEN}` }
+      }) as any;
+      return payload?.data;
+    },
+    enabled: !!skuId,
+  });
+}
+
+export function useInventoryConfidence(skuId: string | null) {
+  return useQuery({
+    queryKey: ['inventory-confidence', skuId],
+    queryFn: async () => {
+      if (!skuId) return null;
+      const payload = await apiClient.get<any>(`/inventory/confidence/${skuId}`, {
+        headers: { Authorization: `Bearer ${TOKEN}` }
+      }) as any;
+      return payload?.data;
+    },
+    enabled: !!skuId,
+  });
+}
+
+export function useDashboardKPIs() {
+  return useQuery({
+    queryKey: ['inventory-dashboard-kpis'],
+    queryFn: async () => {
+      const payload = await apiClient.get<any>('/inventory/dashboard/kpis', {
+        headers: { Authorization: `Bearer ${TOKEN}` }
+      }) as any;
+      return payload?.data || {};
+    }
+  });
+}
+
+export function useDashboardExceptions() {
+  return useQuery({
+    queryKey: ['inventory-dashboard-exceptions'],
+    queryFn: async () => {
+      const payload = await apiClient.get<any>('/inventory/dashboard/exceptions', {
+        headers: { Authorization: `Bearer ${TOKEN}` }
+      }) as any;
+      return payload?.data || [];
+    }
+  });
+}
+
+export interface ManualAdjustmentRequest {
+  warehouse_id: string;
+  sku_id: string;
+  quantity: number;
+  reason: string;
+  reference_number: string;
+  adjustment_date: string;
+}
+
+export function useCreateManualAdjustment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: ManualAdjustmentRequest) => {
+      const response = await apiClient.post<any>('/inventory/movements/manual-adjustments', data, {
         headers: { Authorization: `Bearer ${TOKEN}` }
       });
-      return response.data.data;
+      return response;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['inventory-balances'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-ledger', variables.sku_id] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-confidence', variables.sku_id] });
     },
   });
 }

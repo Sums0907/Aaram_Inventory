@@ -4,6 +4,7 @@ from .status import GenericStatus
 from .currency import CurrencyCode
 from .country import CountryCode
 from .language import LanguageCode
+from .item_type import ItemType
 
 __all__ = [
     "Role",
@@ -11,5 +12,6 @@ __all__ = [
     "GenericStatus",
     "CurrencyCode",
     "CountryCode",
-    "LanguageCode"
+    "LanguageCode",
+    "ItemType"
 ]
