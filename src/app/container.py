@@ -42,6 +42,20 @@ class DomainsContainer(containers.DeclarativeContainer):
         AccountingContainer,
         db=core.db
     )
+
+    # Wire expense_service into goods_receipt_service at the cross-domain level
+    # (InventoryContainer cannot import AccountingContainer — DomainsContainer bridges them)
+    from src.domains.inventory.services.goods_receipt import GoodsReceiptService
+    from src.domains.inventory.repositories.goods_receipt import GoodsReceiptRepository
+    from src.domains.inventory.services.movement import InventoryMovementService
+    from src.domains.inventory.services.transformation_engine import InventoryTransformationEngine
+    goods_receipt_service_with_accounting = providers.Factory(
+        GoodsReceiptService,
+        repository=inventory.provided.goods_receipt_repository.call(),
+        movement_service=inventory.provided.movement_service.call(),
+        transformation_engine=inventory.provided.transformation_engine.call(),
+        expense_service=accounting.provided.jw_expense_service.call(),
+    )
     
     connectors = providers.Container(
         ConnectorsContainer,

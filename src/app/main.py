@@ -28,6 +28,11 @@ def create_app() -> FastAPI:
         debug=settings.DEBUG
     )
     
+    print(f"\nAARAMBOOKS {'CERTIFICATION' if settings.DATABASE_ENV.lower() == 'test' else 'DATABASE'}")
+    print("-" * 25)
+    print(f"Environment: {settings.DATABASE_ENV.upper()}")
+    print(f"Database: {settings.DATABASE_URL.split('///')[-1] if 'sqlite' in settings.DATABASE_URL else settings.DATABASE_URL}\n")
+    
     # Initialize Dependency Injection Container
     domains_container = DomainsContainer()
     domains_container.core.config.from_dict(settings.model_dump())
@@ -41,6 +46,12 @@ def create_app() -> FastAPI:
     domains_container.matching().wire(packages=["src.domains.matching"])
     domains_container.inventory().wire(packages=["src.domains.inventory", "src.api.v1"])
     domains_container.accounting().wire(packages=["src.domains.accounting", "src.api.v1"])
+    domains_container.accounting().wire(modules=[
+        "src.domains.accounting.job_worker.api.rates",
+        "src.domains.accounting.job_worker.api.expenses",
+        "src.domains.accounting.job_worker.api.payments",
+        "src.domains.accounting.job_worker.api.payables",
+    ])
     domains_container.connectors().wire(packages=["src.domains.connectors"])
     domains_container.wire(modules=[
         "src.api.v1.read_api_router", 
@@ -51,8 +62,11 @@ def create_app() -> FastAPI:
         "src.domains.inventory.api.router",
         "src.domains.inventory.api.movement_router",
         "src.domains.inventory.api.dashboard_router",
+        "src.domains.inventory.api.item_workspace",
         "src.domains.inventory.api.goods_receipt",
         "src.domains.inventory.api.purchase_return",
+        "src.domains.inventory.api.job_work",
+        "src.domains.inventory.api.exception_router",
         "src.domains.connectors.api.shopdeck_router",
         "src.domains.masters.api.supplier"
     ])
@@ -88,17 +102,32 @@ def create_app() -> FastAPI:
     from src.domains.inventory.api.router import router as inv_router
     from src.domains.inventory.api.movement_router import router as inv_mov_router
     from src.domains.inventory.api.dashboard_router import router as inv_dash_router
+    from src.domains.inventory.api.item_workspace import router as item_workspace_router
     from src.domains.inventory.api.goods_receipt import router as grn_router
     from src.domains.inventory.api.purchase_return import router as pr_router
+    from src.domains.inventory.api.job_work import router as job_work_router
+    from src.domains.inventory.api.exception_router import router as exception_router
     api_v1_router.include_router(inv_router)
     api_v1_router.include_router(inv_mov_router)
     api_v1_router.include_router(inv_dash_router)
+    api_v1_router.include_router(item_workspace_router)
     api_v1_router.include_router(grn_router, prefix="/inventory")
     api_v1_router.include_router(pr_router, prefix="/inventory")
+    api_v1_router.include_router(job_work_router)
+    api_v1_router.include_router(exception_router)
     api_v1_router.include_router(shopdeck_router, prefix="/shopdeck")
     api_v1_router.include_router(accounting_export_router, prefix="/accounting/export")
     from src.domains.accounting.api.journal_router import router as jrn_router
     api_v1_router.include_router(jrn_router, prefix="/accounting")
+    # Job Worker Accounting sub-domain
+    from src.domains.accounting.job_worker.api.rates import router as jw_rates_router
+    from src.domains.accounting.job_worker.api.expenses import router as jw_expenses_router
+    from src.domains.accounting.job_worker.api.payments import router as jw_payments_router
+    from src.domains.accounting.job_worker.api.payables import router as jw_payables_router
+    api_v1_router.include_router(jw_rates_router)
+    api_v1_router.include_router(jw_expenses_router)
+    api_v1_router.include_router(jw_payments_router)
+    api_v1_router.include_router(jw_payables_router)
     api_v1_router.include_router(dashboard_router, prefix="/dashboard")
     api_v1_router.include_router(read_api_router)
     
