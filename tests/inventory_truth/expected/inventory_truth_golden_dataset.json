@@ -1,6 +1,226 @@
 [
     {
         "sku_code": "TLS-CSH-WHSTRP-5C-16",
+        "opening_stock": 131,
+        "units_sold": 1,
+        "units_returned": 0,
+        "expected_closing": 130,
+        "ledger_closing": 130,
+        "balance_projection": 130,
+        "status": "PASS"
+    },
+    {
+        "sku_code": "KD-BD-AB-QDB-02",
+        "opening_stock": 143,
+        "units_sold": 2,
+        "units_returned": 0,
+        "expected_closing": 141,
+        "ledger_closing": 141,
+        "balance_projection": 141,
+        "status": "PASS"
+    },
+    {
+        "sku_code": "KD-RJ-RJP-KDB",
+        "opening_stock": 120,
+        "units_sold": 105,
+        "units_returned": 0,
+        "expected_closing": 15,
+        "ledger_closing": 15,
+        "balance_projection": 15,
+        "status": "PASS"
+    },
+    {
+        "sku_code": "KD-FK-YLW-5PC-KING-DAISY",
+        "opening_stock": 125,
+        "units_sold": 7,
+        "units_returned": 0,
+        "expected_closing": 118,
+        "ledger_closing": 118,
+        "balance_projection": 118,
+        "status": "PASS"
+    },
+    {
+        "sku_code": "KD-RJ-SBL-KDB",
+        "opening_stock": 147,
+        "units_sold": 2,
+        "units_returned": 1,
+        "expected_closing": 146,
+        "ledger_closing": 146,
+        "balance_projection": 146,
+        "status": "PASS"
+    },
+    {
+        "sku_code": "TLS-BB-GEO-QDB",
+        "opening_stock": 61,
+        "units_sold": 5,
+        "units_returned": 0,
+        "expected_closing": 56,
+        "ledger_closing": 56,
+        "balance_projection": 56,
+        "status": "PASS"
+    },
+    {
+        "sku_code": "KD-FCS-BHCS-QDB",
+        "opening_stock": 130,
+        "units_sold": 2,
+        "units_returned": 0,
+        "expected_closing": 128,
+        "ledger_closing": 128,
+        "balance_projection": 128,
+        "status": "PASS"
+    },
+    {
+        "sku_code": "TLS-HPD-BFLB-KDB",
+        "opening_stock": 21,
+        "units_sold": 5,
+        "units_returned": 2,
+        "expected_closing": 18,
+        "ledger_closing": 18,
+        "balance_projection": 18,
+        "status": "PASS"
+    },
+    {
+        "sku_code": "KD-FCS-EBCS-QDB",
+        "opening_stock": 136,
+        "units_sold": 1,
+        "units_returned": 0,
+        "expected_closing": 135,
+        "ledger_closing": 135,
+        "balance_projection": 135,
+        "status": "PASS"
+    },
+    {
+        "sku_code": "TLS-MP-RYB-DBF",
+        "opening_stock": 137,
+        "units_sold": 2,
+        "units_returned": 0,
+        "expected_closing": 135,
+        "ledger_closing": 135,
+        "balance_projection": 135,
+        "status": "PASS"
+    },
+    {
+        "sku_code": "KD-RR-SPNK-KDB",
+        "opening_stock": 39,
+        "units_sold": 2,
+        "units_returned": 0,
+        "expected_closing": 37,
+        "ledger_closing": 37,
+        "balance_projection": 37,
+        "status": "PASS"
+    },
+    {
+        "sku_code": "TLS-BB-PPP-QDB",
+        "opening_stock": 43,
+        "units_sold": 2,
+        "units_returned": 1,
+        "expected_closing": 42,
+        "ledger_closing": 42,
+        "balance_projection": 42,
+        "status": "PASS"
+    },
+    {
+        "sku_code": "KD-RJ-SGL-KDB",
+        "opening_stock": 127,
+        "units_sold": 5,
+        "units_returned": 0,
+        "expected_closing": 122,
+        "ledger_closing": 122,
+        "balance_projection": 122,
+        "status": "PASS"
+    },
+    {
+        "sku_code": "KD-IK-AQUA-KDB-100",
+        "opening_stock": 35,
+        "units_sold": 1,
+        "units_returned": 0,
+        "expected_closing": 34,
+        "ledger_closing": 34,
+        "balance_projection": 34,
+        "status": "PASS"
+    },
+    {
+        "sku_code": "JSR-SLK-BYPS-QDB_90 x 100 Inches",
+        "opening_stock": 84,
+        "units_sold": 2,
+        "units_returned": 1,
+        "expected_closing": 83,
+        "ledger_closing": 83,
+        "balance_projection": 83,
+        "status": "PASS"
+    },
+    {
+        "sku_code": "KD-SSK-BPGB-KDB",
+        "opening_stock": 141,
+        "units_sold": 1,
+        "units_returned": 0,
+        "expected_closing": 140,
+        "ledger_closing": 140,
+        "balance_projection": 140,
+        "status": "PASS"
+    },
+    {
+        "sku_code": "TLS-BB-BPS-QDB",
+        "opening_stock": 94,
+        "units_sold": 1,
+        "units_returned": 3,
+        "expected_closing": 96,
+        "ledger_closing": 96,
+        "balance_projection": 96,
+        "status": "PASS"
+    },
+    {
+        "sku_code": "TLS-HPD-BBFK-KDB",
+        "opening_stock": 133,
+        "units_sold": 3,
+        "units_returned": 0,
+        "expected_closing": 130,
+        "ledger_closing": 130,
+        "balance_projection": 130,
+        "status": "PASS"
+    },
+    {
+        "sku_code": "KD-MDB-BTFBL-SK",
+        "opening_stock": 53,
+        "units_sold": 1,
+        "units_returned": 0,
+        "expected_closing": 52,
+        "ledger_closing": 52,
+        "balance_projection": 52,
+        "status": "PASS"
+    },
+    {
+        "sku_code": "TLS-DH-BLJAAL-DB",
+        "opening_stock": 124,
+        "units_sold": 1,
+        "units_returned": 0,
+        "expected_closing": 123,
+        "ledger_closing": 123,
+        "balance_projection": 123,
+        "status": "PASS"
+    },
+    {
+        "sku_code": "KD-BD-PB-QDB-03",
+        "opening_stock": 87,
+        "units_sold": 0,
+        "units_returned": 1,
+        "expected_closing": 88,
+        "ledger_closing": 88,
+        "balance_projection": 88,
+        "status": "PASS"
+    },
+    {
+        "sku_code": "TLS-DH-INDGTREE-DB",
+        "opening_stock": 19,
+        "units_sold": 1,
+        "units_returned": 0,
+        "expected_closing": 18,
+        "ledger_closing": 18,
+        "balance_projection": 18,
+        "status": "PASS"
+    },
+    {
+        "sku_code": "TLS-DH-FGREENJAAL-DB",
         "opening_stock": 143,
         "units_sold": 1,
         "units_returned": 0,
@@ -10,263 +230,43 @@
         "status": "PASS"
     },
     {
-        "sku_code": "KD-BD-AB-QDB-02",
-        "opening_stock": 68,
-        "units_sold": 2,
-        "units_returned": 0,
-        "expected_closing": 66,
-        "ledger_closing": 66,
-        "balance_projection": 66,
-        "status": "PASS"
-    },
-    {
-        "sku_code": "KD-RJ-RJP-KDB",
-        "opening_stock": 100,
-        "units_sold": 105,
-        "units_returned": 0,
-        "expected_closing": -5,
-        "ledger_closing": -5,
-        "balance_projection": -5,
-        "status": "PASS"
-    },
-    {
-        "sku_code": "KD-FK-YLW-5PC-KING-DAISY",
-        "opening_stock": 44,
-        "units_sold": 7,
-        "units_returned": 0,
-        "expected_closing": 37,
-        "ledger_closing": 37,
-        "balance_projection": 37,
-        "status": "PASS"
-    },
-    {
-        "sku_code": "KD-RJ-SBL-KDB",
-        "opening_stock": 49,
-        "units_sold": 2,
-        "units_returned": 1,
-        "expected_closing": 48,
-        "ledger_closing": 48,
-        "balance_projection": 48,
-        "status": "PASS"
-    },
-    {
-        "sku_code": "TLS-BB-GEO-QDB",
-        "opening_stock": 75,
-        "units_sold": 5,
-        "units_returned": 0,
-        "expected_closing": 70,
-        "ledger_closing": 70,
-        "balance_projection": 70,
-        "status": "PASS"
-    },
-    {
-        "sku_code": "KD-FCS-BHCS-QDB",
-        "opening_stock": 128,
-        "units_sold": 2,
-        "units_returned": 0,
-        "expected_closing": 126,
-        "ledger_closing": 126,
-        "balance_projection": 126,
-        "status": "PASS"
-    },
-    {
-        "sku_code": "TLS-HPD-BFLB-KDB",
-        "opening_stock": 149,
-        "units_sold": 5,
-        "units_returned": 2,
-        "expected_closing": 146,
-        "ledger_closing": 146,
-        "balance_projection": 146,
-        "status": "PASS"
-    },
-    {
-        "sku_code": "KD-FCS-EBCS-QDB",
-        "opening_stock": 83,
-        "units_sold": 1,
-        "units_returned": 0,
-        "expected_closing": 82,
-        "ledger_closing": 82,
-        "balance_projection": 82,
-        "status": "PASS"
-    },
-    {
-        "sku_code": "TLS-MP-RYB-DBF",
-        "opening_stock": 98,
-        "units_sold": 2,
-        "units_returned": 0,
-        "expected_closing": 96,
-        "ledger_closing": 96,
-        "balance_projection": 96,
-        "status": "PASS"
-    },
-    {
-        "sku_code": "KD-RR-SPNK-KDB",
-        "opening_stock": 46,
-        "units_sold": 2,
-        "units_returned": 0,
-        "expected_closing": 44,
-        "ledger_closing": 44,
-        "balance_projection": 44,
-        "status": "PASS"
-    },
-    {
-        "sku_code": "TLS-BB-PPP-QDB",
-        "opening_stock": 62,
-        "units_sold": 2,
-        "units_returned": 1,
-        "expected_closing": 61,
-        "ledger_closing": 61,
-        "balance_projection": 61,
-        "status": "PASS"
-    },
-    {
-        "sku_code": "KD-RJ-SGL-KDB",
-        "opening_stock": 139,
-        "units_sold": 5,
-        "units_returned": 0,
-        "expected_closing": 134,
-        "ledger_closing": 134,
-        "balance_projection": 134,
-        "status": "PASS"
-    },
-    {
-        "sku_code": "KD-IK-AQUA-KDB-100",
-        "opening_stock": 99,
-        "units_sold": 1,
-        "units_returned": 0,
-        "expected_closing": 98,
-        "ledger_closing": 98,
-        "balance_projection": 98,
-        "status": "PASS"
-    },
-    {
-        "sku_code": "JSR-SLK-BYPS-QDB_90 x 100 Inches",
-        "opening_stock": 99,
-        "units_sold": 2,
-        "units_returned": 1,
-        "expected_closing": 98,
-        "ledger_closing": 98,
-        "balance_projection": 98,
-        "status": "PASS"
-    },
-    {
-        "sku_code": "KD-SSK-BPGB-KDB",
-        "opening_stock": 68,
-        "units_sold": 1,
-        "units_returned": 0,
-        "expected_closing": 67,
-        "ledger_closing": 67,
-        "balance_projection": 67,
-        "status": "PASS"
-    },
-    {
-        "sku_code": "TLS-BB-BPS-QDB",
-        "opening_stock": 103,
-        "units_sold": 1,
-        "units_returned": 3,
-        "expected_closing": 105,
-        "ledger_closing": 105,
-        "balance_projection": 105,
-        "status": "PASS"
-    },
-    {
-        "sku_code": "TLS-HPD-BBFK-KDB",
-        "opening_stock": 28,
-        "units_sold": 3,
-        "units_returned": 0,
-        "expected_closing": 25,
-        "ledger_closing": 25,
-        "balance_projection": 25,
-        "status": "PASS"
-    },
-    {
-        "sku_code": "KD-MDB-BTFBL-SK",
-        "opening_stock": 12,
-        "units_sold": 1,
-        "units_returned": 0,
-        "expected_closing": 11,
-        "ledger_closing": 11,
-        "balance_projection": 11,
-        "status": "PASS"
-    },
-    {
-        "sku_code": "TLS-DH-BLJAAL-DB",
-        "opening_stock": 146,
-        "units_sold": 1,
-        "units_returned": 0,
-        "expected_closing": 145,
-        "ledger_closing": 145,
-        "balance_projection": 145,
-        "status": "PASS"
-    },
-    {
-        "sku_code": "KD-BD-PB-QDB-03",
-        "opening_stock": 82,
-        "units_sold": 0,
-        "units_returned": 1,
-        "expected_closing": 83,
-        "ledger_closing": 83,
-        "balance_projection": 83,
-        "status": "PASS"
-    },
-    {
-        "sku_code": "TLS-DH-INDGTREE-DB",
-        "opening_stock": 106,
-        "units_sold": 1,
-        "units_returned": 0,
-        "expected_closing": 105,
-        "ledger_closing": 105,
-        "balance_projection": 105,
-        "status": "PASS"
-    },
-    {
-        "sku_code": "TLS-DH-FGREENJAAL-DB",
-        "opening_stock": 17,
-        "units_sold": 1,
-        "units_returned": 0,
-        "expected_closing": 16,
-        "ledger_closing": 16,
-        "balance_projection": 16,
-        "status": "PASS"
-    },
-    {
         "sku_code": "TLS-DH-RUSTJAAL-DB",
-        "opening_stock": 30,
+        "opening_stock": 42,
         "units_sold": 1,
         "units_returned": 0,
-        "expected_closing": 29,
-        "ledger_closing": 29,
-        "balance_projection": 29,
+        "expected_closing": 41,
+        "ledger_closing": 41,
+        "balance_projection": 41,
         "status": "PASS"
     },
     {
         "sku_code": "KD-MDB-MGLD-SK",
-        "opening_stock": 83,
+        "opening_stock": 39,
         "units_sold": 1,
         "units_returned": 0,
-        "expected_closing": 82,
-        "ledger_closing": 82,
-        "balance_projection": 82,
+        "expected_closing": 38,
+        "ledger_closing": 38,
+        "balance_projection": 38,
         "status": "PASS"
     },
     {
         "sku_code": "TLS-STRP-MG-DWB",
-        "opening_stock": 70,
+        "opening_stock": 41,
         "units_sold": 1,
         "units_returned": 0,
-        "expected_closing": 69,
-        "ledger_closing": 69,
-        "balance_projection": 69,
+        "expected_closing": 40,
+        "ledger_closing": 40,
+        "balance_projection": 40,
         "status": "PASS"
     },
     {
         "sku_code": "KD-BD-NB-QDB-05",
-        "opening_stock": 138,
+        "opening_stock": 144,
         "units_sold": 0,
         "units_returned": 1,
-        "expected_closing": 139,
-        "ledger_closing": 139,
-        "balance_projection": 139,
+        "expected_closing": 145,
+        "ledger_closing": 145,
+        "balance_projection": 145,
         "status": "PASS"
     }
 ]

@@ -38,6 +38,7 @@ async def main():
     from src.domains.data_ingestion.models.import_file import ImportFileModel
     from src.domains.data_ingestion.models.import_record import ImportRecordModel
     from src.domains.operations.models.sales_order import SalesOrderModel
+    from src.domains.operations.models.lifecycle import CustomerReturnPolicyModel, OrderStateTransitionModel
     from src.domains.operations.models.tax_invoice import TaxInvoiceModel
     from src.domains.operations.models.payment import PaymentModel
     from src.domains.operations.models.settlement import SettlementModel

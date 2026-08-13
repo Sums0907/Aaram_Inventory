@@ -29,7 +29,6 @@ async def setup_test_db():
     import src.domains.masters.models.warehouse
     import src.domains.masters.models.category
     import src.domains.masters.models.product_attribute
-    import src.domains.masters.models.inventory_item
     import src.domains.masters.models.sku
     
     import src.domains.operations.models.sales_order

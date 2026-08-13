@@ -104,6 +104,9 @@ class ShopDeckOrderMapper:
             # Approximate net_amount for now
             "net_amount": self._parse_float(first_row.get("Invoice Total (Incl. Tax)", "")),
             
+            "return_created_date": self._parse_date(first_row.get("Return Created Date", "")),
+            "return_delivered_date": self._parse_date(first_row.get("Return Delivered Date", "")),
+            
             "items": []
         }
         

@@ -1,8 +1,8 @@
 from typing import Optional, List
 from uuid import UUID
-from datetime import date
+from datetime import date, datetime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, Date, Numeric, ForeignKey
+from sqlalchemy import String, Date, DateTime, Numeric, ForeignKey, Boolean
 from src.foundation.database.models import BaseModel
 
 class SalesOrderModel(BaseModel):
@@ -28,6 +28,20 @@ class SalesOrderModel(BaseModel):
     shipping_fee: Mapped[float] = mapped_column(Numeric(15, 2), nullable=False, default=0.0)
     cod_fee: Mapped[float] = mapped_column(Numeric(15, 2), nullable=False, default=0.0)
     net_amount: Mapped[float] = mapped_column(Numeric(15, 2), nullable=False, default=0.0)
+    
+    # Lifecycle Fields
+    lifecycle_state: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    last_observed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    delivered_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    terminal_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    return_policy_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("operations_return_policies.id"), nullable=True)
+    return_window_days_at_delivery: Mapped[Optional[int]] = mapped_column(nullable=True)
+    return_watch_until: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    
+    return_created_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    return_delivered_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    has_open_rto_expectation: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    has_open_return_expectation: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     
     items: Mapped[List["SalesOrderItemModel"]] = relationship("SalesOrderItemModel", back_populates="order", cascade="all, delete-orphan")
     invoices: Mapped[List["TaxInvoiceModel"]] = relationship("TaxInvoiceModel", back_populates="order")

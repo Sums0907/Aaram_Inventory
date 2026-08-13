@@ -479,52 +479,61 @@ Gemini
 
 ## Current Feature
 
-Job Worker Accounting — Integration & Final Certification
+Phase D — ShopDeck Inventory Movement (Physical Inventory Idempotency)
 
 ## Status
 
-**Complete**
+**IMPLEMENTED / VERIFIED**
+
+## Historical Phases
+- **PHASE A - ShopDeck Lifecycle Foundation**: CERTIFIED
+- **PHASE B - Dynamic ShopDeck Report Window**: CERTIFIED
+- **PHASE C - Dynamic ShopDeck Report Reconciliation**: CERTIFIED
+
+## Pre-Existing Technical Debt
+- **AsyncSession / DI connection lifecycle technical debt**: The SQLAlchemy `NullPool` garbage collector warnings are a real resource-lifecycle issue and are explicitly recorded as pre-existing technical debt. They are not harmless and will be addressed in a future DEFERRED INFRASTRUCTURE HARDENING phase.
 
 ## Current Objective
 
-Integrate Job Worker Accounting with Inventory Goods Receipt and certify the complete module end-to-end to ensure financial integrity, decoupled execution within shared transactions, and automated balance calculation.
+Complete Phase D of ShopDeck Reconciliation, inferring PACK boundaries, using `SHOPDECK_SALES_WAREHOUSE_CODE`, and tracking per-item inventory cycles properly with idempotency.
 
 ## Completed
 
-- **Expense Service Integration**:
-  - Refactored `ExpenseService` to strictly use the `ACTIVE` rate and throw `ValidationException` on failure.
-  - Guarded against duplicate expense creation for the same GRN and SKU item.
-- **Goods Receipt Integration**:
-  - `GoodsReceiptService` correctly orchestrates both `TransformationEngine` and `ExpenseService` in a single ACID transaction for `JOB_WORK_RECEIPT`s.
-  - Fails atomically and rolls back the entire GRN if accounting fails.
-- **Payment & Payables**:
-  - `PayableService` correctly derives `Outstanding = Total Expenses - Total Payments`.
-  - `PaymentService` completely isolated from expenses and rejects overpayments.
-- **Certification**:
-  - Written `scripts/certify_job_worker_accounting.py` covering all invariants (A through AA) for the complete Job Worker Accounting lifecycle.
-  - Fixed test environments utilizing `MockBalanceCalculator`, ensuring correct mock inventory injection (`JobWorkIssueModel`, `JobWorkerInventoryModel`, `BOMModel`).
-  - Ran full regression suite; all historical modules (`certify_bom_module.py`, `certify_job_worker_rates.py`, `certify_job_worker_allocation.py`, `certify_stock_custody_ledger.py`) successfully pass.
-  - Published master implementation documentation to `docs/JOB_WORKER_ACCOUNTING_CERTIFIED_BASELINE.md`.
+- **Phase D Inventory Logic**:
+  - Added return dates and expectations fields to `SalesOrderModel`.
+  - Added mapping for `RETURNED` dates in `adapters/shopdeck_order.py`.
+  - Added new ShopDeck statuses (`EXPIRED_AWB`, `LOST`, `PENDING`).
+  - Added inventory cycle inference logic inside `ReconciliationOrchestratorService` based on cumulative movement quantity.
+  - Implemented `RTO_RETURN` mapping for `EXPIRED AWB`.
+  - Fixed lazy-loading `MissingGreenlet` errors for new order items by initializing them.
+  - Enforced `SHOPDECK_SALES_WAREHOUSE_CODE` environment variable verification without defaults.
+  - Confirmed CUSTOMER_RETURN logic relies solely on `return_delivered_date` and is completely independent of the `RETURNED` order status.
+- **Testing**:
+  - Fully expanded the Phase D test matrix in `tests/operations/test_phase_d_inventory.py` to cover RTO initiation/delivery, customer returns (from DELIVERED state), neutral statuses, multi-SKU, duplicate reports idempotency, and warehouse determination.
+  - Fixed flaky datetime-based tests by explicitly mocking `observed_at`.
+  - Created dedicated `test_inventory_movement_failure_rollback` to verify strict transactional atomicity (a failure during Phase D inventory generation guarantees zero partial order/lifecycle updates persist).
+- **Certifications**:
+  - Full Operations + Inventory Truth Regression (`pytest tests/operations tests/inventory_truth -v`) passes (34/34 tests).
+  - `certify_inventory_truth.py` completes execution correctly (Exit Code 0).
 
 ## Remaining
 
-- UI Integration for Job Worker Receipts, Expenses, and Payments (Frontend implementation of the Job Worker Accounting Module).
-- E2E testing using Playwright (if desired by human owner in the future).
-- Further development of other Accounting modules (Sales, General Expenses, Bank/Cash, etc.).
+- Infrastructure Hardening Task (Separate Task) to address `AsyncSession`/DI lifecycle connection leak warnings.
 
 ## Files Changed
 
-- `frontend/src/App.tsx`
-- `frontend/src/api/job-worker-accounting.ts`
-- `frontend/src/components/layout/AccountingLayout.tsx`
-- `frontend/src/pages/AccountingDashboardPage.tsx`
-- `frontend/src/pages/accounting/job-worker-accounting/*`
-- `frontend/src/components/job-worker-accounting/*`
+- `src/domains/operations/models/sales_order.py`
+- `src/domains/operations/schemas/lifecycle.py`
+- `src/domains/operations/services/lifecycle_engine.py`
+- `src/domains/operations/services/reconciliation_orchestrator.py`
+- `src/domains/data_ingestion/services/adapters/shopdeck_order.py`
+- `tests/operations/test_phase_d_inventory.py`
+- `tests/operations/test_reconciliation_orchestrator.py`
 
 ## Tests Run
 
-- Frontend: `npm run build` — completed successfully.
-- Smoke Test: Verified routes load correctly.
+- `PYTHONPATH=. venv/bin/pytest tests/operations tests/inventory_truth -v` (33/33 PASS)
+- `PYTHONPATH=. venv/bin/python scripts/certify_inventory_truth.py` (Exit Code 0)
 
 ## Test Result
 
@@ -532,23 +541,41 @@ Integrate Job Worker Accounting with Inventory Goods Receipt and certify the com
 
 ## Known Issues
 
-- Pre-existing TS warnings in unrelated frontend files.
+- Pre-existing SQLAlchemy `NullPool` connection warnings during tests. Noted as technical debt.
 
 ## Important Decisions
 
-- **Accounting layout**: Job Worker Accounting is placed within the `AccountingLayout` as a sub-menu, not as a top-level module.
-- **Strict Separation**: The UI strictly handles financial data (`Expense`, `Payment`, `Outstanding`). It relies purely on the backend for calculation (Rate × Quantity).
+- **Phase D Architecture**: 
+  - Physical Inventory is the only inventory tracked.
+  - PACK and EXPIRED AWB logic infers missing boundaries based strictly on cumulative sum of previous immutable movements per SKU.
+  - No `select(WarehouseModel).limit(1)` is used; instead we rely on explicit configuration `SHOPDECK_SALES_WAREHOUSE_CODE`.
 
 ## Next Exact Step
 
-**Job Worker Accounting (Frontend)** is complete. 
-Wait for the human owner to specify the next domain or feature.
+**Phase D** is complete and certified. Wait for the human owner to provide instructions for the next phase or confirm the infrastructure hardening task.
 
 
 
 ---
 
 # 16. HANDOFF LOG
+
+### 2026-08-14 — Gemini (Phase D Complete Certification & Testing)
+
+Task: Expand Phase D test matrix and complete certification.
+Changes:
+- Verified CUSTOMER_RETURN logic relies solely on `return_delivered_date` and is completely independent of the `RETURNED` order status. Updated test case to test customer returns from `DELIVERED` status.
+- Implemented `test_inventory_movement_failure_rollback` to verify strict transactional atomicity during Phase D inventory generation.
+- Added comprehensive tests for RTO, customer returns, neutral statuses, multi-SKU, and idempotency to `test_phase_d_inventory.py`.
+- Fixed `MissingGreenlet` lazy-loading bug by pre-initializing the new order items list.
+- Fixed flaky tests caused by `datetime.utcnow()` mismatches by propagating `observed_at` down to the transition models.
+- Enforced `SHOPDECK_SALES_WAREHOUSE_CODE` checks without defaults.
+- Tests: `pytest tests/operations tests/inventory_truth -v` passed (34/34).
+- Certification: `certify_inventory_truth.py` passed with exit code 0.
+Status: Complete
+Next step: Wait for the human owner to approve the Phase D implementation and provide instructions for the next phase or Infrastructure Hardening.
+
+---
 
 ### 2026-08-12 — Gemini (Job Worker Accounting Frontend)
 

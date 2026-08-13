@@ -18,9 +18,14 @@ class DomainsContainer(containers.DeclarativeContainer):
         MastersContainer,
         db=core.db,
     )
+    inventory = providers.Container(
+        InventoryContainer,
+        db=core.db
+    )
     operations = providers.Container(
         OperationsContainer,
-        db=core.db
+        db=core.db,
+        inventory_movement_service=inventory.movement_service
     )
     data_ingestion = providers.Container(
         DataIngestionContainer,
@@ -32,10 +37,6 @@ class DomainsContainer(containers.DeclarativeContainer):
     )
     matching = providers.Container(
         MatchingContainer,
-        db=core.db
-    )
-    inventory = providers.Container(
-        InventoryContainer,
         db=core.db
     )
     accounting = providers.Container(
