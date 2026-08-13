@@ -10,6 +10,7 @@ from .packaging import PackagingModel
 from .image import ProductImageModel
 from .supplier import Supplier
 from .category_attribute import CategoryAttributeModel
+from .bom import BOMModel, BOMItemModel
 
 __all__ = [
     "CompanyModel", 
@@ -24,5 +25,7 @@ __all__ = [
     "PackagingModel",
     "ProductImageModel",
     "Supplier",
-    "CategoryAttributeModel"
+    "CategoryAttributeModel",
+    "BOMModel",
+    "BOMItemModel"
 ]

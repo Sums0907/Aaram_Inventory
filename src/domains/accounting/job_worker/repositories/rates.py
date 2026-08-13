@@ -28,22 +28,35 @@ class JobWorkRateRepository:
         return obj
 
     async def get_applicable_rate(
-        self, job_worker_id: UUID, sku_id: UUID, on_date: date
+        self, job_worker_id: UUID, sku_id: UUID, session: Optional[AsyncSession] = None
     ) -> Optional[JobWorkRateModel]:
-        """Return the most-recent rate whose effective_from <= on_date."""
+        """Return the exactly one active rate for this job worker and sku."""
+        db = session or self.session
         stmt = (
             select(JobWorkRateModel)
             .where(
                 JobWorkRateModel.job_worker_id == job_worker_id,
                 JobWorkRateModel.sku_id == sku_id,
-                JobWorkRateModel.effective_from <= on_date,
                 JobWorkRateModel.is_active == True,
             )
-            .order_by(JobWorkRateModel.effective_from.desc())
-            .limit(1)
         )
-        res = await self.session.execute(stmt)
+        res = await db.execute(stmt)
         return res.scalars().first()
+
+    async def archive_active_rate(self, job_worker_id: UUID, sku_id: UUID, updated_by: UUID) -> None:
+        """Atomically archives any active rate for this combination."""
+        from sqlalchemy import update
+        from src.foundation.utilities.dates import utc_now
+        stmt = (
+            update(JobWorkRateModel)
+            .where(
+                JobWorkRateModel.job_worker_id == job_worker_id,
+                JobWorkRateModel.sku_id == sku_id,
+                JobWorkRateModel.is_active == True,
+            )
+            .values(is_active=False, updated_by=updated_by, updated_on=utc_now())
+        )
+        await self.session.execute(stmt)
 
     async def get_all_for_worker(self, job_worker_id: UUID) -> List[JobWorkRateModel]:
         stmt = (

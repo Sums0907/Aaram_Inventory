@@ -9,19 +9,28 @@ import { DashboardPage } from "@/pages/DashboardPage"
 import { ImportsPage } from "@/pages/ImportsPage"
 import { MatchingPage } from "@/pages/MatchingPage"
 import { InventoryExplorerDashboard } from "@/pages/inventory/InventoryExplorerDashboard"
+import { InventoryPage } from "@/pages/inventory/InventoryDashboard"
 import { ProductsPage } from "@/pages/inventory/ProductsPage"
 import { SuppliersPage } from "@/pages/inventory/SuppliersPage"
+import { JobWorkerStockPage } from "@/pages/inventory/JobWorkerStockPage"
 import { GoodsReceiptsPage } from "@/pages/inventory/GoodsReceiptsPage"
 import { PurchaseReturnsPage } from "@/pages/inventory/PurchaseReturnsPage"
-import { StockMovementsPage } from "@/pages/inventory/StockMovementsPage"
+import { ActivityPage } from "@/pages/inventory/ActivityPage"
 import { PhysicalVerificationPage } from "@/pages/inventory/PhysicalVerificationPage"
 import { AdjustmentsPage } from "@/pages/inventory/AdjustmentsPage"
 import { ExceptionsPage } from "@/pages/inventory/ExceptionsPage"
 import { ConfidencePage } from "@/pages/inventory/ConfidencePage"
 import { DailyUpdatePage } from "@/pages/inventory/DailyUpdatePage"
-import { AccountingPage } from "@/pages/AccountingPage"
+import { AccountingLayout } from "@/components/layout/AccountingLayout"
+import { AccountingDashboardPage } from "@/pages/AccountingDashboardPage"
+import { JobWorkerAccountingDashboard } from "@/pages/accounting/job-worker-accounting/JobWorkerAccountingDashboard"
+import { JobWorkerPayablesWorkspace } from "@/pages/accounting/job-worker-accounting/JobWorkerPayablesWorkspace"
+import { JobWorkRatesPage } from "@/pages/accounting/job-worker-accounting/JobWorkRatesPage"
 import { ExportsPage } from "@/pages/ExportsPage"
 import { SettingsPage } from "@/pages/SettingsPage"
+import { BOMSetupPage } from "@/pages/inventory/BOMSetupPage"
+import { TransformationsPage } from "@/pages/inventory/TransformationsPage"
+import UnitsOfMeasurePage from "@/pages/inventory/UnitsOfMeasurePage"
 
 const queryClient = new QueryClient()
 
@@ -63,20 +72,32 @@ function App() {
               
               {/* Inventory Workspace */}
               <Route path="inventory" element={<InventoryLayout />}>
-                <Route index element={<InventoryExplorerDashboard />} />
+                <Route index element={<InventoryPage />} />
+                <Route path="catalog" element={<InventoryExplorerDashboard />} />
                 <Route path="daily-update" element={<DailyUpdatePage />} />
                 <Route path="products" element={<ProductsPage />} />
                 <Route path="suppliers" element={<SuppliersPage />} />
+                <Route path="job-worker-stock" element={<JobWorkerStockPage />} />
                 <Route path="goods-receipts" element={<GoodsReceiptsPage />} />
                 <Route path="purchase-returns" element={<PurchaseReturnsPage />} />
-                <Route path="movements" element={<StockMovementsPage />} />
+                <Route path="activity" element={<ActivityPage />} />
                 <Route path="verification" element={<PhysicalVerificationPage />} />
                 <Route path="adjustments" element={<AdjustmentsPage />} />
                 <Route path="exceptions" element={<ExceptionsPage />} />
                 <Route path="confidence" element={<ConfidencePage />} />
+                <Route path="boms" element={<BOMSetupPage />} />
+                <Route path="transformations" element={<TransformationsPage />} />
+                <Route path="units-of-measure" element={<UnitsOfMeasurePage />} />
               </Route>
 
-              <Route path="accounting" element={<AccountingPage />} />
+              <Route path="accounting" element={<AccountingLayout />}>
+                <Route index element={<AccountingDashboardPage />} />
+                <Route path="job-worker">
+                  <Route path="dashboard" element={<JobWorkerAccountingDashboard />} />
+                  <Route path="payables" element={<JobWorkerPayablesWorkspace />} />
+                  <Route path="rates" element={<JobWorkRatesPage />} />
+                </Route>
+              </Route>
               <Route path="exports" element={<ExportsPage />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />

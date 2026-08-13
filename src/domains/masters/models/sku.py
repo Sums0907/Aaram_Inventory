@@ -22,6 +22,9 @@ class SKUModel(BaseModel):
     material: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     thread_count: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     
+    # Authoritative UOM for component-capable items
+    uom_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("units_of_measure.id"), nullable=True)
+    
     # Any other dynamic attributes
     attribute_values: Mapped[dict] = mapped_column(JSON().with_variant(JSONB, "postgresql"), nullable=False, default={})
     
@@ -38,3 +41,4 @@ class SKUModel(BaseModel):
     pricing: Mapped[Optional["PricingModel"]] = relationship("PricingModel", back_populates="sku", uselist=False, cascade="all, delete-orphan")
     packaging: Mapped[Optional["PackagingModel"]] = relationship("PackagingModel", back_populates="sku", uselist=False, cascade="all, delete-orphan")
     images: Mapped[List["ProductImageModel"]] = relationship("ProductImageModel", back_populates="sku", cascade="all, delete-orphan")
+    uom: Mapped[Optional["UnitOfMeasureModel"]] = relationship("UnitOfMeasureModel")

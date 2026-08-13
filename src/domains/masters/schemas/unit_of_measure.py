@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Literal
 import uuid
 from datetime import datetime
 from pydantic import Field
@@ -9,6 +9,7 @@ class UnitOfMeasureBase(BaseSchema):
     unit_name: str = Field(..., min_length=1, max_length=100, description="Full Unit Name")
     short_name: str = Field(..., min_length=1, max_length=20, description="Short Representation")
     description: Optional[str] = Field(None, max_length=255)
+    unit_type: Literal["INTEGER", "DECIMAL"] = Field(default="INTEGER", description="Type of quantity supported by this unit")
 
 class UnitOfMeasureCreate(UnitOfMeasureBase):
     unit_code: str = Field(..., min_length=1, max_length=50, description="Unique Immutable Code")

@@ -92,3 +92,13 @@ async def archive_product(
     user_uuid = UUID(current_user.id)
     product = await service.archive_product(product_id, updated_by=user_uuid)
     return SuccessResponse(data=ProductResponse.model_validate(product, from_attributes=True))
+
+@router.delete("/{product_id}", response_model=SuccessResponse[None])
+@inject
+async def delete_product(
+    product_id: UUID,
+    current_user: CurrentUser = Depends(get_current_user),
+    service: ProductService = Depends(Provide[MastersContainer.product_service])
+):
+    await service.delete_product(product_id)
+    return SuccessResponse(data=None, message="Product permanently deleted")

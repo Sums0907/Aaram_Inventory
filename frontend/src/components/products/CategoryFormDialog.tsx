@@ -6,7 +6,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { useCreateCategory } from "@/api/masters"
+import { useCreateCategory, useUpdateCategory } from "@/api/masters"
+import type { CategoryInfo } from "@/api/masters"
 
 const formSchema = z.object({
   category_name: z.string().min(1, "Category name is required"),
@@ -23,9 +24,10 @@ interface CategoryFormDialogProps {
   onOpenChange: (open: boolean) => void
   defaultItemType?: string
   defaultParentId?: string
+  initialData?: CategoryInfo | null
 }
 
-export function CategoryFormDialog({ open, onOpenChange, defaultItemType, defaultParentId }: CategoryFormDialogProps) {
+export function CategoryFormDialog({ open, onOpenChange, defaultItemType, defaultParentId, initialData }: CategoryFormDialogProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -38,31 +40,50 @@ export function CategoryFormDialog({ open, onOpenChange, defaultItemType, defaul
   })
 
   const createMutation = useCreateCategory()
+  const updateMutation = useUpdateCategory()
+
+  const isEdit = !!initialData
 
   useEffect(() => {
     if (open) {
-      form.reset({
-        category_name: "",
-        category_code: "",
-        item_type: defaultItemType || "FINISHED_GOODS",
-        parent_id: defaultParentId || "",
-        attributes: "",
-      })
+      if (initialData) {
+        form.reset({
+          category_name: initialData.category_name,
+          category_code: initialData.category_code || "",
+          item_type: initialData.item_type || defaultItemType || "FINISHED_GOODS",
+          parent_id: initialData.parent_id || defaultParentId || "",
+          attributes: initialData.attributes?.join(", ") || "",
+        })
+      } else {
+        form.reset({
+          category_name: "",
+          category_code: "",
+          item_type: defaultItemType || "FINISHED_GOODS",
+          parent_id: defaultParentId || "",
+          attributes: "",
+        })
+      }
     }
-  }, [open, defaultItemType, defaultParentId, form])
+  }, [open, defaultItemType, defaultParentId, initialData, form])
 
   const onSubmit = async (values: FormValues) => {
     try {
-      await createMutation.mutateAsync({
+      const data = {
         category_name: values.category_name,
         category_code: values.category_code || undefined,
         item_type: values.item_type,
         parent_id: values.parent_id || undefined,
         attributes: values.attributes ? values.attributes.split(",").map(s => s.trim()).filter(Boolean) : []
-      })
+      }
+      
+      if (isEdit && initialData) {
+        await updateMutation.mutateAsync({ id: initialData.id, data })
+      } else {
+        await createMutation.mutateAsync(data)
+      }
       onOpenChange(false)
     } catch (error) {
-      console.error("Failed to create category:", error)
+      console.error("Failed to save category:", error)
     }
   }
 
@@ -71,7 +92,7 @@ export function CategoryFormDialog({ open, onOpenChange, defaultItemType, defaul
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            {defaultParentId ? "Create Subcategory" : "Create Category"}
+            {isEdit ? "Edit Category" : defaultParentId ? "Create Subcategory" : "Create Category"}
           </DialogTitle>
         </DialogHeader>
 
@@ -123,8 +144,8 @@ export function CategoryFormDialog({ open, onOpenChange, defaultItemType, defaul
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={createMutation.isPending}>
-                {createMutation.isPending ? "Creating..." : "Create Category"}
+              <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+                {isEdit ? (updateMutation.isPending ? "Saving..." : "Save Changes") : (createMutation.isPending ? "Creating..." : "Create Category")}
               </Button>
             </DialogFooter>
           </form>

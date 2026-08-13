@@ -1,9 +1,10 @@
 import { useJournals } from "@/api/accounting"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Link } from "react-router-dom"
 import { BookOpen, Download, Building, Landmark, Wallet, TrendingUp } from "lucide-react"
 
-export function AccountingPage() {
+export function AccountingDashboardPage() {
   const { data: journals, isLoading } = useJournals()
 
   // Aggregate balances from journal lines for a business-level view
@@ -39,10 +40,12 @@ export function AccountingPage() {
           <p className="text-slate-500">Live ledger balances automatically generated from operations.</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button className="gap-2 bg-indigo-600 hover:bg-indigo-700 w-full md:w-auto">
-            <Download className="h-4 w-4" />
-            Generate Monthly Export
-          </Button>
+          <Link to="/exports">
+            <Button className="gap-2 bg-indigo-600 hover:bg-indigo-700 w-full md:w-auto">
+              <Download className="h-4 w-4" />
+              Generate Monthly Export
+            </Button>
+          </Link>
         </div>
       </div>
 

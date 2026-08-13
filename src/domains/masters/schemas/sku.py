@@ -20,26 +20,34 @@ class PricingInfo(PydanticBaseModel):
     gst_percentage: float
     hsn_code: Optional[str] = None
 
+class UnitOfMeasureInfo(PydanticBaseModel):
+    id: UUID
+    unit_code: str
+    unit_name: str
+    unit_type: str = "INTEGER"
+
 class ImageInfo(PydanticBaseModel):
     image_url: str
     display_order: int
 
 class SKUBase(BaseSchema):
-    size: Optional[str] = Field(None, max_length=50)
-    color: Optional[str] = Field(None, max_length=255)
+    size: Optional[str] = Field(None, max_length=255)
+    color: Optional[str] = Field(None, max_length=100)
     pattern: Optional[str] = Field(None, max_length=255)
     material: Optional[str] = Field(None, max_length=255)
-    thread_count: Optional[str] = Field(None, max_length=50)
+    thread_count: Optional[str] = Field(None, max_length=255)
     attribute_values: Dict[str, str] = Field(default_factory=dict, description="Other attributes")
     barcode: Optional[str] = Field(None, max_length=100)
+    uom_id: Optional[UUID] = Field(None, description="Authoritative Unit of Measure for components")
 
 class SKUCreate(SKUBase):
-    item_code: str = Field(..., min_length=1, max_length=50, description="Unique Internal Item Code")
-    sku_code: Optional[str] = Field(None, min_length=1, max_length=50, description="SKU Code for Finished Goods")
+    item_code: str = Field(..., min_length=1, max_length=255, description="Unique Internal Item Code")
+    sku_code: Optional[str] = Field(None, min_length=1, max_length=255, description="SKU Code for Finished Goods")
     product_id: UUID = Field(..., description="Product Reference")
 
 class SKUUpdate(SKUBase):
-    pass
+    item_code: Optional[str] = Field(None, min_length=1, max_length=255)
+    product_id: Optional[UUID] = Field(None)
 
 class SKUResponse(SKUCreate):
     id: UUID
@@ -48,9 +56,11 @@ class SKUResponse(SKUCreate):
     updated_on: datetime
     created_by: Optional[UUID]
     updated_by: Optional[UUID]
+    has_bom: bool = Field(default=False)
 
     # Joined fields for the UI
     product: Optional[ProductInfo] = None
+    uom: Optional[UnitOfMeasureInfo] = None
     pricing: Optional[PricingInfo] = None
     images: List[ImageInfo] = Field(default_factory=list)
 

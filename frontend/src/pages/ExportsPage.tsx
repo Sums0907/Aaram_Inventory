@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { FileDown, CalendarCheck, CheckCircle2, FileSpreadsheet, BookOpen, Clock, BadgeCheck, FileText, AlertCircle } from "lucide-react"
 import { useEffect, useState } from "react"
+import { apiClient } from "@/api/client"
 import {
   Table,
   TableBody,
@@ -132,18 +133,13 @@ function FormalGeneralJournal({
 export function ExportsPage() {
   const [journals, setJournals] = useState<MonthlyJournals | null>(null)
   const [loading, setLoading] = useState(true)
-  const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0IiwidXNlcm5hbWUiOiJkZW1vIiwicm9sZSI6ImFkbWluIiwiZXhwIjoxODE3NDcyNjA2fQ.J4sb028IFN8h3OBlYq1RatBHZKs0SH6p8eGuKVXKp_c";
-
   // Derive the current month for display purposes (e.g. "April 2026")
   const currentMonth = "April 2026"; 
 
   useEffect(() => {
     async function fetchJournals() {
       try {
-        const response = await fetch('http://localhost:8000/api/v1/accounting/export/json', {
-          headers: { Authorization: `Bearer ${TOKEN}` }
-        })
-        const resData = await response.json()
+        const resData: any = await apiClient.get('/accounting/export/json')
         if (resData.success) {
           setJournals(resData.data)
         }
@@ -157,13 +153,11 @@ export function ExportsPage() {
   }, [])
 
   const downloadFile = async (endpoint: string, filename: string) => {
-    const response = await fetch(`http://localhost:8000/api/v1/accounting/export/vyapar/${endpoint}`, {
-      headers: { Authorization: `Bearer ${TOKEN}` }
-    })
-    
-    if (response.ok) {
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
+    try {
+      const response = await apiClient.get(`/accounting/export/vyapar/${endpoint}`, {
+        responseType: 'blob'
+      })
+      const url = window.URL.createObjectURL(new Blob([response as any]))
       const a = document.createElement('a')
       a.href = url
       a.download = filename
@@ -171,7 +165,7 @@ export function ExportsPage() {
       a.click()
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
-    } else {
+    } catch (err) {
       alert("Failed to download CSV.")
     }
   }

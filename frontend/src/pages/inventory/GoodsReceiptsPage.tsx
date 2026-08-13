@@ -90,7 +90,7 @@ export function GoodsReceiptsPage() {
                       {grn.status}
                     </span>
                   </TableCell>
-                  <TableCell className="text-slate-500 text-xs truncate max-w-[100px]">{grn.created_by || "System"}</TableCell>
+                  <TableCell className="text-slate-500 text-xs truncate max-w-[100px]">System</TableCell>
                   <TableCell className="text-slate-500 text-xs">{new Date(grn.created_on).toLocaleString()}</TableCell>
                   <TableCell>
                     <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleView(grn.id); }}>

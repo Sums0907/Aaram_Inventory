@@ -93,3 +93,13 @@ async def archive_category(
     user_uuid = UUID(current_user.id)
     category = await service.archive_category(category_id, updated_by=user_uuid)
     return SuccessResponse(data=CategoryResponse.model_validate(category, from_attributes=True))
+
+@router.delete("/{category_id}", response_model=SuccessResponse[None])
+@inject
+async def delete_category(
+    category_id: UUID,
+    current_user: CurrentUser = Depends(get_current_user),
+    service: CategoryService = Depends(Provide[MastersContainer.category_service])
+):
+    await service.delete_category(category_id)
+    return SuccessResponse(data=None, message="Category permanently deleted")

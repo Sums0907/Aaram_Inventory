@@ -12,19 +12,22 @@ import {
 } from "@/components/ui/table"
 import { Plus, Search, FileDown } from "lucide-react"
 import { SupplierDialog } from "@/components/suppliers/SupplierDialog"
+import { JobWorkerWorkspace } from "@/components/suppliers/JobWorkerWorkspace"
 
 export function SuppliersPage() {
   const [search, setSearch] = useState("")
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null)
+  const [jobWorkDialogOpen, setJobWorkDialogOpen] = useState(false)
+  const [activeJobWorker, setActiveJobWorker] = useState<{id: string, name: string} | null>(null)
 
   const { data, isLoading } = useSuppliers(0, 100)
   
   const suppliers = data?.data || []
   
   const filteredSuppliers = suppliers.filter(s => 
-    s.name.toLowerCase().includes(search.toLowerCase()) || 
-    (s.gstin && s.gstin.toLowerCase().includes(search.toLowerCase()))
+    s?.name?.toLowerCase().includes(search.toLowerCase()) || 
+    (s?.gstin && s.gstin.toLowerCase().includes(search.toLowerCase()))
   )
 
   const handleEdit = (id: string) => {
@@ -35,6 +38,11 @@ export function SuppliersPage() {
   const handleCreate = () => {
     setSelectedSupplierId(null)
     setDialogOpen(true)
+  }
+
+  const handleOpenJobWork = (id: string, name: string) => {
+    setActiveJobWorker({ id, name })
+    setJobWorkDialogOpen(true)
   }
 
   return (
@@ -102,6 +110,16 @@ export function SuppliersPage() {
                   <TableCell>{supplier.contact_number || "-"}</TableCell>
                   <TableCell>{supplier.email || "-"}</TableCell>
                   <TableCell className="text-right">
+                    {supplier.is_job_worker && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleOpenJobWork(supplier.id, supplier.name)}
+                        className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 mr-2"
+                      >
+                        Job Work
+                      </Button>
+                    )}
                     <Button 
                       variant="ghost" 
                       size="sm"
@@ -122,6 +140,15 @@ export function SuppliersPage() {
         onOpenChange={setDialogOpen}
         supplierId={selectedSupplierId}
       />
+
+      {activeJobWorker && (
+        <JobWorkerWorkspace 
+          open={jobWorkDialogOpen}
+          onOpenChange={setJobWorkDialogOpen}
+          supplierId={activeJobWorker.id}
+          supplierName={activeJobWorker.name}
+        />
+      )}
     </div>
   )
 }

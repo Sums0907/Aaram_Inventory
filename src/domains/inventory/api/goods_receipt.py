@@ -15,7 +15,7 @@ router = APIRouter(prefix="/goods-receipts", tags=["Goods Receipts"])
 async def create_grn(
     schema: GoodsReceiptCreate,
     current_user: CurrentUser = Depends(get_current_user),
-    service: GoodsReceiptService = Depends(Provide[DomainsContainer.inventory.goods_receipt_service])
+    service: GoodsReceiptService = Depends(Provide[DomainsContainer.goods_receipt_service_with_accounting])
 ):
     user_uuid = UUID(current_user.id)
     result = await service.create(schema, created_by=user_uuid)

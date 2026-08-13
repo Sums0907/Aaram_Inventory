@@ -23,3 +23,4 @@ class InventoryItemCreate(BaseModel):
     thread_count: Optional[str] = Field(None, max_length=50)
     attribute_values: Dict[str, str] = Field(default_factory=dict, description="Dynamic variant attributes")
     barcode: Optional[str] = Field(None, max_length=100)
+    uom_id: Optional[UUID] = Field(None, description="Authoritative Unit of Measure for components")

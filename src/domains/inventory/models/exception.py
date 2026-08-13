@@ -1,7 +1,7 @@
 from uuid import UUID
 from datetime import datetime
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import String, Integer, DateTime, ForeignKey
+from sqlalchemy import Numeric, String, Integer, DateTime, ForeignKey
 from src.foundation.database.models import BaseModel
 
 class InventoryExceptionModel(BaseModel):
@@ -15,8 +15,8 @@ class InventoryExceptionModel(BaseModel):
     exception_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     source_system: Mapped[str] = mapped_column(String(100), nullable=False) # ACCOUNTING, MARKETPLACE, PHYSICAL
     
-    expected_quantity: Mapped[int] = mapped_column(Integer, nullable=False)
-    actual_quantity: Mapped[int] = mapped_column(Integer, nullable=False)
+    expected_quantity: Mapped[float] = mapped_column(Numeric(15, 3), nullable=False)
+    actual_quantity: Mapped[float] = mapped_column(Numeric(15, 3), nullable=False)
     difference: Mapped[int] = mapped_column(Integer, nullable=False)
     
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="OPEN") # OPEN, INVESTIGATING, RESOLVED

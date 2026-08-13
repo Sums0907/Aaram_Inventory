@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { useProducts, useCategories, useCreateInventoryItem, useUpdateSKU, type SKUResponse } from "@/api/masters"
+import { useProducts, useCategories, useCreateInventoryItem, useUpdateSKU, useUpdateProduct, useUnitsOfMeasure, type SKUResponse } from "@/api/masters"
 
 const formSchema = z.object({
   item_type: z.string().min(1, "Item type is required"),
@@ -25,6 +25,7 @@ const formSchema = z.object({
   color: z.string().max(255).optional(),
   size: z.string().max(50).optional(),
   barcode: z.string().max(100).optional(),
+  base_uom_id: z.string().optional(),
   
   attribute_values: z.record(z.string()).optional(),
 
@@ -34,6 +35,12 @@ const formSchema = z.object({
 }).refine(data => data.product_id || data.new_product_name, {
   message: "Master Item is required",
   path: ["product_id"]
+}).refine(data => {
+  if (data.item_type !== "FINISHED_GOODS" && !data.base_uom_id) return false;
+  return true;
+}, {
+  message: "Unit of Measure is required for components",
+  path: ["base_uom_id"]
 });
 
 type FormValues = z.infer<typeof formSchema>
@@ -57,12 +64,13 @@ export function InventoryItemFormDialog({ open, onOpenChange, initialData, defau
       category_id: initialData?.product?.category_id || defaultCategoryId || "",
       product_id: initialData?.product_id || "",
       new_category_name: "",
-      new_product_name: "",
+      new_product_name: initialData?.product?.product_name || "",
       item_code: "",
       sku_code: "",
       color: "",
       size: "",
       barcode: "",
+      base_uom_id: "",
       attribute_values: {},
     },
   })
@@ -73,6 +81,7 @@ export function InventoryItemFormDialog({ open, onOpenChange, initialData, defau
 
   const { data: categories } = useCategories(itemType)
   const { data: products } = useProducts()
+  const { data: uoms } = useUnitsOfMeasure()
   
   const filteredProducts = products?.filter(p => (p.item_type || "FINISHED_GOODS") === itemType) || []
 
@@ -83,8 +92,12 @@ export function InventoryItemFormDialog({ open, onOpenChange, initialData, defau
     return cat?.attributes || [];
   }, [categories, categoryId])
 
+  const newCatName = form.watch("new_category_name")
+  const newProdName = form.watch("new_product_name")
+
   const createMutation = useCreateInventoryItem()
   const updateMutation = useUpdateSKU()
+  const updateProductMutation = useUpdateProduct()
 
   useEffect(() => {
     if (open) {
@@ -93,11 +106,13 @@ export function InventoryItemFormDialog({ open, onOpenChange, initialData, defau
           item_type: initialData.product?.item_type || "FINISHED_GOODS",
           category_id: initialData.product?.category_id || "existing_but_unknown",
           product_id: initialData.product?.id || "",
+          new_product_name: initialData.product?.product_name || "",
           item_code: initialData.item_code || "",
           sku_code: initialData.sku_code || "",
           color: initialData.color || "",
           size: initialData.size || "",
           barcode: initialData.barcode || "",
+          base_uom_id: (initialData as any).uom_id || "",
           attribute_values: initialData.attribute_values || {},
         })
       } else {
@@ -112,11 +127,12 @@ export function InventoryItemFormDialog({ open, onOpenChange, initialData, defau
           color: "",
           size: "",
           barcode: "",
+          base_uom_id: "",
           attribute_values: {},
         })
       }
     }
-  }, [open, initialData, form, defaultCategoryId, defaultItemType])
+  }, [open, initialData, form, defaultCategoryId, defaultItemType, products])
 
   const onSubmit = async (values: FormValues) => {
     try {
@@ -128,15 +144,27 @@ export function InventoryItemFormDialog({ open, onOpenChange, initialData, defau
       })
 
       if (isEdit) {
+        // Update SKU
         await updateMutation.mutateAsync({
           id: initialData.id,
           data: {
-            size: values.size,
-            color: values.color,
-            barcode: values.barcode,
+            size: values.size || undefined,
+            color: values.color || undefined,
+            barcode: values.barcode || undefined,
+            item_code: values.item_code || undefined,
+            product_id: values.product_id !== "NEW" ? values.product_id : undefined,
+            uom_id: values.base_uom_id || undefined,
             attribute_values,
           }
         })
+        
+        // Update Product Name if changed
+        if (values.new_product_name && values.new_product_name !== initialData.product?.product_name) {
+          await updateProductMutation.mutateAsync({
+            id: initialData.product_id,
+            data: { product_name: values.new_product_name }
+          })
+        }
       } else {
         // Auto-generate codes if missing
         const randomHex = () => Math.random().toString(16).substring(2, 8).toUpperCase();
@@ -151,11 +179,12 @@ export function InventoryItemFormDialog({ open, onOpenChange, initialData, defau
           new_product_name: values.product_id === "NEW" ? values.new_product_name : undefined,
           item_code: finalItemCode,
           sku_code: finalSkuCode,
-          color: values.color,
-          size: values.size,
-          barcode: values.barcode,
+          color: values.color || undefined,
+          size: values.size || undefined,
+          barcode: values.barcode || undefined,
+          base_uom_id: values.base_uom_id || undefined,
           attribute_values,
-        })
+        } as any)
       }
       onSuccess?.()
       onOpenChange(false)
@@ -187,14 +216,13 @@ export function InventoryItemFormDialog({ open, onOpenChange, initialData, defau
                     <FormItem>
                       <FormLabel>Inventory Type</FormLabel>
                       <Select 
-                        disabled={isEdit} 
                         onValueChange={(val) => {
                           field.onChange(val)
                           form.setValue("category_id", "")
                           form.setValue("product_id", "")
                         }}
-                        defaultValue={field.value}
-                        value={field.value}
+                        defaultValue={field.value || undefined}
+                        value={field.value || undefined}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -223,10 +251,9 @@ export function InventoryItemFormDialog({ open, onOpenChange, initialData, defau
                         <FormItem>
                           <FormLabel>Category</FormLabel>
                           <Select 
-                            disabled={isEdit} 
                             onValueChange={field.onChange} 
-                            defaultValue={field.value}
-                            value={field.value}
+                            defaultValue={field.value || undefined}
+                            value={field.value || undefined}
                           >
                             <FormControl>
                               <SelectTrigger className="bg-white">
@@ -280,10 +307,9 @@ export function InventoryItemFormDialog({ open, onOpenChange, initialData, defau
                         <FormItem>
                           <FormLabel>Master Item</FormLabel>
                           <Select 
-                            disabled={isEdit} 
                             onValueChange={field.onChange} 
-                            defaultValue={field.value}
-                            value={field.value}
+                            defaultValue={field.value || undefined}
+                            value={field.value || undefined}
                           >
                             <FormControl>
                               <SelectTrigger className="bg-white">
@@ -291,11 +317,13 @@ export function InventoryItemFormDialog({ open, onOpenChange, initialData, defau
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectGroup>
-                                <SelectItem value="NEW" className="text-primary font-semibold border-b mb-1">
-                                  + Create Master Item
-                                </SelectItem>
-                              </SelectGroup>
+                              {!isEdit && (
+                                <SelectGroup>
+                                  <SelectItem value="NEW" className="text-primary font-semibold border-b mb-1">
+                                    + Create Master Item
+                                  </SelectItem>
+                                </SelectGroup>
+                              )}
                               <SelectGroup>
                                 <SelectLabel>Existing Master Items</SelectLabel>
                                 {filteredProducts.map(p => (
@@ -312,15 +340,16 @@ export function InventoryItemFormDialog({ open, onOpenChange, initialData, defau
                     />
                   </div>
 
-                  {productId === "NEW" && (
+                  {(productId === "NEW" || isEdit) && (
                     <div className="col-span-2">
                       <FormField
                         control={form.control}
                         name="new_product_name"
                         render={({ field }) => (
                           <FormItem>
+                            <FormLabel>{isEdit ? "Master Item Name" : ""}</FormLabel>
                             <FormControl>
-                              <Input placeholder="Type new master item name..." {...field} className="bg-white" />
+                              <Input placeholder={isEdit ? "Edit master item name..." : "Type new master item name..."} {...field} className="bg-white" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -338,12 +367,37 @@ export function InventoryItemFormDialog({ open, onOpenChange, initialData, defau
                       <FormItem>
                         <FormLabel>Item Code (Auto-generated if blank)</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g. RM-FAB-001" {...field} disabled={isEdit} />
+                          <Input placeholder="e.g. RM-FAB-001" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+
+                  {itemType !== "FINISHED_GOODS" && (
+                    <FormField
+                      control={form.control}
+                      name="base_uom_id"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Base Unit of Measure</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value || undefined} defaultValue={field.value || undefined}>
+                            <FormControl>
+                              <SelectTrigger className="bg-white">
+                                <SelectValue placeholder="Select UOM" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {uoms?.filter(u => u.status?.toUpperCase() === 'ACTIVE').map(u => (
+                                <SelectItem key={u.id} value={u.id}>{u.unit_name} ({u.short_name})</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
 
                   {itemType === "FINISHED_GOODS" && (
                     <FormField

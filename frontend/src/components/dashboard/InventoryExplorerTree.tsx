@@ -27,6 +27,12 @@ interface InventoryExplorerTreeProps {
   onSelectNode: (node: TreeNode) => void;
   onCreateCategory: (parentType: string, parentId?: string) => void;
   onCreateProduct: (categoryId: string) => void;
+  onEditCategory?: (categoryId: string, currentName: string) => void;
+  onArchiveCategory?: (categoryId: string) => void;
+  onDeleteCategory?: (categoryId: string) => void;
+  onEditProduct?: (productId: string, currentName: string) => void;
+  onArchiveProduct?: (productId: string) => void;
+  onDeleteProduct?: (productId: string) => void;
 }
 
 export function buildTree(hierarchy: HierarchyResponse): TreeNode[] {
@@ -109,7 +115,7 @@ export function buildTree(hierarchy: HierarchyResponse): TreeNode[] {
   return Object.values(typeNodes);
 }
 
-export function InventoryExplorerTree({ hierarchy, selectedNodeId, onSelectNode, onCreateCategory, onCreateProduct }: InventoryExplorerTreeProps) {
+export function InventoryExplorerTree({ hierarchy, selectedNodeId, onSelectNode, onCreateCategory, onCreateProduct, onRenameCategory, onDeleteCategory, onEditProduct }: InventoryExplorerTreeProps) {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['FINISHED_GOODS']));
   
   const tree = buildTree(hierarchy);
@@ -139,7 +145,8 @@ export function InventoryExplorerTree({ hierarchy, selectedNodeId, onSelectNode,
             <div 
               className={cn(
                 "flex items-center py-1 px-2 cursor-pointer text-sm hover:bg-accent rounded-sm group",
-                isSelected && "bg-accent text-accent-foreground font-medium"
+                isSelected && "bg-accent text-accent-foreground font-medium",
+                node.data?.status === 'archived' && "line-through opacity-60"
               )}
               style={{ paddingLeft: `${depth * 16 + 8}px` }}
               onClick={() => onSelectNode(node)}
@@ -170,28 +177,46 @@ export function InventoryExplorerTree({ hierarchy, selectedNodeId, onSelectNode,
           </ContextMenuTrigger>
           <ContextMenuContent className="w-48">
             {node.type === 'INVENTORY_TYPE' && (
-              <ContextMenuItem onSelect={() => onCreateCategory(node.id)}>
+              <ContextMenuItem onSelect={() => setTimeout(() => onCreateCategory(node.id), 0)}>
                 New Category...
               </ContextMenuItem>
             )}
             {node.type === 'CATEGORY' && (
               <>
-                <ContextMenuItem onSelect={() => onCreateCategory(node.data.item_type, node.id)}>
+                <ContextMenuItem onSelect={() => setTimeout(() => onCreateCategory(node.data.item_type, node.id), 0)}>
                   New Subcategory...
                 </ContextMenuItem>
-                <ContextMenuItem onSelect={() => onCreateProduct(node.id)}>
+                <ContextMenuItem onSelect={() => setTimeout(() => onCreateProduct(node.id), 0)}>
                   New Inventory Item...
                 </ContextMenuItem>
-                <ContextMenuItem>Rename</ContextMenuItem>
-                <ContextMenuItem className="text-destructive">Delete</ContextMenuItem>
+                <ContextMenuItem onSelect={() => setTimeout(() => onEditCategory?.(node.id, node.data.category_name), 0)}>
+                  Edit Category...
+                </ContextMenuItem>
+                {node.data?.status === 'archived' ? (
+                  <ContextMenuItem className="text-destructive font-medium" onSelect={() => setTimeout(() => onDeleteCategory?.(node.id), 0)}>
+                    Delete Category (Permanent)
+                  </ContextMenuItem>
+                ) : (
+                  <ContextMenuItem className="text-destructive" onSelect={() => setTimeout(() => onArchiveCategory?.(node.id), 0)}>
+                    Archive Category
+                  </ContextMenuItem>
+                )}
               </>
             )}
             {node.type === 'PRODUCT' && (
               <>
-                <ContextMenuItem>Edit</ContextMenuItem>
-                <ContextMenuItem>Receive Goods</ContextMenuItem>
-                <ContextMenuItem>View Ledger</ContextMenuItem>
-                <ContextMenuItem className="text-destructive">Deactivate</ContextMenuItem>
+                <ContextMenuItem onSelect={() => setTimeout(() => onEditProduct?.(node.id, node.data.product_name), 0)}>
+                  Edit Master Item...
+                </ContextMenuItem>
+                {node.data?.status === 'archived' ? (
+                  <ContextMenuItem className="text-destructive font-medium" onSelect={() => setTimeout(() => onDeleteProduct?.(node.id), 0)}>
+                    Delete Master Item (Permanent)
+                  </ContextMenuItem>
+                ) : (
+                  <ContextMenuItem className="text-destructive" onSelect={() => setTimeout(() => onArchiveProduct?.(node.id), 0)}>
+                    Archive Master Item
+                  </ContextMenuItem>
+                )}
               </>
             )}
           </ContextMenuContent>

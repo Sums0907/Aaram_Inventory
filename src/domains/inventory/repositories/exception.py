@@ -28,8 +28,12 @@ class InventoryExceptionRepository:
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
         
-    async def save(self, exception: InventoryExceptionModel) -> InventoryExceptionModel:
-        self.session.add(exception)
-        await self.session.commit()
-        await self.session.refresh(exception)
+    async def save(self, exception: InventoryExceptionModel, session: AsyncSession = None) -> InventoryExceptionModel:
+        db_session = session or self.session
+        db_session.add(exception)
+        if not session:
+            await db_session.commit()
+            await db_session.refresh(exception)
+        else:
+            await db_session.flush()
         return exception

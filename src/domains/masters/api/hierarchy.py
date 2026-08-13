@@ -11,8 +11,9 @@ router = APIRouter(prefix="/hierarchy", tags=["Inventory Hierarchy"])
 @router.get("", response_model=SuccessResponse[HierarchyResponse], status_code=status.HTTP_200_OK)
 @inject
 async def get_hierarchy(
+    only_archived: bool = False,
     current_user: CurrentUser = Depends(get_current_user),
     service: InventoryHierarchyService = Depends(Provide[MastersContainer.inventory_hierarchy_service])
 ):
-    data = await service.get_hierarchy()
+    data = await service.get_hierarchy(only_archived)
     return SuccessResponse(data=data)

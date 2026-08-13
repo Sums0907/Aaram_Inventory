@@ -15,15 +15,20 @@ import {
 
 const INVENTORY_NAV_ITEMS = [
   { name: "Dashboard", href: "/inventory", icon: LayoutDashboard },
+  { name: "Catalog", href: "/inventory/catalog", icon: Package },
   { name: "Daily Update", href: "/inventory/daily-update", icon: Package },
   { name: "Products", href: "/inventory/products", icon: Package },
+  { name: "BOMs", href: "/inventory/boms", icon: Settings2 },
+  { name: "UOMs", href: "/inventory/units-of-measure", icon: Settings2 },
   { name: "Suppliers", href: "/inventory/suppliers", icon: Users },
   { name: "Goods Receipts", href: "/inventory/goods-receipts", icon: FileDown },
   { name: "Purchase Returns", href: "/inventory/purchase-returns", icon: FileUp },
-  { name: "Movements", href: "/inventory/movements", icon: ArrowRightLeft },
+  { name: "Activity", href: "/inventory/activity", icon: ArrowRightLeft },
   { name: "Verification", href: "/inventory/verification", icon: ClipboardCheck },
   { name: "Adjustments", href: "/inventory/adjustments", icon: Settings2 },
   { name: "Exceptions", href: "/inventory/exceptions", icon: AlertTriangle },
+  { name: "Transformations", href: "/inventory/transformations", icon: ArrowRightLeft },
+  { name: "Job Worker Stock", href: "/inventory/job-worker-stock", icon: Package },
   { name: "Confidence", href: "/inventory/confidence", icon: ShieldCheck },
 ]
 

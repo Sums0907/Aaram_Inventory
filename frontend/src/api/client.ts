@@ -20,7 +20,9 @@ apiClient.interceptors.response.use(
     
     // Extract error message safely
     let errorMessage = "An unexpected error occurred.";
-    if (error.response?.data?.message) {
+    if (error.response?.data?.error?.message) {
+      errorMessage = error.response.data.error.message;
+    } else if (error.response?.data?.message) {
       errorMessage = error.response.data.message;
     } else if (error.response?.data?.detail) {
       // FastAPI default validation error format

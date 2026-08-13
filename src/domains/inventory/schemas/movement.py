@@ -12,7 +12,12 @@ MovementType = Literal[
     "CUSTOMER_RETURN",
     "RTO_RETURN",
     "MANUAL_ADJUSTMENT",
-    "STOCK_COUNT_ADJUSTMENT"
+    "STOCK_COUNT_ADJUSTMENT",
+    "JOB_WORK_ISSUE",
+    "JOB_WORK_RECEIPT",
+    "JOB_WORK_RETURN",
+    "RAW_MATERIAL_CONSUMPTION",
+    "INVENTORY_TRANSFORMATION"
 ]
 
 class InventoryMovementBase(BaseSchema):
@@ -25,7 +30,7 @@ class InventoryMovementBase(BaseSchema):
     warehouse_id: UUID
     sku_id: UUID
     
-    quantity: int
+    quantity: float
     unit_cost: float = Field(default=0.0)
     
     reference_type: str = Field(..., max_length=100)
@@ -46,7 +51,7 @@ class InventoryMovementResponse(InventoryMovementBase):
 class PurchaseReceiptRequest(BaseSchema):
     warehouse_id: UUID
     sku_id: UUID
-    quantity: int = Field(..., gt=0, description="Quantity received")
+    quantity: float = Field(..., gt=0, description="Quantity received")
     vendor_id: UUID
     purchase_document: str = Field(..., max_length=255, description="PO Number or Bill Number")
     receipt_date: date
@@ -54,7 +59,7 @@ class PurchaseReceiptRequest(BaseSchema):
 class PurchaseReturnRequest(BaseSchema):
     warehouse_id: UUID
     sku_id: UUID
-    quantity: int = Field(..., gt=0, description="Quantity returned")
+    quantity: float = Field(..., gt=0, description="Quantity returned")
     vendor_id: UUID
     purchase_document: str = Field(..., max_length=255, description="PO Number or Bill Number")
     return_date: date
@@ -62,7 +67,7 @@ class PurchaseReturnRequest(BaseSchema):
 class CustomerReturnRequest(BaseSchema):
     warehouse_id: UUID
     sku_id: UUID
-    quantity: int = Field(..., gt=0, description="Quantity returned by customer")
+    quantity: float = Field(..., gt=0, description="Quantity returned by customer")
     customer_id: UUID
     order_number: str = Field(..., max_length=255, description="Original Order Number")
     return_date: date
@@ -70,7 +75,7 @@ class CustomerReturnRequest(BaseSchema):
 class RTOReturnRequest(BaseSchema):
     warehouse_id: UUID
     sku_id: UUID
-    quantity: int = Field(..., gt=0, description="Quantity returned by courier (RTO)")
+    quantity: float = Field(..., gt=0, description="Quantity returned by courier (RTO)")
     courier_id: UUID
     awb_number: str = Field(..., max_length=255, description="Tracking AWB Number")
     rto_date: date
@@ -78,7 +83,7 @@ class RTOReturnRequest(BaseSchema):
 class ManualAdjustmentRequest(BaseSchema):
     warehouse_id: UUID
     sku_id: UUID
-    quantity: int = Field(..., description="Adjustment quantity (can be positive or negative)")
+    quantity: float = Field(..., description="Adjustment quantity (can be positive or negative)")
     reason: str = Field(..., max_length=255)
     reference_number: str = Field(..., max_length=255)
     adjustment_date: date
@@ -86,9 +91,9 @@ class ManualAdjustmentRequest(BaseSchema):
 class StockCountAdjustmentRequest(BaseSchema):
     warehouse_id: UUID
     sku_id: UUID
-    system_quantity: int
+    system_quantity: float
     physical_count: int
-    difference: int = Field(..., description="Calculated difference: physical_count - system_quantity")
+    difference: float = Field(..., description="Calculated difference: physical_count - system_quantity")
     stock_count_reference: str = Field(..., max_length=255)
     count_date: date
 

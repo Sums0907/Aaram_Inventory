@@ -1,3 +1,5 @@
+import os
+os.environ["DATABASE_ENV"] = "test"
 import pytest_asyncio
 import pytest
 from dependency_injector import providers

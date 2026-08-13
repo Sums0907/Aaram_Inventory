@@ -15,7 +15,9 @@ from src.domains.inventory.repositories.movement import InventoryMovementReposit
 from src.domains.inventory.repositories.balance import InventoryBalanceRepository
 from src.domains.inventory.repositories.exception import InventoryExceptionRepository
 
-DATABASE_URL = "sqlite+aiosqlite:///./test_manual.db"
+import os
+os.environ["DATABASE_ENV"] = "test"
+DATABASE_URL = "sqlite+aiosqlite:///./test_seed.db"
 
 async def main():
     print("Seeding Golden Inventory Data...")

@@ -90,32 +90,37 @@ class PaymentService:
         from sqlalchemy import func, select as sa_select
         from src.domains.accounting.job_worker.models.payable_allocation import PayableAllocationModel as AllocModel
 
-        for expense in expenses:
-            if remaining <= 0:
-                break
-            alloc_stmt = sa_select(func.coalesce(func.sum(AllocModel.allocated_amount), 0)).where(
-                AllocModel.expense_id == expense.id
-            )
-            alloc_res = await self._session.execute(alloc_stmt)
-            already_allocated = Decimal(str(alloc_res.scalar() or 0))
-            expense_amount = Decimal(str(expense.amount))
-            available_on_expense = expense_amount - already_allocated
-
-            if available_on_expense <= 0:
-                continue
-
-            to_allocate = min(remaining, available_on_expense)
-            alloc = PayableAllocationModel(
-                expense_id=expense.id,
-                payment_id=payment.id,
-                allocated_amount=to_allocate,
-                created_by=created_by,
-                updated_by=created_by,
-            )
-            await self.payment_repo.create_allocation(alloc)
-            remaining -= to_allocate
-
-        return payment
+        try:
+            for expense in expenses:
+                if remaining <= 0:
+                    break
+                alloc_stmt = sa_select(func.coalesce(func.sum(AllocModel.allocated_amount), 0)).where(
+                    AllocModel.expense_id == expense.id
+                )
+                alloc_res = await self._session.execute(alloc_stmt)
+                already_allocated = Decimal(str(alloc_res.scalar() or 0))
+                expense_amount = Decimal(str(expense.amount))
+                available_on_expense = expense_amount - already_allocated
+    
+                if available_on_expense <= 0:
+                    continue
+    
+                to_allocate = min(remaining, available_on_expense)
+                alloc = PayableAllocationModel(
+                    expense_id=expense.id,
+                    payment_id=payment.id,
+                    allocated_amount=to_allocate,
+                    created_by=created_by,
+                    updated_by=created_by,
+                )
+                await self.payment_repo.create_allocation(alloc)
+                remaining -= to_allocate
+    
+            await self._session.commit()
+            return payment
+        except Exception as e:
+            await self._session.rollback()
+            raise e
 
     async def get_all_for_worker(self, job_worker_id: UUID) -> List[JobWorkerPaymentModel]:
         return await self.payment_repo.get_all_for_worker(job_worker_id)

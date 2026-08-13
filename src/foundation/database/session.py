@@ -24,3 +24,22 @@ class Database:
             yield session
 
 Base = declarative_base()
+
+from sqlalchemy import event, Delete
+from sqlalchemy.schema import MetaData
+from sqlalchemy.engine import Engine
+from src.foundation.database.safety import assert_destructive_operation_allowed
+
+@event.listens_for(MetaData, "before_drop")
+def protect_database_drop(target, connection, **kw):
+    # Retrieve the engine URL directly from the connection
+    url = str(connection.engine.url)
+    assert_destructive_operation_allowed("DROP ALL TABLES", url)
+
+@event.listens_for(Engine, "before_execute")
+def protect_database_execute(conn, clauseelement, multiparams, params, execution_options):
+    if isinstance(clauseelement, Delete):
+        # Block ALL raw bulk deletes via execution (including DELETE ... WHERE)
+        # Normal CRUD (session.delete) will not be intercepted here
+        url = str(conn.engine.url)
+        assert_destructive_operation_allowed("EXPLICIT BULK DELETE (session.execute(delete(...)))", url)

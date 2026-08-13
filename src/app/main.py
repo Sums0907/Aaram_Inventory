@@ -46,12 +46,6 @@ def create_app() -> FastAPI:
     domains_container.matching().wire(packages=["src.domains.matching"])
     domains_container.inventory().wire(packages=["src.domains.inventory", "src.api.v1"])
     domains_container.accounting().wire(packages=["src.domains.accounting", "src.api.v1"])
-    domains_container.accounting().wire(modules=[
-        "src.domains.accounting.job_worker.api.rates",
-        "src.domains.accounting.job_worker.api.expenses",
-        "src.domains.accounting.job_worker.api.payments",
-        "src.domains.accounting.job_worker.api.payables",
-    ])
     domains_container.connectors().wire(packages=["src.domains.connectors"])
     domains_container.wire(modules=[
         "src.api.v1.read_api_router", 
@@ -68,7 +62,11 @@ def create_app() -> FastAPI:
         "src.domains.inventory.api.job_work",
         "src.domains.inventory.api.exception_router",
         "src.domains.connectors.api.shopdeck_router",
-        "src.domains.masters.api.supplier"
+        "src.domains.masters.api.supplier",
+        "src.domains.accounting.job_worker.api.rates",
+        "src.domains.accounting.job_worker.api.expenses",
+        "src.domains.accounting.job_worker.api.payments",
+        "src.domains.accounting.job_worker.api.payables",
     ])
     
     # CORS Middleware (Frozen Strategy: explicit origins, never "*")

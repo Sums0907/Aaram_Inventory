@@ -1,22 +1,26 @@
 import { useState, useMemo, useRef } from "react"
-import { useSKUs, useCreateSKU, useUpdateSKU, type SKUResponse } from "@/api/masters"
+import { useSKUs, useCreateSKU, useUpdateSKU, useCreateInventoryItem, useUnitsOfMeasure, type SKUResponse } from "@/api/masters"
 import { useInventoryBalances } from "@/api/inventory"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Search, X, Package, AlertCircle, Plus, Upload } from "lucide-react"
-import { ExecutiveSummary } from "@/components/products/ExecutiveSummary"
-import { ProductFiltersSidebar, type ProductFilters, DEFAULT_FILTERS } from "@/components/products/ProductFiltersSidebar"
-import { ProductWorkspaceDialog } from "@/components/products/ProductWorkspaceDialog"
-import { InventoryItemFormDialog } from "@/components/products/InventoryItemFormDialog"
 import { Button } from "@/components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Papa from "papaparse"
+import { ExecutiveSummary } from "@/components/products/ExecutiveSummary"
+import { InventoryItemFormDialog } from "@/components/products/InventoryItemFormDialog"
+import { ProductWorkspaceDialog } from "@/components/products/ProductWorkspaceDialog"
+import { formatQuantityValue } from "@/lib/utils"
 
 export function ProductsPage() {
   const { data: skus, isLoading: isLoadingSkus } = useSKUs()
   const { data: balances, isLoading: isLoadingBalances } = useInventoryBalances()
+  const { data: uoms } = useUnitsOfMeasure()
   
   const [searchQuery, setSearchQuery] = useState("")
-  const [filters, setFilters] = useState<ProductFilters>(DEFAULT_FILTERS)
+  const [activeTab, setActiveTab] = useState("All")
+  const [selectedCategory, setSelectedCategory] = useState("All")
+  const [selectedSubcategory, setSelectedSubcategory] = useState("All")
   const [selectedSku, setSelectedSku] = useState<SKUResponse | null>(null)
   
   type SortOption = "name_asc" | "name_desc" | "price_asc" | "price_desc" | "stock_asc" | "stock_desc" | "updated_desc"
@@ -24,6 +28,7 @@ export function ProductsPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   
   const createMutation = useCreateSKU()
+  const createInventoryItemMutation = useCreateInventoryItem()
   const updateMutation = useUpdateSKU()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isImporting, setIsImporting] = useState(false)
@@ -41,25 +46,35 @@ export function ProductsPage() {
           let updated = 0
           let created = 0
           for (const row of results.data as any[]) {
-            if (!row.sku_code || !row.product_id) continue;
+            const skuId = row["Sku Id"] || row["sku_code"];
+            const name = row["Name"] || row["new_product_name"];
+            const category = row["Product Type"] || row["new_category_name"];
+            if (!skuId || !name) continue;
             
-            const existingSku = skus?.find(s => s.sku_code === row.sku_code)
-            const payload = {
-              sku_code: row.sku_code,
-              product_id: row.product_id,
-              color: row.color,
-              size: row.size,
-              barcode: row.barcode,
-              pattern: row.pattern,
-              material: row.material,
-              thread_count: row.thread_count
-            }
+            const existingSku = skus?.find(s => s.item_code === skuId || s.sku_code === skuId)
 
             if (existingSku) {
+              const payload = {
+                color: row["Colour"] || row.color,
+                size: row["Size"] || row.size,
+                material: row["attr_Material"] || row.material,
+                thread_count: row["attr_Thread Count (TC)"] || row.thread_count,
+              }
               await updateMutation.mutateAsync({ id: existingSku.id, data: payload })
               updated++
             } else {
-              await createMutation.mutateAsync(payload)
+              const payload = {
+                item_type: "FINISHED_GOODS",
+                new_category_name: category || "Uncategorized",
+                new_product_name: name,
+                item_code: skuId,
+                sku_code: skuId,
+                color: row["Colour"] || row.color,
+                size: row["Size"] || row.size,
+                material: row["attr_Material"] || row.material,
+                thread_count: row["attr_Thread Count (TC)"] || row.thread_count,
+              }
+              await createInventoryItemMutation.mutateAsync(payload)
               created++
             }
           }
@@ -80,7 +95,7 @@ export function ProductsPage() {
   const getInventoryCount = (skuId: string) => {
     if (!balances) return 0;
     const skuBalances = balances.filter((b: any) => b.sku_id === skuId);
-    return skuBalances.reduce((total: number, b: any) => total + (b.balance || 0), 0);
+    return skuBalances.reduce((total: number, b: any) => total + (Number(b.balance) || 0), 0);
   }
 
   const getInventoryConfidence = (skuId: string) => {
@@ -112,44 +127,25 @@ export function ProductsPage() {
       if (searchQuery) {
         const q = searchQuery.toLowerCase()
         const matchesSearch = 
-          sku.sku_code.toLowerCase().includes(q) ||
-          sku.product?.product_name?.toLowerCase().includes(q) ||
-          sku.product?.brand?.toLowerCase().includes(q)
+          sku?.sku_code?.toLowerCase().includes(q) ||
+          sku?.product?.product_name?.toLowerCase().includes(q) ||
+          sku?.product?.brand?.toLowerCase().includes(q)
         if (!matchesSearch) return false
       }
 
-      // 2. Item Type
-      if (filters.itemTypes.length > 0) {
-        if (!sku.product?.item_type || !filters.itemTypes.includes(sku.product.item_type)) return false
+      // 2. Tab Filter
+      if (activeTab !== "All") {
+        if (!sku.product?.item_type || sku.product.item_type !== activeTab) return false
       }
 
       // 3. Category
-      if (filters.categories.length > 0) {
-        if (!sku.product?.product_type || !filters.categories.includes(sku.product.product_type)) return false
+      if (selectedCategory !== "All") {
+        if (!sku.product?.product_type || sku.product.product_type !== selectedCategory) return false
       }
 
-      // 4. Brand
-      if (filters.brands.length > 0) {
-        if (!sku.product?.brand || !filters.brands.includes(sku.product.brand)) return false
-      }
-
-      // 4. Stock Status
-      const count = getInventoryCount(sku.id)
-      if (filters.stockStatus === "In Stock" && count <= 0) return false
-      if (filters.stockStatus === "Out of Stock" && count > 0) return false
-      if (filters.stockStatus === "Low Stock" && (count <= 0 || count >= 10)) return false // Using 10 as low stock threshold
-      if (filters.stockStatus === "Negative Stock" && count >= 0) return false
-
-      // 5. Price Range
-      const price = sku.pricing?.selling_price || 0
-      if (price < filters.priceRange[0] || price > filters.priceRange[1]) return false
-
-      // 6. Product Status (Mock logic if status is not exactly aligned, but backend uses GenericStatus)
-      if (filters.productStatus !== "All") {
-         const skuStatus = sku.status?.toUpperCase() || ""
-         if (filters.productStatus === "Active" && skuStatus !== "ACTIVE") return false
-         if (filters.productStatus === "Archived" && skuStatus !== "INACTIVE") return false
-         // Add hidden if needed
+      // 4. Subcategory (Brand)
+      if (selectedSubcategory !== "All") {
+        if (!sku.product?.brand || sku.product.brand !== selectedSubcategory) return false
       }
 
       return true
@@ -158,8 +154,8 @@ export function ProductsPage() {
       const bStock = getInventoryCount(b.id)
       const aPrice = a.pricing?.selling_price || 0
       const bPrice = b.pricing?.selling_price || 0
-      const aName = a.product?.product_name || a.sku_code
-      const bName = b.product?.product_name || b.sku_code
+      const aName = a.product?.product_name || a.sku_code || ""
+      const bName = b.product?.product_name || b.sku_code || ""
 
       switch (sortBy) {
         case "name_asc": return aName.localeCompare(bName)
@@ -173,32 +169,13 @@ export function ProductsPage() {
           return new Date(b.updated_on || 0).getTime() - new Date(a.updated_on || 0).getTime()
       }
     })
-  }, [skus, searchQuery, filters, balances, sortBy])
+  }, [skus, searchQuery, activeTab, selectedCategory, selectedSubcategory, balances, sortBy])
 
-  // Active filter chips
-  const activeFiltersCount = 
-    filters.itemTypes.length +
-    filters.categories.length + 
-    filters.brands.length + 
-    (filters.stockStatus !== "All Products" ? 1 : 0) + 
-    (filters.productStatus !== "Active" ? 1 : 0) +
-    (filters.priceRange[0] > 0 || filters.priceRange[1] < 10000 ? 1 : 0)
-
-  const removeFilter = (type: string, value?: string) => {
-    if (type === 'itemType' && value) {
-      setFilters(prev => ({ ...prev, itemTypes: prev.itemTypes.filter(t => t !== value) }))
-    } else if (type === 'category' && value) {
-      setFilters(prev => ({ ...prev, categories: prev.categories.filter(c => c !== value) }))
-    } else if (type === 'brand' && value) {
-      setFilters(prev => ({ ...prev, brands: prev.brands.filter(b => b !== value) }))
-    } else if (type === 'stockStatus') {
-      setFilters(prev => ({ ...prev, stockStatus: 'All Products' }))
-    } else if (type === 'productStatus') {
-      setFilters(prev => ({ ...prev, productStatus: 'Active' }))
-    } else if (type === 'priceRange') {
-      setFilters(prev => ({ ...prev, priceRange: [0, 10000] }))
-    }
-  }
+  // Calculate active UI filters count
+  const activeUiFiltersCount = 
+    (activeTab !== "All" ? 1 : 0) +
+    (selectedCategory !== "All" ? 1 : 0) + 
+    (selectedSubcategory !== "All" ? 1 : 0)
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-12">
@@ -211,16 +188,20 @@ export function ProductsPage() {
         <ExecutiveSummary skus={skus} balances={balances} />
       )}
 
-      {/* Main Layout: Sidebar + Content */}
-      <div className="flex gap-6 items-start mt-6">
+      {/* Main Layout */}
+      <div className="flex flex-col gap-6 items-stretch mt-6">
         
-        {/* Left Sidebar */}
-        <ProductFiltersSidebar 
-          filters={filters} 
-          setFilters={setFilters} 
-          availableCategories={availableCategories} 
-          availableBrands={availableBrands} 
-        />
+        {/* Top navigation tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="bg-slate-100 border p-1 rounded-lg">
+            <TabsTrigger value="All">All</TabsTrigger>
+            <TabsTrigger value="FINISHED_GOODS">Finished Goods</TabsTrigger>
+            <TabsTrigger value="RAW_MATERIAL">Raw Materials</TabsTrigger>
+            <TabsTrigger value="CONSUMABLE">Consumables</TabsTrigger>
+            <TabsTrigger value="PACKAGING">Packaging</TabsTrigger>
+            <TabsTrigger value="SEMI_FINISHED_GOODS">Semi-Finished Goods</TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0 space-y-4">
@@ -240,6 +221,23 @@ export function ProductsPage() {
               </div>
               
               <div className="flex items-center gap-3 shrink-0">
+                <select 
+                  className="h-[46px] px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm text-slate-700 font-medium"
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                >
+                  <option value="All">Category</option>
+                  {availableCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+                
+                <select 
+                  className="h-[46px] px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm text-slate-700 font-medium"
+                  value={selectedSubcategory}
+                  onChange={(e) => setSelectedSubcategory(e.target.value)}
+                >
+                  <option value="All">Subcategory</option>
+                  {availableBrands.map(b => <option key={b} value={b}>{b}</option>)}
+                </select>
                 <select 
                   className="h-[46px] px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm text-slate-700 font-medium"
                   value={sortBy}
@@ -281,46 +279,28 @@ export function ProductsPage() {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-sm text-slate-500 font-medium">Showing {filteredSkus.length} of {skus?.length || 0} Products</span>
                 
-                {activeFiltersCount > 0 && <span className="text-slate-300">|</span>}
+                {activeUiFiltersCount > 0 && <span className="text-slate-300">|</span>}
                 
-                {filters.itemTypes.map(t => (
-                  <Badge key={`type-${t}`} variant="secondary" className="bg-white border text-slate-700 flex items-center gap-1 font-normal">
-                    {t.replace('_', ' ')} <X className="h-3 w-3 cursor-pointer hover:text-rose-500" onClick={() => removeFilter('itemType', t)} />
-                  </Badge>
-                ))}
-
-                {filters.categories.map(c => (
-                  <Badge key={`cat-${c}`} variant="secondary" className="bg-white border text-slate-700 flex items-center gap-1 font-normal">
-                    {c} <X className="h-3 w-3 cursor-pointer hover:text-rose-500" onClick={() => removeFilter('category', c)} />
-                  </Badge>
-                ))}
-                
-                {filters.brands.map(b => (
-                  <Badge key={`brand-${b}`} variant="secondary" className="bg-white border text-slate-700 flex items-center gap-1 font-normal">
-                    {b} <X className="h-3 w-3 cursor-pointer hover:text-rose-500" onClick={() => removeFilter('brand', b)} />
-                  </Badge>
-                ))}
-
-                {filters.stockStatus !== "All Products" && (
+                {activeTab !== "All" && (
                   <Badge variant="secondary" className="bg-white border text-slate-700 flex items-center gap-1 font-normal">
-                    Stock: {filters.stockStatus} <X className="h-3 w-3 cursor-pointer hover:text-rose-500" onClick={() => removeFilter('stockStatus')} />
+                    {activeTab.replace('_', ' ')} <X className="h-3 w-3 cursor-pointer hover:text-rose-500" onClick={() => setActiveTab("All")} />
                   </Badge>
                 )}
 
-                {filters.productStatus !== "Active" && (
+                {selectedCategory !== "All" && (
                   <Badge variant="secondary" className="bg-white border text-slate-700 flex items-center gap-1 font-normal">
-                    Status: {filters.productStatus} <X className="h-3 w-3 cursor-pointer hover:text-rose-500" onClick={() => removeFilter('productStatus')} />
-                  </Badge>
-                )}
-
-                {(filters.priceRange[0] > 0 || filters.priceRange[1] < 10000) && (
-                  <Badge variant="secondary" className="bg-white border text-slate-700 flex items-center gap-1 font-normal">
-                    ₹{filters.priceRange[0]} - ₹{filters.priceRange[1]} <X className="h-3 w-3 cursor-pointer hover:text-rose-500" onClick={() => removeFilter('priceRange')} />
+                    {selectedCategory} <X className="h-3 w-3 cursor-pointer hover:text-rose-500" onClick={() => setSelectedCategory("All")} />
                   </Badge>
                 )}
                 
-                {activeFiltersCount > 0 && (
-                  <button onClick={() => setFilters(DEFAULT_FILTERS)} className="text-xs text-indigo-600 hover:underline ml-2">
+                {selectedSubcategory !== "All" && (
+                  <Badge variant="secondary" className="bg-white border text-slate-700 flex items-center gap-1 font-normal">
+                    {selectedSubcategory} <X className="h-3 w-3 cursor-pointer hover:text-rose-500" onClick={() => setSelectedSubcategory("All")} />
+                  </Badge>
+                )}
+                
+                {activeUiFiltersCount > 0 && (
+                  <button onClick={() => { setActiveTab("All"); setSelectedCategory("All"); setSelectedSubcategory("All") }} className="text-xs text-indigo-600 hover:underline ml-2">
                     Clear Filters
                   </button>
                 )}
@@ -340,7 +320,7 @@ export function ProductsPage() {
                       <tr>
                         <th className="px-4 py-3 font-medium">Item Identity</th>
                         <th className="px-4 py-3 font-medium">Type & Category</th>
-                        <th className="px-4 py-3 font-medium text-right">Price</th>
+                        <th className="px-4 py-3 font-medium text-right">UoM</th>
                         <th className="px-4 py-3 font-medium text-right w-48">Inventory Count</th>
                         <th className="px-4 py-3 font-medium text-center">Confidence</th>
                       </tr>
@@ -374,22 +354,33 @@ export function ProductsPage() {
                               </div>
                             </td>
                             <td className="px-4 py-4">
-                              <div className="flex flex-col gap-1">
+                              <div className="flex flex-col gap-1.5">
                                 <Badge variant="secondary" className="w-fit bg-slate-100 text-slate-600 font-normal">
                                   {sku.product?.item_type?.replace('_', ' ') || 'FINISHED GOODS'}
                                 </Badge>
+                                {sku.product?.item_type === 'FINISHED_GOODS' && (
+                                  sku.has_bom ? (
+                                    <Badge variant="outline" className="w-fit bg-emerald-50 text-emerald-700 border-emerald-200 font-normal flex items-center gap-1 text-[10px] px-1.5 py-0">
+                                      ✓ BOM Configured
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="w-fit bg-rose-50 text-rose-700 border-rose-200 font-normal flex items-center gap-1 text-[10px] px-1.5 py-0">
+                                      <AlertCircle className="h-3 w-3" /> Missing BOM
+                                    </Badge>
+                                  )
+                                )}
                                 {sku.product?.product_type && (
                                   <span className="text-xs text-slate-500">{sku.product.product_type}</span>
                                 )}
                               </div>
                             </td>
                             <td className="px-4 py-4 text-right">
-                              <span className="font-medium text-slate-900">₹{sku.pricing?.selling_price || 0}</span>
+                              <span className="font-medium text-slate-900">{uoms?.find(u => u.id === (sku as any).uom_id)?.short_name || "-"}</span>
                             </td>
                             <td className="px-4 py-4 text-right">
                               <div className="flex justify-end">
                                 <Badge variant="outline" className={`font-mono text-base px-3 py-1 border-2 ${count > 0 ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : count < 0 ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
-                                  {count}
+                                  {formatQuantityValue(count, uoms?.find(u => u.id === (sku as any).uom_id)?.unit_type)} {uoms?.find(u => u.id === (sku as any).uom_id)?.short_name || "units"}
                                 </Badge>
                               </div>
                             </td>
@@ -412,7 +403,7 @@ export function ProductsPage() {
                   </div>
                   <h3 className="text-lg font-medium text-slate-900">No products match your current filters.</h3>
                   <p className="text-sm mt-1 mb-6">Try removing some filters or searching differently.</p>
-                  <button onClick={() => setFilters(DEFAULT_FILTERS)} className="px-4 py-2 bg-white border border-slate-200 rounded-md text-sm font-medium hover:bg-slate-50 shadow-sm text-slate-700">
+                  <button onClick={() => { setActiveTab("All"); setSelectedCategory("All"); setSelectedSubcategory("All") }} className="px-4 py-2 bg-white border border-slate-200 rounded-md text-sm font-medium hover:bg-slate-50 shadow-sm text-slate-700">
                     Clear All Filters
                   </button>
                 </div>

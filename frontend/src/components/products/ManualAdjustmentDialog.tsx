@@ -1,3 +1,4 @@
+import { formatQuantityValue } from "@/lib/utils"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -18,7 +19,7 @@ interface ManualAdjustmentDialogProps {
 }
 
 const adjustmentSchema = z.object({
-  quantity: z.number().min(1, "Quantity must be at least 1"),
+  quantity: z.number().min(0.001, "Quantity must be greater than 0"),
   reason: z.string().min(1, "Reason is required"),
   reference_number: z.string().min(1, "Reference number is required"),
   remarks: z.string().optional()
@@ -110,7 +111,8 @@ export function ManualAdjustmentDialog({ skuId, open, onOpenChange, type, onSucc
               <input
                 id="quantity"
                 type="number"
-                min="1"
+                min="0.001"
+                step="any"
                 className="flex h-10 w-full rounded-md border border-slate-300 bg-transparent px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 {...form.register("quantity", { valueAsNumber: true })}
               />

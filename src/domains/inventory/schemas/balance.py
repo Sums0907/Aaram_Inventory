@@ -7,7 +7,7 @@ from src.foundation.validation.base import BaseSchema
 class InventoryBalanceBase(BaseSchema):
     warehouse_id: UUID
     sku_id: UUID
-    quantity_on_hand: int
+    quantity_on_hand: float
     confidence_score: int = Field(default=100, ge=0, le=100)
     confidence_reasons: List[str] = Field(default_factory=list)
     last_movement_date: Optional[datetime] = None

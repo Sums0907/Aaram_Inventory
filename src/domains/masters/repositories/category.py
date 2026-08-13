@@ -45,6 +45,12 @@ class CategoryRepository:
         await self.session.commit()
         await self.session.refresh(category)
         return category
+        
+    async def delete(self, category_id: UUID) -> None:
+        category = await self.get_by_id(category_id)
+        if category:
+            await self.session.delete(category)
+            await self.session.commit()
 
     async def set_category_attributes(self, category_id: UUID, attribute_names: List[str]) -> None:
         from src.domains.masters.models.product_attribute import ProductAttributeModel

@@ -10,15 +10,25 @@ class JobWorkExpenseRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def create(self, obj: JobWorkExpenseModel) -> JobWorkExpenseModel:
-        self.session.add(obj)
+    async def create(self, obj: JobWorkExpenseModel, session: Optional[AsyncSession] = None) -> JobWorkExpenseModel:
+        db = session or self.session
+        db.add(obj)
         return obj
 
-    async def exists_for_receipt(self, source_receipt_id: UUID) -> bool:
-        """Guard: prevent duplicate expenses for the same receipt."""
+    async def exists_for_receipt_item(self, source_receipt_id: UUID, sku_id: UUID, session: Optional[AsyncSession] = None) -> bool:
+        """Guard: prevent duplicate expenses for the same receipt line item."""
+        db = session or self.session
         stmt = select(JobWorkExpenseModel.id).where(
             JobWorkExpenseModel.source_receipt_id == source_receipt_id,
+            JobWorkExpenseModel.finished_product_id == sku_id,
             JobWorkExpenseModel.status == "POSTED",
+        )
+        res = await db.execute(stmt)
+        return res.scalars().first() is not None
+
+    async def exists_by_rate_id(self, rate_id: UUID) -> bool:
+        stmt = select(JobWorkExpenseModel.id).where(
+            JobWorkExpenseModel.rate_version_id == rate_id
         )
         res = await self.session.execute(stmt)
         return res.scalars().first() is not None

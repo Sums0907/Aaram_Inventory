@@ -7,14 +7,14 @@ export interface HierarchyResponse {
   products: ProductInfo[];
 }
 
-export const fetchInventoryHierarchy = async (): Promise<HierarchyResponse> => {
-  const response = await apiClient.get<{ data: HierarchyResponse }>("/masters/hierarchy");
+export const fetchInventoryHierarchy = async (onlyArchived: boolean = false): Promise<HierarchyResponse> => {
+  const response = await apiClient.get<{ data: HierarchyResponse }>(`/masters/hierarchy?only_archived=${onlyArchived}`);
   return (response as any).data;
 };
 
-export const useInventoryHierarchy = () => {
+export const useInventoryHierarchy = (onlyArchived: boolean = false) => {
   return useQuery({
-    queryKey: ["inventory-hierarchy"],
-    queryFn: fetchInventoryHierarchy,
+    queryKey: ["inventory-hierarchy", onlyArchived],
+    queryFn: () => fetchInventoryHierarchy(onlyArchived),
   });
 };

@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: list[str] = Field(default=["http://localhost:5173", "http://localhost:3000"])
 
     # Database Config
+    DATABASE_ENV: str = Field(default="development")
     DATABASE_URL: str = Field(default="postgresql+asyncpg://postgres:postgres@localhost:5432/aarambooks")
     DATABASE_URL_SYNC: str = Field(default="postgresql://postgres:postgres@localhost:5432/aarambooks")
     DB_POOL_SIZE: int = Field(default=5)

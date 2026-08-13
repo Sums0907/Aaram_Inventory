@@ -86,3 +86,9 @@ class CategoryService:
         category.status = GenericStatus.ARCHIVED
         category.updated_by = updated_by
         return await self.repository.update(category)
+        
+    async def delete_category(self, category_id: UUID) -> None:
+        category = await self.get_category(category_id)
+        if category.status != GenericStatus.ARCHIVED:
+            raise ValidationException(message="Only archived categories can be permanently deleted")
+        await self.repository.delete(category_id)

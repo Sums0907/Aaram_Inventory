@@ -2,7 +2,7 @@ import uuid
 from typing import List
 from datetime import date
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, Date, Uuid, ForeignKey, Integer, Text
+from sqlalchemy import Numeric, String, Date, Uuid, ForeignKey, Integer, Text
 from src.foundation.database.models import BaseModel
 
 class PurchaseReturn(BaseModel):
@@ -26,7 +26,7 @@ class PurchaseReturnItem(BaseModel):
     return_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("inventory_purchase_returns.id"), nullable=False)
     sku_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("skus.id"), nullable=False)
     
-    quantity: Mapped[int] = mapped_column(Integer, nullable=False)
+    quantity: Mapped[float] = mapped_column(Numeric(15, 3), nullable=False)
     unit_of_measure: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
     purchase_return: Mapped["PurchaseReturn"] = relationship("PurchaseReturn", back_populates="items")

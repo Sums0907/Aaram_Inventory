@@ -94,6 +94,7 @@ class InventoryItemService:
                 thread_count=schema.thread_count,
                 attribute_values=schema.attribute_values,
                 barcode=schema.barcode,
+                uom_id=schema.uom_id,
                 created_by=user_id,
                 updated_by=user_id
             )

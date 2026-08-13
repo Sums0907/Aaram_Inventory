@@ -9,6 +9,7 @@ from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Optional, List
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from src.foundation.database.models import SequenceModel
 from src.domains.accounting.job_worker.repositories.expenses import JobWorkExpenseRepository
 from src.domains.accounting.job_worker.repositories.rates import JobWorkRateRepository
@@ -55,43 +56,48 @@ class ExpenseService:
         receipt_date: date,
         created_by: UUID,
         rate_override: Optional[float] = None,
+        session: Optional[AsyncSession] = None,
     ) -> Optional[JobWorkExpenseModel]:
         """
         Called by GoodsReceiptService after a JOB_WORK_RECEIPT is posted.
 
         Returns:
-            The created JobWorkExpenseModel, or None if no rate is configured
-            and rate_override is also not provided.
+            The created JobWorkExpenseModel.
 
         Raises:
-            ValidationException if a duplicate expense for this receipt already exists.
+            ValidationException if a duplicate expense exists, or if no active rate is configured.
         """
-        # Guard: no duplicate expense for same receipt
-        if await self.expense_repo.exists_for_receipt(receipt_id):
+        # Guard: no duplicate expense for same receipt and item
+        if await self.expense_repo.exists_for_receipt_item(receipt_id, sku_id, session=session):
             raise ValidationException(
-                f"An expense already exists for receipt {receipt_number}. Duplicate prevented."
+                f"An expense already exists for receipt {receipt_number} and SKU. Duplicate prevented."
             )
 
         # Determine rate
+        rate_version_id = None
         if rate_override is not None:
             rate = Decimal(str(rate_override))
             rate_basis = "PER_PIECE"
         else:
             rate_model = await self.rate_repo.get_applicable_rate(
-                job_worker_id, sku_id, receipt_date
+                job_worker_id, sku_id, session=session
             )
             if rate_model is None:
-                # No rate configured — return None, the caller handles the warning
-                return None
+                raise ValidationException(
+                    "No active Job Work rate is configured for this Job Worker and Product."
+                )
             rate = Decimal(str(rate_model.rate))
             rate_basis = rate_model.rate_basis
+            rate_version_id = rate_model.id
 
         qty = Decimal(str(quantity))
         amount = (qty * rate).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
         today = date.today()
         prefix = f"JWE-{today.strftime('%d%m%y')}"
-        reference = await _next_seq(self._session, prefix)
+        
+        db = session or self._session
+        reference = await _next_seq(db, prefix)
 
         expense = JobWorkExpenseModel(
             reference=reference,
@@ -100,6 +106,7 @@ class ExpenseService:
             quantity=qty,
             rate=rate,
             rate_basis=rate_basis,
+            rate_version_id=rate_version_id,
             amount=amount,
             source_receipt_id=receipt_id,
             source_receipt_number=receipt_number,
@@ -108,7 +115,7 @@ class ExpenseService:
             created_by=created_by,
             updated_by=created_by,
         )
-        await self.expense_repo.create(expense)
+        await self.expense_repo.create(expense, session=session)
         return expense
 
     async def create_manual(

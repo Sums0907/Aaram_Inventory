@@ -3,12 +3,21 @@ import { apiClient } from './client';
 
 export interface InventoryBalanceResponse {
   sku_id: string;
+  warehouse_id: string;
   warehouse: string;
   sku_code: string;
   sku_name: string;
   balance: number;
   confidence_score: number;
   in_transit: number;
+}
+
+export interface InventoryPositionResponse {
+  sku_id: string;
+  total_stock: number;
+  warehouse_stock: number;
+  job_worker_total: number;
+  job_workers: { name: string; stock: number }[];
 }
 
 interface ListBalancesResponse {
@@ -55,7 +64,7 @@ export function useInventoryBalances() {
       const payload = await apiClient.get<any>('/inventory/balances', {
         headers: { Authorization: `Bearer ${TOKEN}` }
       }) as any;
-      return payload?.data || [];
+      return Array.isArray(payload) ? payload : (payload?.data || []);
     },
   });
 }
@@ -121,6 +130,16 @@ export interface ManualAdjustmentRequest {
   adjustment_date: string;
 }
 
+export interface StockCountAdjustmentRequest {
+  warehouse_id: string;
+  sku_id: string;
+  system_quantity: number;
+  physical_count: number;
+  difference: number;
+  stock_count_reference: string;
+  count_date: string;
+}
+
 export function useCreateManualAdjustment() {
   const queryClient = useQueryClient();
 
@@ -135,6 +154,34 @@ export function useCreateManualAdjustment() {
       queryClient.invalidateQueries({ queryKey: ['inventory-balances'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-ledger', variables.sku_id] });
       queryClient.invalidateQueries({ queryKey: ['inventory-confidence', variables.sku_id] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-activities'] });
+    },
+  });
+}
+
+export function useCreateStockCountAdjustment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: StockCountAdjustmentRequest) => {
+      const response = await apiClient.post<any>('/inventory/movements/stock-counts', data);
+      return response;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['inventory-balances'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-ledger', variables.sku_id] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-confidence', variables.sku_id] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-activities'] });
+    },
+  });
+}
+
+export function useInventoryPosition() {
+  return useQuery({
+    queryKey: ['inventory-position'],
+    queryFn: async () => {
+      const response = await apiClient.get<{ success: boolean; data: InventoryPositionResponse[] }>('/inventory/position');
+      return response.data.data;
     },
   });
 }

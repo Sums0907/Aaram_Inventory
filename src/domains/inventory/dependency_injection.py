@@ -11,9 +11,24 @@ from src.domains.inventory.services.confidence_engine import ConfidenceEngine
 from src.domains.inventory.services.balance_calculator import BalanceCalculatorService
 from src.domains.inventory.services.goods_receipt import GoodsReceiptService
 from src.domains.inventory.services.purchase_return import PurchaseReturnService
+from src.domains.inventory.repositories.job_work import JobWorkRepository
+from src.domains.inventory.services.job_work import JobWorkService
+from src.domains.inventory.repositories.exception import InventoryExceptionRepository
+from src.domains.inventory.services.exception import InventoryExceptionService
+from src.domains.inventory.services.transformation_engine import InventoryTransformationEngine
 
 class InventoryContainer(containers.DeclarativeContainer):
     db = providers.Dependency()
+
+    exception_repository = providers.Factory(
+        InventoryExceptionRepository,
+        session=db.provided._session_factory.call(),
+    )
+    
+    exception_service = providers.Factory(
+        InventoryExceptionService,
+        repository=exception_repository,
+    )
 
     movement_repository = providers.Factory(
         InventoryMovementRepository,
@@ -65,14 +80,31 @@ class InventoryContainer(containers.DeclarativeContainer):
         movement_repository=movement_repository,
     )
 
+    transformation_engine = providers.Factory(
+        InventoryTransformationEngine,
+        movement_service=movement_service,
+    )
+
     goods_receipt_service = providers.Factory(
         GoodsReceiptService,
         repository=goods_receipt_repository,
         movement_service=movement_service,
+        transformation_engine=transformation_engine,
     )
 
     purchase_return_service = providers.Factory(
         PurchaseReturnService,
         repository=purchase_return_repository,
+        movement_service=movement_service,
+    )
+
+    job_work_repository = providers.Factory(
+        JobWorkRepository,
+        session=db.provided._session_factory.call(),
+    )
+
+    job_work_service = providers.Factory(
+        JobWorkService,
+        repository=job_work_repository,
         movement_service=movement_service,
     )

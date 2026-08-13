@@ -1,3 +1,4 @@
+import { formatQuantityValue } from "@/lib/utils"
 import React from "react"
 import { useInventoryLedger, useInventoryConfidence } from "@/api/inventory"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
@@ -134,7 +135,7 @@ export function LedgerDashboardDialog({ skuId, skuCode, skuName, isOpen, onClose
                                 <div className="text-right">
                                   <div className={`text-sm font-bold flex items-center justify-end gap-1 ${isNegative ? 'text-amber-600' : 'text-emerald-600'}`}>
                                     {isNegative ? <TrendingDown className="h-3 w-3" /> : <TrendingUp className="h-3 w-3" />}
-                                    {entry.movement.quantity > 0 ? '+' : ''}{entry.movement.quantity}
+                                    {entry.movement.quantity > 0 ? '+' : ''}{formatQuantityValue(entry.movement.quantity)}
                                   </div>
                                   <div className="text-xs text-slate-400 mt-1 font-mono bg-slate-100 px-2 py-0.5 rounded inline-block">
                                     Balance: {entry.running_balance}

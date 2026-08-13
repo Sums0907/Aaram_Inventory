@@ -7,7 +7,9 @@ from src.domains.accounting.models import *
 from src.domains.connectors.models import *
 
 async def create_tables():
-    engine = create_async_engine("sqlite+aiosqlite:///./test_manual.db", echo=True)
+    import os
+    os.environ["DATABASE_ENV"] = "test"
+    engine = create_async_engine("sqlite+aiosqlite:///./test_recreate.db", echo=True)
     async with engine.begin() as conn:
         await conn.run_sync(BaseModel.metadata.create_all)
     print("Tables created successfully.")

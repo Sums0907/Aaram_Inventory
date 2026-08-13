@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { useSupplier, useCreateSupplier, useUpdateSupplier } from "@/api/suppliers"
 
 const supplierSchema = z.object({
@@ -26,6 +27,7 @@ const supplierSchema = z.object({
   contact_number: z.string().optional(),
   email: z.string().email("Invalid email address").optional().or(z.literal("")),
   address: z.string().optional(),
+  is_job_worker: z.boolean().default(false),
 })
 
 type SupplierFormValues = z.infer<typeof supplierSchema>
@@ -49,6 +51,7 @@ export function SupplierDialog({ open, onOpenChange, supplierId }: SupplierDialo
       contact_number: "",
       email: "",
       address: "",
+      is_job_worker: false,
     },
   })
 
@@ -60,6 +63,7 @@ export function SupplierDialog({ open, onOpenChange, supplierId }: SupplierDialo
         contact_number: supplier.contact_number || "",
         email: supplier.email || "",
         address: supplier.address || "",
+        is_job_worker: supplier.is_job_worker || false,
       })
     } else if (!supplierId) {
       form.reset({
@@ -68,6 +72,7 @@ export function SupplierDialog({ open, onOpenChange, supplierId }: SupplierDialo
         contact_number: "",
         email: "",
         address: "",
+        is_job_worker: false,
       })
     }
   }, [supplier, supplierId, form])
@@ -165,6 +170,29 @@ export function SupplierDialog({ open, onOpenChange, supplierId }: SupplierDialo
                       <Input placeholder="Full address" {...field} />
                     </FormControl>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="is_job_worker"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">
+                        Job Worker
+                      </FormLabel>
+                      <div className="text-sm text-muted-foreground">
+                        Allow issuing and receiving materials for job work.
+                      </div>
+                    </div>
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
                   </FormItem>
                 )}
               />

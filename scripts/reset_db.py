@@ -2,9 +2,39 @@ import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from src.foundation.database.session import Base
 from src.domains.accounting.models.ledger import LedgerModel
+import sys
 import os
 
-TEST_DATABASE_URL = "sqlite+aiosqlite:///./test_manual.db"
+def require_test_environment():
+    env = os.environ.get("DATABASE_ENV", "development").lower()
+    if env != "test":
+        print("DATABASE RESET REQUEST\n")
+        print("Environment:\n" + env.upper())
+        print("\nDestructive operation:\nBLOCKED")
+        print("\nDATABASE_ENV must be 'test' to run reset_db.py")
+        sys.exit(1)
+        
+    db_url = os.environ.get("RESET_DATABASE_URL")
+    if not db_url:
+        print("DATABASE RESET REQUEST\n")
+        print("RESET_DATABASE_URL environment variable is required.")
+        print("Example: RESET_DATABASE_URL=sqlite+aiosqlite:///test_cert_reset.db")
+        sys.exit(1)
+        
+    if "test_manual" in db_url or "prod" in db_url:
+        print("DATABASE RESET REQUEST\n")
+        print(f"Target:\n{db_url}")
+        print("\nDestructive operation:\nBLOCKED")
+        print("\nCannot reset a development or production database.")
+        sys.exit(1)
+        
+    print("DATABASE RESET REQUEST\n")
+    print(f"Target:\n{db_url}")
+    print("\nEnvironment:\nTEST")
+    print("\nDestructive operation:\nALLOWED\n\nProceeding...")
+    return db_url
+
+TEST_DATABASE_URL = require_test_environment()
 
 # Import all models to register them with Base.metadata
 from src.domains.masters.models import CategoryModel, UnitOfMeasureModel, ProductAttributeModel, ProductModel, SKUModel, CompanyModel, WarehouseModel, PricingModel, PackagingModel, ProductImageModel
@@ -20,12 +50,17 @@ from src.domains.matching.models.job import MatchJobModel
 from src.domains.matching.models.relationship import MatchRelationshipModel
 from src.domains.matching.models.exception import MatchExceptionModel
 from src.domains.inventory.models.movement import InventoryMovementModel
+from src.domains.inventory.models.balance import InventoryBalanceModel
+from src.domains.inventory.models.exception import InventoryExceptionModel
+from src.domains.inventory.models.goods_receipt import GoodsReceipt, GoodsReceiptItem
+from src.domains.inventory.models.job_work import JobWorkIssueModel, JobWorkReturnModel, JobWorkReceiptModel, JobWorkerInventoryModel
+
+from src.domains.masters.models.bom import BOMModel, BOMItemModel
 from src.domains.accounting.models.ledger import LedgerModel
 from src.domains.accounting.models.journal import JournalEntryModel, JournalLineModel
 import uuid
 
 async def main():
-    print("Resetting database test_manual.db...")
     test_engine = create_async_engine(TEST_DATABASE_URL, echo=False)
     TestingSessionLocal = async_sessionmaker(bind=test_engine, class_=AsyncSession, expire_on_commit=False)
     

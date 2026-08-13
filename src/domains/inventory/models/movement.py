@@ -17,7 +17,7 @@ class InventoryMovementModel(BaseModel):
     warehouse_id: Mapped[UUID] = mapped_column(ForeignKey("warehouses.id"), nullable=False, index=True)
     sku_id: Mapped[UUID] = mapped_column(ForeignKey("skus.id"), nullable=False, index=True)
     
-    quantity: Mapped[int] = mapped_column(nullable=False) # positive for IN, negative for OUT
+    quantity: Mapped[float] = mapped_column(Numeric(15, 3), nullable=False) # positive for IN, negative for OUT
     unit_cost: Mapped[float] = mapped_column(Numeric(15, 2), nullable=False, default=0.0)
     
     reference_type: Mapped[str] = mapped_column(String(100), nullable=False) # e.g. SALES_ORDER

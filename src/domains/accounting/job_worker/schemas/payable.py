@@ -12,6 +12,7 @@ class PayableLedgerEntry(BaseModel):
     expense: Optional[float]  # amount if this is a charge row
     payment: Optional[float]  # amount if this is a payment row
     outstanding: float        # running balance
+    metadata: Optional[dict] = None  # e.g. quantity, sku_id, rate for GRNs; payment_account, notes for PAY
 
 
 class JobWorkerPayableSummary(BaseModel):

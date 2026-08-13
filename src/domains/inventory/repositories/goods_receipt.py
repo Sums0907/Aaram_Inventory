@@ -38,8 +38,13 @@ class GoodsReceiptRepository:
         )
         return list(result.scalars().all()), total
 
-    async def create(self, grn: GoodsReceipt) -> GoodsReceipt:
-        self.session.add(grn)
-        await self.session.commit()
-        # After commit, the object is expired. We re-fetch it with selectinload to ensure relationships are loaded and prevent MissingGreenlet errors.
-        return await self.get_by_id(grn.id)
+    async def create(self, grn: GoodsReceipt, session: AsyncSession = None) -> GoodsReceipt:
+        db_session = session or self.session
+        db_session.add(grn)
+        if not session:
+            await db_session.commit()
+            # After commit, the object is expired. We re-fetch it with selectinload to ensure relationships are loaded and prevent MissingGreenlet errors.
+            return await self.get_by_id(grn.id)
+        else:
+            await db_session.flush()
+            return grn

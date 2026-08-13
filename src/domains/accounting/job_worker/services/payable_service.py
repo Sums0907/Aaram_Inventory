@@ -38,24 +38,35 @@ class PayableService:
         # Build chronological entries
         entries: List[dict] = []
         for e in expenses:
-            created = e.created_on.replace(tzinfo=None) if e.created_on else e.expense_date
+            created_ts = e.created_on.timestamp() if e.created_on else 0
             entries.append({
                 "date": e.expense_date,
                 "particular": f"Job Work Charges",
                 "reference": e.source_receipt_number or e.reference,
                 "expense": float(e.amount),
                 "payment": None,
-                "sort_key": (e.expense_date, created),
+                "metadata": {
+                    "sku_id": str(e.finished_product_id),
+                    "quantity": float(e.quantity),
+                    "rate": float(e.rate),
+                    "rate_basis": e.rate_basis,
+                },
+                "sort_key": (e.expense_date, created_ts),
             })
         for p in payments:
-            created = p.created_on.replace(tzinfo=None) if p.created_on else p.payment_date
+            created_ts = p.created_on.timestamp() if p.created_on else 0
             entries.append({
                 "date": p.payment_date,
                 "particular": "Payment",
                 "reference": p.reference,
                 "expense": None,
                 "payment": float(p.amount),
-                "sort_key": (p.payment_date, created),
+                "metadata": {
+                    "payment_account": p.payment_account,
+                    "payment_reference": p.payment_reference,
+                    "notes": p.notes,
+                },
+                "sort_key": (p.payment_date, created_ts),
             })
 
         entries.sort(key=lambda x: x["sort_key"])
@@ -75,6 +86,7 @@ class PayableService:
                     expense=e["expense"],
                     payment=e["payment"],
                     outstanding=float(running),
+                    metadata=e.get("metadata"),
                 )
             )
 

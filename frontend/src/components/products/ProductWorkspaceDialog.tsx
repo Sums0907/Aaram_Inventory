@@ -3,10 +3,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useDeactivateSKU, useArchiveSKU, type SKUResponse } from "@/api/masters"
-import { ImageIcon, Package, Info, History, ShieldAlert, Tag, Box, FileText, BarChart3, AlertCircle, CheckCircle2, Edit, EyeOff, Trash2 } from "lucide-react"
+import { ImageIcon, Package, Info, History, ShieldAlert, Tag, Box, FileText, BarChart3, AlertCircle, CheckCircle2, Edit, EyeOff, Trash2, ArrowDownToLine, ArrowUpFromLine, RefreshCcw, Settings2, ArrowRightLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { SKUFormDialog } from "./SKUFormDialog"
 import { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
+import { inventoryActivitiesApi } from "@/api/activities"
+import { formatQuantityValue } from "@/lib/utils"
 
 import { QuickInventoryActionCard } from "./QuickInventoryActionCard"
 
@@ -22,6 +25,25 @@ export function ProductWorkspaceDialog({ sku, open, onOpenChange, inventoryCount
   const [activeTab, setActiveTab] = useState("overview")
   const deactivateMutation = useDeactivateSKU()
   const archiveMutation = useArchiveSKU()
+
+  const { data: activitiesData, isLoading: isLoadingActivities } = useQuery({
+    queryKey: ['activities', sku?.id],
+    queryFn: () => inventoryActivitiesApi.getActivities({ sku_id: sku?.id, limit: 100 }),
+    enabled: !!sku?.id
+  })
+
+  function getActivityIcon(type: string) {
+    switch (type) {
+      case 'PURCHASE_RECEIPT': return <ArrowDownToLine className="h-4 w-4 text-emerald-600" />
+      case 'SALES_FULFILLMENT': return <ArrowUpFromLine className="h-4 w-4 text-amber-600" />
+      case 'CUSTOMER_RETURN': return <RefreshCcw className="h-4 w-4 text-emerald-600" />
+      case 'MANUAL_ADJUSTMENT': return <Settings2 className="h-4 w-4 text-slate-600" />
+      case 'STOCK_COUNT_ADJUSTMENT': return <Settings2 className="h-4 w-4 text-slate-600" />
+      case 'JOB_WORK_ISSUE': return <ArrowUpFromLine className="h-4 w-4 text-indigo-600" />
+      case 'JOB_WORK_RECEIPT': return <ArrowDownToLine className="h-4 w-4 text-indigo-600" />
+      default: return <ArrowRightLeft className="h-4 w-4 text-slate-600" />
+    }
+  }
 
   if (!sku) return null
 
@@ -319,10 +341,59 @@ export function ProductWorkspaceDialog({ sku, open, onOpenChange, inventoryCount
                 </div>
               </TabsContent>
               
-              <TabsContent value="ledger" className="mt-0 bg-white p-12 text-center rounded-lg border border-slate-200 shadow-sm">
-                <History className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-slate-900 mb-2">Inventory Ledger</h3>
-                <p className="text-slate-500 max-w-md mx-auto">Chronological record of every inventory movement for this SKU, directly from the Truth Engine.</p>
+              <TabsContent value="ledger" className="mt-0 h-full pb-10">
+                <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="p-4 border-b bg-slate-50/50 flex justify-between items-center">
+                    <h3 className="font-semibold flex items-center gap-2 text-slate-900">
+                      <History className="h-5 w-5 text-indigo-600" /> 
+                      Inventory Ledger
+                    </h3>
+                  </div>
+                  
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm whitespace-nowrap">
+                      <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-medium">
+                        <tr>
+                          <th className="px-4 py-3">Date</th>
+                          <th className="px-4 py-3">Type</th>
+                          <th className="px-4 py-3">Reference</th>
+                          <th className="px-4 py-3 text-right">Quantity</th>
+                          <th className="px-4 py-3 text-right">Balance After</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {isLoadingActivities ? (
+                          <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-500">Loading ledger...</td></tr>
+                        ) : activitiesData?.items && activitiesData.items.length > 0 ? (
+                          activitiesData.items.map((activity) => (
+                            <tr key={activity.id} className="hover:bg-slate-50 transition-colors">
+                              <td className="px-4 py-3 text-slate-500">
+                                {new Date(activity.date).toLocaleString(undefined, {
+                                  month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                                })}
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                  {getActivityIcon(activity.activity_type)}
+                                  <span className="font-medium text-slate-700 capitalize">{activity.activity_name}</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-slate-600">{activity.reference.number}</td>
+                              <td className={`px-4 py-3 text-right font-medium ${activity.quantity > 0 ? "text-emerald-600" : activity.quantity < 0 ? "text-rose-600" : "text-slate-600"}`}>
+                                {activity.quantity > 0 ? "+" : ""}{formatQuantityValue(activity.quantity)}
+                              </td>
+                              <td className="px-4 py-3 text-right font-medium text-slate-900">
+                                {activity.balance_after_activity !== null ? formatQuantityValue(activity.balance_after_activity) : "-"}
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-500">No movements found.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </TabsContent>
 
               <TabsContent value="confidence" className="mt-0 bg-white p-12 text-center rounded-lg border border-slate-200 shadow-sm">

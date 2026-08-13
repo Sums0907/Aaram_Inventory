@@ -10,6 +10,7 @@ class UnitOfMeasureModel(BaseModel):
     unit_name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     short_name: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
     description: Mapped[str] = mapped_column(String(255), nullable=True)
+    unit_type: Mapped[str] = mapped_column(String(20), nullable=False, default="INTEGER", server_default="INTEGER")
     
     status: Mapped[GenericStatus] = mapped_column(
         SQLAlchemyEnum(GenericStatus, name="generic_status", create_type=False),

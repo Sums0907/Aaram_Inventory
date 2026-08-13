@@ -18,7 +18,35 @@ from src.domains.inventory.schemas.movement import (
     InventoryMovementResponse
 )
 
+from typing import Optional
+
 router = APIRouter(prefix="/inventory/movements", tags=["inventory-operations"])
+
+from datetime import date
+
+@router.get("/activities")
+@inject
+async def get_inventory_activities(
+    skip: int = 0,
+    limit: int = 100,
+    movement_type: Optional[str] = None,
+    sku_id: Optional[uuid.UUID] = None,
+    item_type: Optional[str] = None,
+    date_from: Optional[date] = None,
+    date_to: Optional[date] = None,
+    movement_service: InventoryMovementService = Depends(Provide[DomainsContainer.inventory.movement_service])
+):
+    activities = await movement_service.get_activities(
+        skip=skip, 
+        limit=limit, 
+        movement_type=movement_type, 
+        sku_id=sku_id,
+        item_type=item_type,
+        date_from=date_from,
+        date_to=date_to
+    )
+    return SuccessResponse(data=activities)
+
 
 @router.post("/purchase-receipts", response_model=SuccessResponse[InventoryMovementResponse])
 @inject

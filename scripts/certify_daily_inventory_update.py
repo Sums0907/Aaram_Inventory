@@ -2,6 +2,7 @@ import asyncio
 import logging
 import json
 import os
+os.environ["DATABASE_ENV"] = "test"
 import uuid
 from datetime import date
 

@@ -9,6 +9,7 @@ from .sku import router as sku_router
 from .supplier import router as supplier_router
 from .inventory_item import router as inventory_item_router
 from .hierarchy import router as hierarchy_router
+from .bom import router as bom_router
 
 router = APIRouter()
 router.include_router(company_router)
@@ -21,3 +22,4 @@ router.include_router(sku_router)
 router.include_router(supplier_router)
 router.include_router(inventory_item_router)
 router.include_router(hierarchy_router)
+router.include_router(bom_router)

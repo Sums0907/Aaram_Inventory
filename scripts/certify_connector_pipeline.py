@@ -13,7 +13,8 @@ from sqlalchemy import select
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("CertifyConnectorPipeline")
 
-TEST_DATABASE_URL = "sqlite+aiosqlite:///./test_manual.db"
+os.environ["DATABASE_ENV"] = "test"
+TEST_DATABASE_URL = "sqlite+aiosqlite:///./test_cert_connector.db"
 
 async def main():
     logger.info("Initializing Connector Certification Pipeline...")

@@ -39,6 +39,9 @@ class JobWorkExpenseModel(BaseModel):
     rate_basis: Mapped[str] = mapped_column(
         String(50), nullable=False, default="PER_PIECE"
     )
+    rate_version_id: Mapped[Optional[UUID]] = mapped_column(
+        ForeignKey("jwa_job_work_rates.id"), nullable=True
+    )
 
     # Financial result
     amount: Mapped[float] = mapped_column(Numeric(15, 2), nullable=False)

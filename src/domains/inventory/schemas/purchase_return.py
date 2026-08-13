@@ -6,7 +6,7 @@ from src.foundation.validation.base import BaseSchema
 
 class PurchaseReturnItemBase(BaseSchema):
     sku_id: UUID
-    quantity: int = Field(..., gt=0)
+    quantity: float = Field(..., gt=0)
     unit_of_measure: Optional[str] = None
 
 class PurchaseReturnItemCreate(PurchaseReturnItemBase):

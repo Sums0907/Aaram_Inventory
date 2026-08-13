@@ -125,7 +125,6 @@ class GoodsReceiptService:
                     )
                     await self.transformation_engine.execute_transformation(engine_request, created_by, session=session)
 
-                    # 4. Trigger Job Worker Accounting expense (same transaction)
                     if self.expense_service is not None:
                         try:
                             expense = await self.expense_service.create_from_receipt(
@@ -136,13 +135,8 @@ class GoodsReceiptService:
                                 receipt_number=saved_grn.grn_number,
                                 receipt_date=saved_grn.receipt_date,
                                 created_by=created_by,
+                                session=session,
                             )
-                            if expense is None:
-                                log.warning(
-                                    "No Job Work Rate configured for job_worker=%s sku=%s on %s. "
-                                    "GRN will proceed without an expense record.",
-                                    saved_grn.supplier_id, item.sku_id, saved_grn.receipt_date,
-                                )
                         except ValidationException:
                             raise  # Duplicate-expense guard — surface this clearly
                         except Exception as exc:

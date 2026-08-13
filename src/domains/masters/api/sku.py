@@ -92,3 +92,13 @@ async def archive_sku(
     user_uuid = UUID(current_user.id)
     sku = await service.archive_sku(sku_id, updated_by=user_uuid)
     return SuccessResponse(data=SKUResponse.model_validate(sku, from_attributes=True))
+
+@router.delete("/{sku_id}", response_model=SuccessResponse[dict])
+@inject
+async def delete_sku(
+    sku_id: UUID,
+    current_user: CurrentUser = Depends(get_current_user),
+    service: SKUService = Depends(Provide[MastersContainer.sku_service])
+):
+    await service.delete_sku(sku_id)
+    return SuccessResponse(data={"message": "SKU deleted successfully"})

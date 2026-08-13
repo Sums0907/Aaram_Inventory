@@ -1,5 +1,6 @@
 from uuid import UUID
 from typing import Optional
+from decimal import Decimal
 from src.domains.inventory.repositories.exception import InventoryExceptionRepository
 from src.domains.inventory.repositories.movement import InventoryMovementRepository
 from src.domains.inventory.schemas.enums import ExceptionSource
@@ -59,10 +60,10 @@ class ConfidenceEngine:
         # If the sku has no warehouse filter, we would normally sum all warehouses,
         # but here we can just sum all movements for the SKU.
         movements = await self.movement_repository.get_movements_for_sku(sku_id)
-        total_qty = 0
+        total_qty = Decimal('0')
         for mov in movements:
             if not warehouse_id or mov.warehouse_id == warehouse_id:
-                total_qty += mov.quantity
+                total_qty += Decimal(str(mov.quantity))
                 
         if total_qty < 0:
             score -= 30

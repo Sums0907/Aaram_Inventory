@@ -53,3 +53,9 @@ class ProductRepository:
         await self.session.commit()
         await self.session.refresh(product)
         return product
+        
+    async def delete(self, product_id: UUID) -> None:
+        product = await self.get_by_id(product_id)
+        if product:
+            await self.session.delete(product)
+            await self.session.commit()

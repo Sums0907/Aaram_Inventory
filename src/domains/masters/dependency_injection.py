@@ -18,6 +18,8 @@ from src.domains.masters.repositories.supplier import SupplierRepository
 from src.domains.masters.services.supplier import SupplierService
 from src.domains.masters.services.inventory_item import InventoryItemService
 from src.domains.masters.services.hierarchy import InventoryHierarchyService
+from src.domains.masters.repositories.bom import BOMRepository
+from src.domains.masters.services.bom import BOMService
 
 class MastersContainer(containers.DeclarativeContainer):
     db = providers.Dependency()
@@ -55,6 +57,10 @@ class MastersContainer(containers.DeclarativeContainer):
         SupplierRepository,
         session=db.provided._session_factory.call(),
     )
+    bom_repository = providers.Factory(
+        BOMRepository,
+        session=db.provided._session_factory.call(),
+    )
 
     # Services
     company_service = providers.Factory(
@@ -86,6 +92,7 @@ class MastersContainer(containers.DeclarativeContainer):
         SKUService,
         repository=sku_repository,
         product_repo=product_repository,
+        bom_repo=bom_repository,
     )
     supplier_service = providers.Factory(
         SupplierService,
@@ -98,4 +105,8 @@ class MastersContainer(containers.DeclarativeContainer):
     inventory_hierarchy_service = providers.Factory(
         InventoryHierarchyService,
         session=db.provided._session_factory.call(),
+    )
+    bom_service = providers.Factory(
+        BOMService,
+        repository=bom_repository,
     )

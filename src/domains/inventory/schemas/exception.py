@@ -11,9 +11,9 @@ class InventoryExceptionBase(BaseSchema):
     sku_id: UUID
     exception_date: datetime
     source_system: ExceptionSource
-    expected_quantity: int
-    actual_quantity: int
-    difference: int
+    expected_quantity: float
+    actual_quantity: float
+    difference: float
     status: ExceptionStatus = ExceptionStatus.OPEN
     resolution_notes: Optional[str] = None
 
@@ -23,6 +23,19 @@ class InventoryExceptionCreate(InventoryExceptionBase):
 class InventoryExceptionResponse(InventoryExceptionBase):
     id: UUID
     created_on: datetime
-    updated_on: datetime
-    created_by: Optional[UUID]
-    updated_by: Optional[UUID]
+    updated_on: Optional[datetime] = None
+    created_by: Optional[UUID] = None
+    updated_by: Optional[UUID] = None
+class ExceptionInventoryItem(BaseSchema):
+    inventory_code: str
+    name: str
+
+class EnrichedExceptionResponse(InventoryExceptionResponse):
+    inventory_item: ExceptionInventoryItem
+
+class ExceptionListResponse(BaseSchema):
+    total_count: int
+    items: list[EnrichedExceptionResponse]
+
+class ResolveExceptionRequest(BaseSchema):
+    resolution_notes: str

@@ -93,3 +93,9 @@ class ProductService:
         product.status = GenericStatus.ARCHIVED
         product.updated_by = updated_by
         return await self.repository.update(product)
+        
+    async def delete_product(self, product_id: UUID) -> None:
+        product = await self.get_product(product_id)
+        if product.status != GenericStatus.ARCHIVED:
+            raise ValidationException(message="Only archived products can be permanently deleted")
+        await self.repository.delete(product_id)

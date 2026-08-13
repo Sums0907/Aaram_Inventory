@@ -50,6 +50,20 @@ If this file conflicts with the actual code:
 
 ---
 
+## 2.1 DATABASE WRITE TESTING RULE (PERMANENT)
+
+For every feature that creates, updates, or deletes persistent data, the AI must explicitly test and verify the following:
+
+1. Test that the API/request succeeds.
+2. Test that the database contains the expected result using a **fresh database session**.
+3. Test the resulting business calculation/state.
+4. Test the UI/API response where applicable.
+5. For important financial transactions, verify that the data survives session/request completion.
+
+**A successful HTTP response or in-memory SQLAlchemy success must never be considered sufficient proof that a database write worked.**
+
+---
+
 # 3. AI ROLES
 
 ## ChatGPT — Architecture / Interpretation
@@ -457,7 +471,7 @@ If GRNI / unbilled purchase accounting is introduced, it must be deliberately de
 
 ## Current Primary Coding Agent
 
-Claude Sonnet (backup; Gemini limit exhausted)
+Gemini
 
 ## Previous Coding Agent
 
@@ -465,7 +479,7 @@ Gemini
 
 ## Current Feature
 
-Stock Custody Ledger — UI integration into Job Worker page
+Job Worker Accounting — Integration & Final Certification
 
 ## Status
 
@@ -473,33 +487,44 @@ Stock Custody Ledger — UI integration into Job Worker page
 
 ## Current Objective
 
-Integrate the Stock Custody Ledger as a new tab inside the existing Job Worker Workspace dialog on the Job Worker Stock page.
+Integrate Job Worker Accounting with Inventory Goods Receipt and certify the complete module end-to-end to ensure financial integrity, decoupled execution within shared transactions, and automated balance calculation.
 
 ## Completed
 
-- 3-tier database safety environment (Dev: `test_manual.db` protected; Test: `test_cert_*.db`; Production separate)
-- Golden backups at `~/.aarambooks_golden_backup/`
-- Manual data restored (Ashok Tailor, Terracotta Bloom Bedsheet, BOM)
-- 4 core certification suites passing (BOM, Inventory Truth, Daily Update, Job Worker Allocation)
-- `docs/INVENTORY_CERTIFIED_BASELINE.md` created as permanent architectural contract
-- **Stock Custody Ledger backend implemented and certified** — all 5 suites pass
-- **Stock Custody Ledger UI integrated** into `JobWorkerStockPage` and `JobWorkerWorkspace`
+- **Expense Service Integration**:
+  - Refactored `ExpenseService` to strictly use the `ACTIVE` rate and throw `ValidationException` on failure.
+  - Guarded against duplicate expense creation for the same GRN and SKU item.
+- **Goods Receipt Integration**:
+  - `GoodsReceiptService` correctly orchestrates both `TransformationEngine` and `ExpenseService` in a single ACID transaction for `JOB_WORK_RECEIPT`s.
+  - Fails atomically and rolls back the entire GRN if accounting fails.
+- **Payment & Payables**:
+  - `PayableService` correctly derives `Outstanding = Total Expenses - Total Payments`.
+  - `PaymentService` completely isolated from expenses and rejects overpayments.
+- **Certification**:
+  - Written `scripts/certify_job_worker_accounting.py` covering all invariants (A through AA) for the complete Job Worker Accounting lifecycle.
+  - Fixed test environments utilizing `MockBalanceCalculator`, ensuring correct mock inventory injection (`JobWorkIssueModel`, `JobWorkerInventoryModel`, `BOMModel`).
+  - Ran full regression suite; all historical modules (`certify_bom_module.py`, `certify_job_worker_rates.py`, `certify_job_worker_allocation.py`, `certify_stock_custody_ledger.py`) successfully pass.
+  - Published master implementation documentation to `docs/JOB_WORKER_ACCOUNTING_CERTIFIED_BASELINE.md`.
 
 ## Remaining
 
-- Job Worker Accounting module (expenses, payables, payments) — separate domain, not started
-- Yield / production capacity tracking — explicitly out of scope for this milestone
+- UI Integration for Job Worker Receipts, Expenses, and Payments (Frontend implementation of the Job Worker Accounting Module).
+- E2E testing using Playwright (if desired by human owner in the future).
+- Further development of other Accounting modules (Sales, General Expenses, Bank/Cash, etc.).
 
-## Files Changed (UI Integration)
+## Files Changed
 
-- `frontend/src/api/job-works.ts` — Added `CustodyLedgerEntry`, `CustodyLedgerItem`, `CustodyLedgerResponse` types + `useCustodyLedger()` hook; also wired cache invalidation in `useCreateJobWorkIssue` and `useCreateJobWorkReturn`
-- `frontend/src/components/suppliers/JobWorkerWorkspace.tsx` — Refactored to 3-tab layout (Pending Material / Recent Activity / Stock Custody Ledger); added `initialTab` prop; added `LedgerItemSection` (collapsible per-item ledger) and `CustodyLedgerTab` components
-- `frontend/src/pages/inventory/JobWorkerStockPage.tsx` — Added `BookOpen` import; added `initialTab` to workspace state; added indigo "Ledger" button on each row that opens the workspace dialog directly on the custody ledger tab
+- `frontend/src/App.tsx`
+- `frontend/src/api/job-worker-accounting.ts`
+- `frontend/src/components/layout/AccountingLayout.tsx`
+- `frontend/src/pages/AccountingDashboardPage.tsx`
+- `frontend/src/pages/accounting/job-worker-accounting/*`
+- `frontend/src/components/job-worker-accounting/*`
 
 ## Tests Run
 
-- Frontend: `npm run build` — completed successfully (pre-existing TS warnings in unrelated files only)
-- Backend: all 5 certification suites PASS (unchanged from previous session)
+- Frontend: `npm run build` — completed successfully.
+- Smoke Test: Verified routes load correctly.
 
 ## Test Result
 
@@ -507,37 +532,52 @@ Integrate the Stock Custody Ledger as a new tab inside the existing Job Worker W
 
 ## Known Issues
 
-- Pre-existing TS warnings in unrelated frontend files (ImportsPage, ActivityPage, AdjustmentsPage, ConfidencePage, etc.) — not caused by this work, not blocking.
-- The `certify_inventory_truth.py` and `certify_daily_inventory_update.py` suites log `ERROR` messages for "Movement with number already exists" — pre-existing, does not affect PASS outcome.
+- Pre-existing TS warnings in unrelated frontend files.
 
 ## Important Decisions
 
-- **Not a new page** — integrated as a third tab inside the existing `JobWorkerWorkspace` dialog. No new route, no new page file.
-- **`initialTab` prop** — passing `initialTab="ledger"` to `JobWorkerWorkspace` allows the "Ledger" button on the main stock page to open the dialog directly on the custody tab.
-- **Per-item collapsible sections** — each inventory item has its own expandable ledger showing all events chronologically with running Pending balance.
-- **Colour coding** — Issue (blue), Consumption (purple), Return (orange), Pending (indigo bold). No Dr/Cr anywhere.
-- **Auto cache invalidation** — `useCustodyLedger` query is automatically invalidated whenever an issue or return is created.
-- **Clickable references** — Each reference in the ledger (JW-ISS-*, JWR-*, REC-*) is a clickable button. Clicking expands an inline detail card showing document type, document number, date, pending balance after the event, and a plain-English description. No new API call — all data comes from the existing ledger entry. Clicking again (or the × button) closes the card.
+- **Accounting layout**: Job Worker Accounting is placed within the `AccountingLayout` as a sub-menu, not as a top-level module.
+- **Strict Separation**: The UI strictly handles financial data (`Expense`, `Payment`, `Outstanding`). It relies purely on the backend for calculation (Rate × Quantity).
 
 ## Next Exact Step
 
-**Job Worker Accounting (Backend)** is complete and certified.
-
-**Job Worker Accounting (Frontend)** is the next step to implement.
-This includes:
-- `api/job-worker-accounting.ts`
-- `pages/job-worker-accounting/JobWorkerAccountingDashboard.tsx`
-- `pages/job-worker-accounting/JobWorkerPayablesPage.tsx`
-- `pages/job-worker-accounting/JobWorkRatesPage.tsx`
-- Routing and Navigation
-
-**Do NOT begin frontend implementation without explicit instruction.**
+**Job Worker Accounting (Frontend)** is complete. 
+Wait for the human owner to specify the next domain or feature.
 
 
 
 ---
 
 # 16. HANDOFF LOG
+
+### 2026-08-12 — Gemini (Job Worker Accounting Frontend)
+
+Task: Implement Job Worker Accounting Frontend UI
+
+Changes:
+- Created `frontend/src/api/job-worker-accounting.ts` with React Query hooks.
+- Refactored `AccountingPage.tsx` into an `AccountingLayout.tsx` which includes the new `Job Worker Accounting` sub-navigation.
+- Implemented `JobWorkerAccountingDashboard.tsx` for high-level KPIs and outstanding balances.
+- Implemented `JobWorkerPayablesWorkspace.tsx` for chronological worker ledger view and statement downloading.
+- Implemented `JobWorkRatesPage.tsx` and `JobWorkRateFormDialog.tsx` for rate configuration.
+- Verified TypeScript build and routes.
+- Fully adhered to the separation of concerns: Job Worker Accounting is inside Accounting, separate from Inventory.
+
+Files:
+- `frontend/src/App.tsx`
+- `frontend/src/api/job-worker-accounting.ts`
+- `frontend/src/components/layout/AccountingLayout.tsx`
+- `frontend/src/pages/AccountingDashboardPage.tsx` (renamed from `AccountingPage.tsx`)
+- `frontend/src/pages/accounting/job-worker-accounting/*`
+- `frontend/src/components/job-worker-accounting/*`
+
+Tests: `npm run build` and Smoke Tests — PASS
+
+Status: Complete (Frontend)
+
+Next step: Wait for the human owner to provide instructions for the next feature.
+
+---
 
 ### 2026-08-12 — Gemini (Job Worker Accounting Backend)
 

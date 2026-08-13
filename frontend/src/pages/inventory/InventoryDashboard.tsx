@@ -1,235 +1,260 @@
-import { useState } from "react"
-import { useInventoryBalances, useDashboardKPIs, useDashboardExceptions, type InventoryBalanceResponse } from "@/api/inventory"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Package, AlertTriangle, ShieldCheck, Activity, Search, ListFilter } from "lucide-react"
-import { LedgerDashboardDialog } from "@/components/inventory/LedgerDashboardDialog"
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import { AlertCircle, PackageSearch, Activity, Package, ArrowRight, ArrowDownToLine, ArrowUpFromLine, Search } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-export function InventoryPage() {
-  const { data: balances, isLoading: isBalancesLoading } = useInventoryBalances()
-  const { data: kpis, isLoading: isKpisLoading } = useDashboardKPIs()
-  const { data: exceptions, isLoading: isExceptionsLoading } = useDashboardExceptions()
-  
-  const [selectedSku, setSelectedSku] = useState<InventoryBalanceResponse | null>(null)
-  const [searchQuery, setSearchQuery] = useState("")
+interface DashboardKPIs {
+  total_skus_tracked: number;
+  total_negative_inventory: number;
+  total_low_stock: number;
+  bom_health: { skus_missing_bom: number };
+  total_pending_job_work: number;
+}
 
-  const isLoading = isBalancesLoading || isKpisLoading || isExceptionsLoading
+interface RecentActivity {
+  id: string;
+  movement_number: string;
+  sku_id: string;
+  quantity: number;
+  movement_type: string;
+  reference_document: string;
+  status: string;
+  created_on: string;
+}
 
-  // Compute Total Current Stock (Sum of all balances)
-  const totalStock = balances?.reduce((acc: number, curr: InventoryBalanceResponse) => acc + curr.balance, 0) || 0
+export const InventoryPage: React.FC = () => {
+  const [kpis, setKpis] = useState<DashboardKPIs | null>(null);
+  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Filter balances based on search
-  const filteredBalances = balances?.filter(b => 
-    b.sku_name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    b.sku_code.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || []
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const [kpiRes, activityRes] = await Promise.all([
+          fetch("/api/v1/inventory/dashboard/kpis"),
+          fetch("/api/v1/inventory/dashboard/recent-activity")
+        ]);
+        
+        if (kpiRes.ok) {
+          const data = await kpiRes.json();
+          setKpis(data.data);
+        }
+        
+        if (activityRes.ok) {
+          const data = await activityRes.json();
+          setRecentActivity(data.data);
+        }
+      } catch (error) {
+        console.error("Failed to load dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchDashboardData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex h-full w-full items-center justify-center p-8">
+        <Activity className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-12">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="flex flex-col gap-6 p-8 w-full max-w-7xl mx-auto">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Inventory Intelligence</h1>
-          <p className="text-slate-500">Operational command center for physical inventory tracking.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-primary">Inventory Intelligence</h1>
+          <p className="text-muted-foreground mt-2">Control centre for inventory truth, health and movements.</p>
+        </div>
+        <div className="flex gap-4">
+          <Button variant="outline" asChild>
+            <Link to="/inventory/receipts"><ArrowDownToLine className="mr-2 h-4 w-4" /> Receive Goods</Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link to="/inventory/suppliers"><ArrowUpFromLine className="mr-2 h-4 w-4" /> Issue to Job Worker</Link>
+          </Button>
+          <Button asChild>
+            <Link to="/inventory/products"><Search className="mr-2 h-4 w-4" /> Browse Inventory</Link>
+          </Button>
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="grid gap-6 md:grid-cols-4">
-          {[1, 2, 3, 4].map(i => (
-            <Card key={i} className="border-slate-200 h-32 animate-pulse bg-slate-50/50" />
-          ))}
-        </div>
-      ) : (
-        <>
-          {/* Operational KPIs */}
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <Card className="border-slate-200 shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-slate-500 flex items-center justify-between">
-                  Tracked SKUs
-                  <Package className="h-4 w-4 text-slate-400" />
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold tracking-tight text-slate-900">
-                  {kpis?.total_skus_tracked || 0}
-                </div>
-                <p className="text-xs text-slate-500 mt-1">Total physical items mapped</p>
-              </CardContent>
-            </Card>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Items</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{kpis?.total_skus_tracked || 0}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Low Stock</CardTitle>
+            <AlertCircle className="h-4 w-4 text-orange-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{kpis?.total_low_stock || 0}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Negative Stock</CardTitle>
+            <AlertCircle className="h-4 w-4 text-red-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-500">{kpis?.total_negative_inventory || 0}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending Job Work</CardTitle>
+            <PackageSearch className="h-4 w-4 text-yellow-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{kpis?.total_pending_job_work || 0}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">BOM Incomplete</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{kpis?.bom_health?.skus_missing_bom || 0}</div>
+          </CardContent>
+        </Card>
+      </div>
 
-            <Card className="border-slate-200 shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-slate-500 flex items-center justify-between">
-                  Current Stock
-                  <Activity className="h-4 w-4 text-emerald-500" />
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold tracking-tight text-emerald-600">
-                  {new Intl.NumberFormat('en-IN').format(totalStock)}
-                </div>
-                <p className="text-xs text-slate-500 mt-1">Total projected units</p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-slate-200 shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-slate-500 flex items-center justify-between">
-                  Average Confidence
-                  <ShieldCheck className="h-4 w-4 text-indigo-500" />
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold tracking-tight text-indigo-600">
-                  {kpis?.average_confidence_score || 0}%
-                </div>
-                <p className="text-xs text-slate-500 mt-1">System-wide data integrity</p>
-              </CardContent>
-            </Card>
-
-            <Card className={`border-slate-200 shadow-sm relative overflow-hidden ${(kpis?.total_negative_inventory || 0) > 0 ? 'bg-red-50/30 border-red-200' : ''}`}>
-              {(kpis?.total_negative_inventory || 0) > 0 && (
-                <div className="absolute top-0 left-0 w-1 h-full bg-red-500" />
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="flex flex-col gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Needs Attention</CardTitle>
+              <CardDescription>Critical operational items requiring action</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+              {(kpis?.total_negative_inventory ?? 0) > 0 && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Negative Stock Detected</AlertTitle>
+                  <AlertDescription className="flex items-center justify-between">
+                    <span>{kpis?.total_negative_inventory} items currently have negative balance.</span>
+                    <Button variant="link" size="sm" asChild className="p-0 h-auto">
+                      <Link to="/inventory/products?filter=negative">Resolve <ArrowRight className="ml-1 h-3 w-3"/></Link>
+                    </Button>
+                  </AlertDescription>
+                </Alert>
               )}
-              <CardHeader className="pb-2">
-                <CardTitle className={`text-sm font-medium flex items-center justify-between ${(kpis?.total_negative_inventory || 0) > 0 ? 'text-red-900' : 'text-slate-500'}`}>
-                  Negative Stock
-                  <AlertTriangle className={`h-4 w-4 ${(kpis?.total_negative_inventory || 0) > 0 ? 'text-red-500' : 'text-slate-400'}`} />
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className={`text-3xl font-bold tracking-tight ${(kpis?.total_negative_inventory || 0) > 0 ? 'text-red-700' : 'text-slate-900'}`}>
-                  {kpis?.total_negative_inventory || 0}
+              
+              {(kpis?.total_low_stock ?? 0) > 0 && (
+                <Alert className="border-orange-200 bg-orange-50 text-orange-900">
+                  <AlertCircle className="h-4 w-4 text-orange-600" />
+                  <AlertTitle className="text-orange-900">Low Stock</AlertTitle>
+                  <AlertDescription className="flex items-center justify-between text-orange-800">
+                    <span>{kpis?.total_low_stock} items are running low.</span>
+                    <Button variant="link" size="sm" asChild className="p-0 h-auto text-orange-700">
+                      <Link to="/inventory/products?filter=low">View Items <ArrowRight className="ml-1 h-3 w-3"/></Link>
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              {(kpis?.total_pending_job_work ?? 0) > 0 && (
+                <Alert className="border-yellow-200 bg-yellow-50 text-yellow-900">
+                  <PackageSearch className="h-4 w-4 text-yellow-600" />
+                  <AlertTitle className="text-yellow-900">Pending Job Work</AlertTitle>
+                  <AlertDescription className="flex items-center justify-between text-yellow-800">
+                    <span>{kpis?.total_pending_job_work} items are currently with Job Workers.</span>
+                    <Button variant="link" size="sm" asChild className="p-0 h-auto text-yellow-700">
+                      <Link to="/inventory/suppliers">View Job Workers <ArrowRight className="ml-1 h-3 w-3"/></Link>
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              {(kpis?.bom_health?.skus_missing_bom ?? 0) > 0 && (
+                <Alert>
+                  <Activity className="h-4 w-4" />
+                  <AlertTitle>Missing BOMs</AlertTitle>
+                  <AlertDescription className="flex items-center justify-between">
+                    <span>{kpis?.bom_health?.skus_missing_bom} finished goods are missing a BOM definition.</span>
+                    <Button variant="link" size="sm" asChild className="p-0 h-auto">
+                      <Link to="/inventory/boms">Setup BOMs <ArrowRight className="ml-1 h-3 w-3"/></Link>
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              {(!kpis || (kpis.total_negative_inventory === 0 && kpis.total_low_stock === 0 && kpis.total_pending_job_work === 0 && kpis.bom_health?.skus_missing_bom === 0)) && (
+                <div className="text-sm text-muted-foreground py-4 text-center">
+                  All inventory health metrics look good. No critical items require attention.
                 </div>
-                <p className={`text-xs mt-1 ${(kpis?.total_negative_inventory || 0) > 0 ? 'text-red-600' : 'text-slate-500'}`}>SKUs with unviable balances</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid gap-6 lg:grid-cols-3">
-            
-            {/* Exceptions Workbench */}
-            <Card className="border-slate-200 shadow-sm lg:col-span-1 flex flex-col h-[500px]">
-              <CardHeader className="bg-slate-50/50 border-b flex-shrink-0">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-lg text-slate-900">Exceptions Workbench</CardTitle>
-                    <CardDescription>Actionable inventory discrepancies</CardDescription>
-                  </div>
-                  <Badge variant="secondary" className="bg-red-100 text-red-700 hover:bg-red-100">
-                    {exceptions?.length || 0} Open
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0 overflow-y-auto flex-1 bg-slate-50/20">
-                {exceptions && exceptions.length > 0 ? (
-                  <div className="divide-y divide-slate-100">
-                    {exceptions.map((exc: any, idx: number) => (
-                      <div key={idx} className="p-4 bg-white hover:bg-slate-50 transition-colors">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <AlertTriangle className="h-4 w-4 text-red-500" />
-                            <span className="font-semibold text-sm text-slate-900">{exc.resolution_notes || 'Negative Inventory'}</span>
-                          </div>
-                          <span className="text-xs text-slate-500 font-mono">{exc.exception_number}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm mt-3">
-                          <div className="flex flex-col">
-                            <span className="text-slate-500 text-xs">Projected</span>
-                            <span className="font-semibold text-red-600">{exc.actual_quantity} units</span>
-                          </div>
-                          <div className="flex flex-col text-right">
-                            <span className="text-slate-500 text-xs">Action Required</span>
-                            <span className="text-blue-600 font-medium cursor-pointer hover:underline">Resolve issue</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-3">
-                    <ShieldCheck className="h-10 w-10 text-emerald-400" />
-                    <p className="text-sm">No open exceptions</p>
-                  </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+        
+        <Card className="flex flex-col h-full">
+          <CardHeader>
+            <CardTitle>Recent Inventory Activity</CardTitle>
+            <CardDescription>Latest immutable ledger movements</CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1 overflow-auto p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="pl-6">Date</TableHead>
+                  <TableHead>Movement</TableHead>
+                  <TableHead className="text-right pr-6">Quantity</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recentActivity.map((activity) => (
+                  <TableRow key={activity.id}>
+                    <TableCell className="pl-6 text-muted-foreground whitespace-nowrap">
+                      {new Date(activity.created_on).toLocaleString(undefined, {
+                        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium text-xs bg-muted px-2 py-1 rounded inline-block mb-1">{activity.movement_type}</div>
+                      <div className="text-xs text-muted-foreground">{activity.reference_document || activity.movement_number}</div>
+                    </TableCell>
+                    <TableCell className={`text-right font-medium pr-6 ${activity.quantity > 0 ? "text-green-600" : activity.quantity < 0 ? "text-red-600" : ""}`}>
+                      {activity.quantity > 0 ? "+" : ""}{activity.quantity}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                
+                {recentActivity.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
+                      No recent activity recorded.
+                    </TableCell>
+                  </TableRow>
                 )}
-              </CardContent>
-            </Card>
-
-            {/* SKU Directory */}
-            <Card className="border-slate-200 shadow-sm lg:col-span-2 flex flex-col h-[500px]">
-              <CardHeader className="bg-slate-50/50 border-b flex-shrink-0 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-lg">SKU Directory</CardTitle>
-                    <CardDescription>Search and explore individual stock ledger timelines</CardDescription>
-                  </div>
-                </div>
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
-                  <input 
-                    type="text" 
-                    placeholder="Search by SKU Name or Code..." 
-                    className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-              </CardHeader>
-              <CardContent className="p-0 overflow-y-auto flex-1">
-                <div className="divide-y divide-slate-100">
-                  {filteredBalances.map((item, idx) => (
-                    <div 
-                      key={idx} 
-                      className="p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:bg-indigo-50/30 cursor-pointer transition-colors group"
-                      onClick={() => setSelectedSku(item)}
-                    >
-                      <div className="mb-3 sm:mb-0">
-                        <p className="font-medium text-slate-900 group-hover:text-indigo-700 transition-colors">{item.sku_name}</p>
-                        <p className="text-sm text-slate-500 font-mono mt-0.5">{item.sku_code}</p>
-                      </div>
-                      <div className="flex items-center justify-between sm:justify-end gap-6">
-                        <div className="flex flex-col items-end">
-                          <span className="text-xs text-slate-500 mb-1">Stock</span>
-                          <span className={`font-bold text-lg ${item.balance < 0 ? 'text-red-600' : 'text-slate-900'}`}>
-                            {item.balance}
-                          </span>
-                        </div>
-                        <div className="flex flex-col items-end w-24">
-                          <span className="text-xs text-slate-500 mb-1">Confidence</span>
-                          <Badge variant="outline" className={item.confidence_score >= 90 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : item.confidence_score >= 70 ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-red-50 text-red-700 border-red-200'}>
-                            {item.confidence_score}%
-                          </Badge>
-                        </div>
-                        <Button variant="ghost" size="icon" className="hidden sm:inline-flex opacity-0 group-hover:opacity-100 transition-opacity">
-                          <ListFilter className="h-4 w-4 text-indigo-600" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {filteredBalances.length === 0 && (
-                    <div className="p-8 text-center text-slate-500">
-                      No SKUs match your search query.
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+              </TableBody>
+            </Table>
+          </CardContent>
+          <div className="p-4 border-t border-border mt-auto">
+             <Button variant="ghost" className="w-full" asChild>
+                <Link to="/inventory/activity">View All Activity <ArrowRight className="ml-2 h-4 w-4"/></Link>
+             </Button>
           </div>
-        </>
-      )}
-
-      {selectedSku && (
-        <LedgerDashboardDialog
-          isOpen={true}
-          onClose={() => setSelectedSku(null)}
-          skuId={selectedSku.sku_id}
-          skuCode={selectedSku.sku_code}
-          skuName={selectedSku.sku_name}
-        />
-      )}
+        </Card>
+      </div>
     </div>
-  )
-}
+  );
+};

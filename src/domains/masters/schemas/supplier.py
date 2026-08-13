@@ -11,6 +11,7 @@ class SupplierBase(BaseSchema):
     email: Optional[str] = Field(None, max_length=255)
     address: Optional[str] = None
     remarks: Optional[str] = None
+    is_job_worker: bool = Field(default=False)
 
 class SupplierCreate(SupplierBase):
     pass

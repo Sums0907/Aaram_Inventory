@@ -21,3 +21,9 @@ class BaseModel(Base):
     )
     created_by: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), nullable=True)
     updated_by: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), nullable=True)
+
+class SequenceModel(BaseModel):
+    __tablename__ = "system_sequences"
+    
+    sequence_name: Mapped[str] = mapped_column(unique=True, index=True)
+    last_value: Mapped[int] = mapped_column(default=0)

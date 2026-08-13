@@ -3,10 +3,11 @@ from uuid import UUID
 from datetime import date, datetime
 from pydantic import Field
 from src.foundation.validation.base import BaseSchema
+from src.domains.inventory.schemas.enums import GoodsReceiptType
 
 class GoodsReceiptItemBase(BaseSchema):
     sku_id: UUID
-    quantity: int = Field(..., gt=0)
+    quantity: float = Field(..., gt=0)
     unit_of_measure: Optional[str] = None
 
 class GoodsReceiptItemCreate(GoodsReceiptItemBase):
@@ -22,6 +23,7 @@ class GoodsReceiptBase(BaseSchema):
     invoice_number: Optional[str] = None
     challan_number: Optional[str] = None
     remarks: Optional[str] = None
+    receipt_type: GoodsReceiptType = GoodsReceiptType.RAW_MATERIAL_RECEIPT
 
 class GoodsReceiptCreate(GoodsReceiptBase):
     grn_number: str = Field(..., max_length=255)

@@ -9,12 +9,23 @@ from uuid import UUID
 from datetime import date
 from typing import Optional
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import String, Date, Numeric, ForeignKey, Boolean
+from sqlalchemy import String, Date, Numeric, ForeignKey, Boolean, Index, text
 from src.foundation.database.models import BaseModel
 
 
 class JobWorkRateModel(BaseModel):
     __tablename__ = "jwa_job_work_rates"
+
+    __table_args__ = (
+        Index(
+            "uix_active_job_work_rate",
+            "job_worker_id",
+            "sku_id",
+            unique=True,
+            sqlite_where=text("is_active = 1"),
+            postgresql_where=text("is_active = true")
+        ),
+    )
 
     # Who and what
     job_worker_id: Mapped[UUID] = mapped_column(

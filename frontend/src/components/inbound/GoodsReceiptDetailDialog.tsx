@@ -1,3 +1,4 @@
+import { formatQuantityValue } from "@/lib/utils"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { useGoodsReceipt } from "@/api/goods-receipts"
 import { useSuppliers } from "@/api/suppliers"
@@ -22,7 +23,17 @@ export function GoodsReceiptDetailDialog({ open, onOpenChange, grnId }: Props) {
   
   const getSkuCode = (id: string) => {
     const sku = skusData?.find((s: any) => s.id === id)
-    return sku ? `${sku.sku_code} - ${sku.product?.product_name || ""}` : id
+    return sku ? `${sku.item_code || sku.sku_code} - ${sku.product?.product_name || ""}` : id
+  }
+
+  const getSkuUOM = (id: string) => {
+    const sku = skusData?.find((s: any) => s.id === id)
+    return sku?.uom?.short_name || sku?.uom?.unit_name || "PCS"
+  }
+
+  const getSkuUnitType = (id: string) => {
+    const sku = skusData?.find((s: any) => s.id === id)
+    return sku?.uom?.unit_type || "INTEGER"
   }
 
   return (
@@ -80,8 +91,8 @@ export function GoodsReceiptDetailDialog({ open, onOpenChange, grnId }: Props) {
                     {grn.items?.map((item) => (
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">{getSkuCode(item.sku_id)}</TableCell>
-                        <TableCell className="text-right font-medium text-green-600">+{item.quantity}</TableCell>
-                        <TableCell className="text-right text-slate-500">{item.unit_of_measure || "PCS"}</TableCell>
+                        <TableCell className="text-right font-medium text-green-600">+{formatQuantityValue(item.quantity, getSkuUnitType(item.sku_id))}</TableCell>
+                        <TableCell className="text-right text-slate-500">{item.unit_of_measure || getSkuUOM(item.sku_id)}</TableCell>
                         <TableCell>
                           <span className="inline-flex items-center rounded bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
                             PURCHASE_RECEIPT

@@ -4,7 +4,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, ForeignKey, Table, Column
 from src.foundation.database.models import BaseModel
 from sqlalchemy import Enum as SQLAlchemyEnum
-from src.foundation.enums import ItemType
+from src.foundation.enums import ItemType, GenericStatus
 
 # Association table for Products and Product Attributes
 product_attributes_table = Table(
@@ -28,6 +28,13 @@ class ProductModel(BaseModel):
         nullable=False,
         default=ItemType.FINISHED_GOODS,
         server_default="FINISHED_GOODS"
+    )
+
+    status: Mapped[GenericStatus] = mapped_column(
+        SQLAlchemyEnum(GenericStatus, name="generic_status_enum", create_type=False),
+        nullable=False,
+        default=GenericStatus.ACTIVE,
+        server_default="ACTIVE"
     )
     
     # We may still link to categories later, but making it nullable for now since CSV might not perfectly align with existing categories

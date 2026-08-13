@@ -25,6 +25,7 @@ export interface Supplier {
   email?: string
   address?: string
   remarks?: string
+  is_job_worker: boolean
   created_on: string
   updated_on: string
 }
@@ -36,6 +37,7 @@ export interface CreateSupplierInput {
   email?: string
   address?: string
   remarks?: string
+  is_job_worker: boolean
 }
 
 export interface UpdateSupplierInput extends Partial<CreateSupplierInput> {

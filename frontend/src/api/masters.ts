@@ -9,6 +9,14 @@ export interface ProductInfo {
   product_type: string | null;
   item_type?: string;
   category_id?: string;
+  status: string;
+}
+
+export interface UnitOfMeasureInfo {
+  id: string;
+  unit_code: string;
+  unit_name: string;
+  unit_type?: "INTEGER" | "DECIMAL";
 }
 
 export interface PricingInfo {
@@ -34,6 +42,7 @@ export interface CategoryInfo {
   item_type: string;
   parent_id?: string;
   attributes?: { attribute_name: string; is_required: boolean }[];
+  status: string;
 }
 
 export interface ImageInfo {
@@ -53,9 +62,12 @@ export interface SKUResponse {
   thread_count: string | null;
   barcode: string | null;
   product: ProductInfo | null;
+  uom: UnitOfMeasureInfo | null;
   pricing: PricingInfo | null;
   images: ImageInfo[];
   attribute_values: Record<string, string>;
+  updated_on?: string;
+  has_bom?: boolean;
 }
 
 export interface InventoryItemCreatePayload {
@@ -139,11 +151,141 @@ export function useCategories(itemType?: string) {
   });
 }
 
+export interface UnitOfMeasureInfo {
+  id: string;
+  unit_code: string;
+  unit_name: string;
+  short_name: string;
+  description?: string;
+  status: string;
+  unit_type?: "INTEGER" | "DECIMAL";
+}
+
+export function useUnitsOfMeasure() {
+  return useQuery({
+    queryKey: ['masters-uoms'],
+    queryFn: async () => {
+      const payload = await apiClient.get<any>('/masters/units-of-measure', {
+        headers: { Authorization: `Bearer ${TOKEN}` }
+      }).catch(() => ({ data: [] })) as any;
+      return (payload?.data || []) as UnitOfMeasureInfo[];
+    },
+  });
+}
+
+export function useCreateUOM() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: Omit<UnitOfMeasureInfo, 'id' | 'status'>) => {
+      const payload = await apiClient.post<any>('/masters/units-of-measure', data, {
+        headers: { Authorization: `Bearer ${TOKEN}` }
+      });
+      return payload?.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['masters-uoms'] });
+    },
+  });
+}
+
+export function useUpdateUOM() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string, data: Partial<UnitOfMeasureInfo> }) => {
+      const payload = await apiClient.put<any>(`/masters/units-of-measure/${id}`, data, {
+        headers: { Authorization: `Bearer ${TOKEN}` }
+      });
+      return payload?.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['masters-uoms'] });
+    },
+  });
+}
+
+export function useActivateUOM() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const payload = await apiClient.patch<any>(`/masters/units-of-measure/${id}/activate`, {}, {
+        headers: { Authorization: `Bearer ${TOKEN}` }
+      });
+      return payload?.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['masters-uoms'] });
+    },
+  });
+}
+
+export function useDeactivateUOM() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const payload = await apiClient.patch<any>(`/masters/units-of-measure/${id}/deactivate`, {}, {
+        headers: { Authorization: `Bearer ${TOKEN}` }
+      });
+      return payload?.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['masters-uoms'] });
+    },
+  });
+}
+
 export function useCreateCategory() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: { category_name: string; category_code?: string; item_type: string; parent_id?: string }) => {
       const payload = await apiClient.post<any>('/masters/categories', data, {
+        headers: { Authorization: `Bearer ${TOKEN}` }
+      });
+      return payload?.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['masters-categories'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-hierarchy'] });
+    },
+  });
+}
+
+export function useUpdateCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string, data: any }) => {
+      const payload = await apiClient.put<any>(`/masters/categories/${id}`, data, {
+        headers: { Authorization: `Bearer ${TOKEN}` }
+      });
+      return payload?.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['masters-categories'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-hierarchy'] });
+    },
+  });
+}
+
+export function useArchiveCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const payload = await apiClient.patch<any>(`/masters/categories/${id}/archive`, {}, {
+        headers: { Authorization: `Bearer ${TOKEN}` }
+      });
+      return payload?.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['masters-categories'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-hierarchy'] });
+    },
+  });
+}
+
+export function useDeleteCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const payload = await apiClient.delete<any>(`/masters/categories/${id}`, {
         headers: { Authorization: `Bearer ${TOKEN}` }
       });
       return payload?.data;
@@ -229,6 +371,54 @@ export function useArchiveSKU() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['masters-skus'] });
+    },
+  });
+}
+
+export function useArchiveProduct() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const payload = await apiClient.patch<any>(`/masters/products/${id}/archive`, {}, {
+        headers: { Authorization: `Bearer ${TOKEN}` }
+      });
+      return payload?.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['masters-products'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-hierarchy'] });
+    }
+  });
+}
+
+export function useUpdateProduct() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string, data: { product_name: string } }) => {
+      const payload = await apiClient.put<any>(`/masters/products/${id}`, data, {
+        headers: { Authorization: `Bearer ${TOKEN}` }
+      });
+      return payload?.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['masters-products'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-hierarchy'] });
+    },
+  });
+}
+
+export function useDeleteProduct() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const payload = await apiClient.delete<any>(`/masters/products/${id}`, {
+        headers: { Authorization: `Bearer ${TOKEN}` }
+      });
+      return payload?.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['masters-products'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-hierarchy'] });
     },
   });
 }

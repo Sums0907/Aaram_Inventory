@@ -24,7 +24,9 @@ class ProductUpdate(ProductBase):
 
 class ProductResponse(ProductCreate):
     id: UUID
+    status: GenericStatus
     created_on: datetime
     updated_on: datetime
     created_by: Optional[UUID]
     updated_by: Optional[UUID]
+    has_bom: bool = Field(default=False)

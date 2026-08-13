@@ -104,7 +104,9 @@ class PipelineOrchestratorService:
                     sku = SKUModel(
                         id=uuid.uuid4(),
                         sku_code=item.external_sku_code,
-                        product_id=product.id
+                        item_code=item.external_sku_code,
+                        product_id=product.id,
+                        uom_id=uom.id
                     )
                     self.session.add(sku)
                     await self.session.commit()
@@ -274,7 +276,9 @@ class PipelineOrchestratorService:
                             sku = SKUModel(
                                 id=uuid.uuid4(),
                                 sku_code=item.external_sku_code,
-                                product_id=product.id
+                                item_code=item.external_sku_code,
+                                product_id=product.id,
+                                uom_id=uom.id
                             )
                             self.session.add(sku)
                             await self.session.commit()

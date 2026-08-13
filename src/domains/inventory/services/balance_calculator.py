@@ -21,12 +21,12 @@ class BalanceCalculatorService:
         self.exception_repository = exception_repository
         self.confidence_engine = confidence_engine
         
-    async def recalculate_balance(self, warehouse_id: UUID, sku_id: UUID) -> InventoryBalanceModel:
+    async def recalculate_balance(self, warehouse_id: UUID, sku_id: UUID, session=None) -> InventoryBalanceModel:
         """
         Recalculates the projected balance from movements and runs the confidence engine.
         """
         # 1. Recalculate quantity directly from posted movements
-        projected_quantity = await self.movement_repository.get_balance(warehouse_id, sku_id)
+        projected_quantity = await self.movement_repository.get_balance(warehouse_id, sku_id, session=session)
         
         # 1b. Catch Negative Inventory
         if projected_quantity < 0:
@@ -43,7 +43,7 @@ class BalanceCalculatorService:
                 actual_quantity=int(projected_quantity),
                 difference=int(projected_quantity)
             )
-            await self.exception_repository.save(exc)
+            await self.exception_repository.save(exc, session=session)
         
         # 2. Get Confidence Score
         confidence_response = await self.confidence_engine.calculate_confidence(sku_id, warehouse_id)
@@ -51,7 +51,7 @@ class BalanceCalculatorService:
         confidence_reasons = confidence_response.positive_signals + confidence_response.negative_signals
         
         # 3. Update or Create Balance Model
-        balance = await self.balance_repository.get_balance(warehouse_id, sku_id)
+        balance = await self.balance_repository.get_balance(warehouse_id, sku_id, session=session)
         
         if not balance:
             balance = InventoryBalanceModel(
@@ -69,4 +69,4 @@ class BalanceCalculatorService:
             balance.last_movement_date = datetime.now(timezone.utc)
             
         # 4. Save to DB
-        return await self.balance_repository.save(balance)
+        return await self.balance_repository.save(balance, session=session)

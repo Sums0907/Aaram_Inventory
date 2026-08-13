@@ -1,7 +1,7 @@
 from uuid import UUID
 from datetime import datetime
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import String, Integer, DateTime, ForeignKey, UniqueConstraint, JSON
+from sqlalchemy import Numeric, String, Integer, DateTime, ForeignKey, UniqueConstraint, JSON
 from src.foundation.database.models import BaseModel
 
 class InventoryBalanceModel(BaseModel):
@@ -13,7 +13,7 @@ class InventoryBalanceModel(BaseModel):
     warehouse_id: Mapped[UUID] = mapped_column(ForeignKey("warehouses.id"), nullable=False, index=True)
     sku_id: Mapped[UUID] = mapped_column(ForeignKey("skus.id"), nullable=False, index=True)
     
-    quantity_on_hand: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    quantity_on_hand: Mapped[float] = mapped_column(Numeric(15, 3), nullable=False, default=0)
     
     # Confidence tracking
     confidence_score: Mapped[int] = mapped_column(Integer, nullable=False, default=100) # 0 to 100

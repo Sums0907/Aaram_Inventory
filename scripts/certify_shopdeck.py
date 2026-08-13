@@ -2,6 +2,7 @@ import asyncio
 import logging
 import json
 import os
+os.environ["DATABASE_ENV"] = "test"
 from pathlib import Path
 from datetime import date
 from unittest.mock import patch, MagicMock, AsyncMock

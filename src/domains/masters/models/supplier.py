@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import String, Text
+from sqlalchemy import String, Text, Boolean
 from src.foundation.database.models import BaseModel
 
 class Supplier(BaseModel):
@@ -11,3 +11,4 @@ class Supplier(BaseModel):
     email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     address: Mapped[str | None] = mapped_column(Text, nullable=True)
     remarks: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_job_worker: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
