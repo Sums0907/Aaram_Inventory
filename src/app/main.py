@@ -61,6 +61,7 @@ def create_app() -> FastAPI:
         "src.domains.inventory.api.purchase_return",
         "src.domains.inventory.api.job_work",
         "src.domains.inventory.api.exception_router",
+        "src.domains.inventory.api.packer_webhook_router",
         "src.domains.connectors.api.shopdeck_router",
         "src.domains.operations.api.lifecycle_router",
         "src.domains.masters.api.supplier",
@@ -107,6 +108,7 @@ def create_app() -> FastAPI:
     from src.domains.inventory.api.job_work import router as job_work_router
     from src.domains.inventory.api.exception_router import router as exception_router
     from src.domains.operations.api.lifecycle_router import router as lifecycle_router
+    from src.domains.inventory.api.packer_webhook_router import router as packer_router
     api_v1_router.include_router(inv_router)
     api_v1_router.include_router(inv_mov_router)
     api_v1_router.include_router(inv_dash_router)
@@ -115,6 +117,7 @@ def create_app() -> FastAPI:
     api_v1_router.include_router(pr_router, prefix="/inventory")
     api_v1_router.include_router(job_work_router)
     api_v1_router.include_router(exception_router)
+    api_v1_router.include_router(packer_router)
     api_v1_router.include_router(shopdeck_router, prefix="/shopdeck")
     api_v1_router.include_router(lifecycle_router, prefix="/operations")
     api_v1_router.include_router(accounting_export_router, prefix="/accounting/export")

@@ -193,103 +193,11 @@ class ReconciliationOrchestratorService:
                     elif status == ShopDeckStatus.RTO_DELIVERED.value:
                         existing_order.has_open_rto_expectation = False
 
-                    # 4. Deterministic Inventory Cycle Calculation
-                    # Calculate cumulative quantities per item based on immutable ledger
-                    for item in existing_order.items:
-                        stmt_mov = select(InventoryMovementModel).where(
-                            InventoryMovementModel.reference_type == "SALES_ORDER",
-                            InventoryMovementModel.reference_id == existing_order.id,
-                            InventoryMovementModel.sku_id == item.sku_id
-                        )
-                        mov_res = await self.session.execute(stmt_mov)
-                        movements = mov_res.scalars().all()
-                        
-                        outbound_qty = sum(abs(m.quantity) for m in movements if m.movement_type == "SALES_FULFILLMENT")
-                        inbound_qty = sum(abs(m.quantity) for m in movements if m.movement_type in ["SALES_RETURN", "RTO_RETURN", "CUSTOMER_RETURN"])
-                        
-                        target_qty = item.quantity
-                        
-                        # Evaluate Outbound
-                        if outbound_qty == inbound_qty:
-                            if outbound_qty == 0:
-                                valid_initial_outbounds = [
-                                    ShopDeckStatus.PACK.value, ShopDeckStatus.HANDOVER.value, ShopDeckStatus.IN_TRANSIT.value,
-                                    ShopDeckStatus.DELIVERED.value, ShopDeckStatus.RTO_INITIATED.value, ShopDeckStatus.RTO_DELIVERED.value,
-                                    ShopDeckStatus.EXPIRED_AWB.value
-                                ]
-                                if status in valid_initial_outbounds or existing_order.return_delivered_date:
-                                    mov_out = InventoryMovementCreate(
-                                        movement_number=f"MOV-OUT-{existing_order.external_order_id}-{item.sku_id}-{int(outbound_qty + target_qty)}",
-                                        movement_type="SALES_FULFILLMENT",
-                                        movement_date=order_date,
-                                        posting_date=datetime.now().date(),
-                                        status="POSTED",
-                                        warehouse_id=self.shopdeck_warehouse_id,
-                                        sku_id=item.sku_id,
-                                        quantity=-target_qty,
-                                        reference_type="SALES_ORDER",
-                                        reference_number=existing_order.external_order_id,
-                                        reference_id=existing_order.id
-                                    )
-                                    # Create with orchestrator user or a system user. Use existing_order.id temporarily as placeholder for user UUID if none is passed
-                                    # But we can just generate a UUID or use a SYSTEM uuid
-                                    await self.movement_service.create_movement(mov_out, user_id=uuid.UUID(int=0), session=self.session)
-                                    summary.inventory_movements_created += 1
-                                    outbound_qty += target_qty
-                            else:
-                                valid_subsequent_outbounds = [
-                                    ShopDeckStatus.PACK.value, ShopDeckStatus.HANDOVER.value, ShopDeckStatus.IN_TRANSIT.value,
-                                    ShopDeckStatus.DELIVERED.value, ShopDeckStatus.RTO_INITIATED.value
-                                ]
-                                if status in valid_subsequent_outbounds:
-                                    mov_out = InventoryMovementCreate(
-                                        movement_number=f"MOV-OUT-{existing_order.external_order_id}-{item.sku_id}-{int(outbound_qty + target_qty)}",
-                                        movement_type="SALES_FULFILLMENT",
-                                        movement_date=order_date,
-                                        posting_date=datetime.now().date(),
-                                        status="POSTED",
-                                        warehouse_id=self.shopdeck_warehouse_id,
-                                        sku_id=item.sku_id,
-                                        quantity=-target_qty,
-                                        reference_type="SALES_ORDER",
-                                        reference_number=existing_order.external_order_id,
-                                        reference_id=existing_order.id
-                                    )
-                                    await self.movement_service.create_movement(mov_out, user_id=uuid.UUID(int=0), session=self.session)
-                                    summary.inventory_movements_created += 1
-                                    outbound_qty += target_qty
-                                    
-                        # Evaluate Inbound
-                        if outbound_qty > inbound_qty:
-                            mov_type = None
-                            prefix = None
-                            if status == ShopDeckStatus.EXPIRED_AWB.value:
-                                mov_type = "RTO_RETURN"
-                                prefix = "EXP"
-                            elif status == ShopDeckStatus.RTO_DELIVERED.value:
-                                mov_type = "RTO_RETURN"
-                                prefix = "RTO"
-                            elif existing_order.return_delivered_date:
-                                mov_type = "CUSTOMER_RETURN"
-                                prefix = "CUS"
-                                
-                            if mov_type:
-                                mov_in = InventoryMovementCreate(
-                                    movement_number=f"MOV-IN-{prefix}-{existing_order.external_order_id}-{item.sku_id}-{int(inbound_qty + target_qty)}",
-                                    movement_type=mov_type,
-                                    movement_date=order_date,
-                                    posting_date=datetime.now().date(),
-                                    status="POSTED",
-                                    warehouse_id=self.shopdeck_warehouse_id,
-                                    sku_id=item.sku_id,
-                                    quantity=target_qty,
-                                    reference_type="SALES_ORDER",
-                                    reference_number=existing_order.external_order_id,
-                                    reference_id=existing_order.id
-                                )
-                                await self.movement_service.create_movement(mov_in, user_id=uuid.UUID(int=0), session=self.session)
-                                summary.inventory_movements_created += 1
-                                inbound_qty += target_qty
+                    # 4. Deterministic Inventory Cycle Calculation (DISCONNECTED IN PHASE 3)
+                    # ShopDeck Order Reconciliation is no longer the active source of Inventory Movements.
+                    # This logic has been intentionally disconnected. Physical movements are now
+                    # handled by the Packer System Integration.
+                    pass
 
             except UnknownShopDeckStatusException:
                 summary.import_exceptions += 1

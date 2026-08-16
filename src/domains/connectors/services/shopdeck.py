@@ -1,9 +1,24 @@
 import httpx
 from typing import AsyncGenerator, Optional
 from datetime import date
+import warnings
+
 from src.domains.connectors.services.base import MarketplaceConnector, DownloadedFileContext
 from src.foundation.configuration.settings import get_settings
 
+def deprecated(reason: str):
+    def decorator(cls):
+        # We can just add a simple warning to __init__
+        orig_init = cls.__init__
+        def new_init(self, *args, **kwargs):
+            warnings.warn(f"{cls.__name__} is deprecated: {reason}", DeprecationWarning, stacklevel=2)
+            if orig_init is not object.__init__:
+                orig_init(self, *args, **kwargs)
+        cls.__init__ = new_init
+        return cls
+    return decorator
+
+@deprecated("ShopDeck Connector is ARCHIVED. Inventory MUST NOT depend on it. Retained for potential future re-integration.")
 class ShopDeckConnector(MarketplaceConnector):
     
     @classmethod

@@ -67,6 +67,25 @@ export function useImportJobPreview(jobId: string | null) {
   });
 }
 
+export interface DynamicReportWindowResponse {
+  required_report_start_date: string | null;
+  required_report_end_date: string | null;
+  oldest_active_order_date: string | null;
+  oldest_active_order_id: string | null;
+  active_order_count: number;
+  reason: string;
+}
+
+export function useReportWindow() {
+  return useQuery({
+    queryKey: ['shopdeck-report-window'],
+    queryFn: async () => {
+      const response = await apiClient.get<{success: boolean, data: DynamicReportWindowResponse}>('/operations/lifecycle/shopdeck-reports/window');
+      return (response as any).data;
+    }
+  });
+}
+
 export function useUploadShopDeckOrders() {
   return useMutation({
     mutationFn: async (file: File) => {

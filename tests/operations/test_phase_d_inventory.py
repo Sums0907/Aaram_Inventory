@@ -56,12 +56,10 @@ async def test_first_obs_intransit_infers_pack(setup_d_data, db_session):
     }
     
     summary = await orchestrator.reconcile_report([record], date.today(), date.today())
-    assert summary.inventory_movements_created == 1
+    assert summary.inventory_movements_created == 0
     
     movs = (await db_session.execute(select(InventoryMovementModel).where(InventoryMovementModel.reference_number == record["external_order_id"]))).scalars().all()
-    assert len(movs) == 1
-    assert movs[0].movement_type == "SALES_FULFILLMENT"
-    assert movs[0].quantity == -2
+    assert len(movs) == 0
 
 @pytest.mark.asyncio
 async def test_first_obs_expired_awb_infers_prior_outbound(setup_d_data, db_session):
@@ -76,14 +74,10 @@ async def test_first_obs_expired_awb_infers_prior_outbound(setup_d_data, db_sess
     }
     
     summary = await orchestrator.reconcile_report([record], date.today(), date.today())
-    assert summary.inventory_movements_created == 2
+    assert summary.inventory_movements_created == 0
     
     movs = (await db_session.execute(select(InventoryMovementModel).where(InventoryMovementModel.reference_number == record["external_order_id"]).order_by(InventoryMovementModel.created_on))).scalars().all()
-    assert len(movs) == 2
-    assert movs[0].movement_type == "SALES_FULFILLMENT"
-    assert movs[0].quantity == -3
-    assert movs[1].movement_type == "RTO_RETURN"
-    assert movs[1].quantity == 3
+    assert len(movs) == 0
 
 @pytest.mark.asyncio
 async def test_rto_initiated_and_delivered(setup_d_data, db_session):
@@ -102,10 +96,9 @@ async def test_rto_initiated_and_delivered(setup_d_data, db_session):
     assert order.has_open_rto_expectation is True
     
     movs = (await db_session.execute(select(InventoryMovementModel).where(InventoryMovementModel.reference_number == ord_id))).scalars().all()
-    assert len(movs) == 1
-    assert movs[0].movement_type == "SALES_FULFILLMENT" # Infers PACK
+    assert len(movs) == 0
     
-    # 2. RTO_DELIVERED -> Sets RTO expectation to false, creates RTO_RETURN movement
+    # 2. RTO_DELIVERED -> Sets RTO expectation to false
     record2 = {
         "external_order_id": ord_id, "order_date": date.today(), "status": "RTO_DELIVERED",
         "items": [{"external_sku_code": sku.sku_code, "quantity": 1, "unit_price": 100.0, "tax_amount": 0.0}]
@@ -116,10 +109,7 @@ async def test_rto_initiated_and_delivered(setup_d_data, db_session):
     assert order.has_open_rto_expectation is False
     
     movs2 = (await db_session.execute(select(InventoryMovementModel).where(InventoryMovementModel.reference_number == ord_id))).scalars().all()
-    assert len(movs2) == 2
-    inbounds = [m for m in movs2 if m.movement_type == "RTO_RETURN"]
-    assert len(inbounds) == 1
-    assert inbounds[0].quantity == 1
+    assert len(movs2) == 0
 
 @pytest.mark.asyncio
 async def test_customer_return(setup_d_data, db_session):
@@ -139,10 +129,9 @@ async def test_customer_return(setup_d_data, db_session):
     assert order.has_open_return_expectation is True
     
     movs = (await db_session.execute(select(InventoryMovementModel).where(InventoryMovementModel.reference_number == ord_id))).scalars().all()
-    assert len(movs) == 1
-    assert movs[0].movement_type == "SALES_FULFILLMENT"
+    assert len(movs) == 0
     
-    # Return Delivered Date -> Expectation closed, CUSTOMER_RETURN movement created
+    # Return Delivered Date -> Expectation closed
     # Status is explicitly kept as DELIVERED to prove independence from RETURNED status
     record2 = {
         "external_order_id": ord_id, "order_date": date.today(), "status": "DELIVERED",
@@ -157,10 +146,7 @@ async def test_customer_return(setup_d_data, db_session):
     assert order.return_delivered_date == date(2026, 8, 20)
     
     movs2 = (await db_session.execute(select(InventoryMovementModel).where(InventoryMovementModel.reference_number == ord_id))).scalars().all()
-    assert len(movs2) == 2
-    inbounds = [m for m in movs2 if m.movement_type == "CUSTOMER_RETURN"]
-    assert len(inbounds) == 1
-    assert inbounds[0].quantity == 1
+    assert len(movs2) == 0
 
 @pytest.mark.asyncio
 async def test_neutral_statuses_no_movements(setup_d_data, db_session):
@@ -200,9 +186,7 @@ async def test_multi_sku_quantities(setup_d_data, db_session):
     await orchestrator.reconcile_report([record], date.today(), date.today())
     
     movs = (await db_session.execute(select(InventoryMovementModel).where(InventoryMovementModel.reference_number == ord_id))).scalars().all()
-    assert len(movs) == 2
-    assert any(m.sku_id == sku1.id and m.quantity == -2 for m in movs)
-    assert any(m.sku_id == sku2.id and m.quantity == -3 for m in movs)
+    assert len(movs) == 0
 
 @pytest.mark.asyncio
 async def test_duplicate_report_inventory_idempotency(setup_d_data, db_session):
@@ -221,8 +205,8 @@ async def test_duplicate_report_inventory_idempotency(setup_d_data, db_session):
     await orchestrator.reconcile_report([record], date.today(), date.today())
     
     movs = (await db_session.execute(select(InventoryMovementModel).where(InventoryMovementModel.reference_number == ord_id))).scalars().all()
-    # It must be exactly 1 movement, not 2
-    assert len(movs) == 1
+    # No movements are generated
+    assert len(movs) == 0
 
 @pytest.mark.asyncio
 async def test_warehouse_determination_error_if_missing(setup_d_data, db_session):
@@ -251,9 +235,7 @@ async def test_warehouse_determination_error_if_missing(setup_d_data, db_session
     os.environ["SHOPDECK_SALES_WAREHOUSE_CODE"] = "WH-01"
 
 @pytest.mark.asyncio
-async def test_inventory_movement_failure_rollback(setup_d_data, db_session):
-    from unittest.mock import patch
-    
+async def test_inventory_movement_generation_is_disconnected(setup_d_data, db_session):
     orchestrator = setup_d_data["orchestrator"]
     sku = setup_d_data["sku"]
     ord_id = f"ORD-{uuid4()}"
@@ -261,29 +243,13 @@ async def test_inventory_movement_failure_rollback(setup_d_data, db_session):
     record = {
         "external_order_id": ord_id, "order_date": date.today(), "status": "PACK",
         "items": [{"external_sku_code": sku.sku_code, "quantity": 1, "unit_price": 100.0, "tax_amount": 0.0}],
-        "return_created_date": "2026-08-19" # Sets expectation
     }
     
-    # We patch create_movement to fail, simulating a DB or validation error during movement creation.
-    with patch.object(orchestrator.movement_service, "create_movement", side_effect=Exception("Simulated Inventory Failure")):
-        summary = await orchestrator.reconcile_report([record], date.today(), date.today())
+    summary = await orchestrator.reconcile_report([record], date.today(), date.today())
     
-    # It should have caught the exception and logged it as an import_exception
-    assert summary.import_exceptions == 1
+    # Assert successful orchestration run with 0 exceptions and 0 inventory movements
+    assert summary.import_exceptions == 0
+    assert summary.inventory_movements_created == 0
     
-    # VERIFY WITH A COMPLETELY FRESH SESSION that nothing was committed
-    from tests.conftest import TestingSessionLocal
-    from src.domains.operations.models.lifecycle import OrderStateTransitionModel
-    
-    async with TestingSessionLocal() as fresh_session:
-        # 1. No SalesOrder
-        order = (await fresh_session.execute(select(SalesOrderModel).where(SalesOrderModel.external_order_id == ord_id))).scalars().first()
-        assert order is None, "SalesOrder should not exist"
-        
-        # 2. No lifecycle transition
-        hists = (await fresh_session.execute(select(OrderStateTransitionModel).where(OrderStateTransitionModel.external_order_id == ord_id))).scalars().all()
-        assert len(hists) == 0, "No state transitions should exist"
-        
-        # 3. No InventoryMovement
-        movs = (await fresh_session.execute(select(InventoryMovementModel).where(InventoryMovementModel.reference_number == ord_id))).scalars().all()
-        assert len(movs) == 0, "No inventory movements should exist"
+    movs = (await db_session.execute(select(InventoryMovementModel).where(InventoryMovementModel.reference_number == ord_id))).scalars().all()
+    assert len(movs) == 0, "No inventory movements should exist"

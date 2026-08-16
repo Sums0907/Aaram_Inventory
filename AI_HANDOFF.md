@@ -471,7 +471,7 @@ If GRNI / unbilled purchase accounting is introduced, it must be deliberately de
 
 ## Current Primary Coding Agent
 
-Gemini
+Antigravity
 
 ## Previous Coding Agent
 
@@ -479,46 +479,51 @@ Gemini
 
 ## Current Feature
 
-Phase D — ShopDeck Inventory Movement (Physical Inventory Idempotency)
+Phase 3 — Remove legacy ShopDeck Order Reconciliation dependency
 
 ## Status
 
-**IMPLEMENTED / VERIFIED**
+**PHASE 3 IMPLEMENTED / VERIFIED**
 
 ## Historical Phases
 - **PHASE A - ShopDeck Lifecycle Foundation**: CERTIFIED
 - **PHASE B - Dynamic ShopDeck Report Window**: CERTIFIED
 - **PHASE C - Dynamic ShopDeck Report Reconciliation**: CERTIFIED
+- **PHASE D - ShopDeck Inventory Movement**: CERTIFIED
+- **PHASE 2 - Packer Integration (Webhooks)**: CERTIFIED
 
 ## Pre-Existing Technical Debt
 - **AsyncSession / DI connection lifecycle technical debt**: The SQLAlchemy `NullPool` garbage collector warnings are a real resource-lifecycle issue and are explicitly recorded as pre-existing technical debt. They are not harmless and will be addressed in a future DEFERRED INFRASTRUCTURE HARDENING phase.
 
 ## Current Objective
 
-Complete Phase D of ShopDeck Reconciliation, inferring PACK boundaries, using `SHOPDECK_SALES_WAREHOUSE_CODE`, and tracking per-item inventory cycles properly with idempotency.
+Retire ShopDeck Order Reconciliation as the inventory source and transition entirely to the Packer System webhook integration for physical inventory events.
 
 ## Completed
 
-- **Phase D Inventory Logic**:
-  - Added return dates and expectations fields to `SalesOrderModel`.
-  - Added mapping for `RETURNED` dates in `adapters/shopdeck_order.py`.
-  - Added new ShopDeck statuses (`EXPIRED_AWB`, `LOST`, `PENDING`).
-  - Added inventory cycle inference logic inside `ReconciliationOrchestratorService` based on cumulative movement quantity.
-  - Implemented `RTO_RETURN` mapping for `EXPIRED AWB`.
-  - Fixed lazy-loading `MissingGreenlet` errors for new order items by initializing them.
-  - Enforced `SHOPDECK_SALES_WAREHOUSE_CODE` environment variable verification without defaults.
-  - Confirmed CUSTOMER_RETURN logic relies solely on `return_delivered_date` and is completely independent of the `RETURNED` order status.
-- **Testing**:
-  - Fully expanded the Phase D test matrix in `tests/operations/test_phase_d_inventory.py` to cover RTO initiation/delivery, customer returns (from DELIVERED state), neutral statuses, multi-SKU, duplicate reports idempotency, and warehouse determination.
-  - Fixed flaky datetime-based tests by explicitly mocking `observed_at`.
-  - Created dedicated `test_inventory_movement_failure_rollback` to verify strict transactional atomicity (a failure during Phase D inventory generation guarantees zero partial order/lifecycle updates persist).
-- **Certifications**:
-  - Full Operations + Inventory Truth Regression (`pytest tests/operations tests/inventory_truth -v`) passes (34/34 tests).
-  - `certify_inventory_truth.py` completes execution correctly (Exit Code 0).
+- **Phase 1 Dependency Audit**:
+  - Validated that ShopDeck Connector is archived, not deleted.
+  - ShopDeck Order Reconciliation is retired as an Inventory source.
+  - Packer becomes the primary operational source.
+- **Phase 2 Packer Integration**:
+  - Implemented `POST /api/v1/internal/webhooks/packer/events`.
+  - Created `PackerEventModel` (mapping to `packer_events`) and added manual Alembic migration.
+  - Created `PackerIntegrationService` to idempotently process events via `event_id`.
+  - Used `SHOPDECK_SALES_WAREHOUSE_CODE` environment variable for warehouse resolution.
+  - Added physical cycle validation to reject duplicate `PACKED` events unless a valid cycle (e.g. RTO) is complete.
+  - Fully implemented DI injection for the session factory.
+  - Handled SQLite `UNIQUE constraint failed: inventory_movements.movement_number` in tests to ensure concurrent duplicates return HTTP 200 `ALREADY_PROCESSED` gracefully.
+  - Wrote and passed comprehensive async tests in `tests/inventory/test_packer_webhook_integration.py`.
+- **Phase 3 Disconnect Active ShopDeck Reconciliation**:
+  - Removed physical inventory generation from `reconciliation_orchestrator.py` and `pipeline_orchestrator.py`.
+  - Archived `ShopDeckConnector` with `@deprecated`.
+  - Documented `DailyUpdatePage.tsx` as LEGACY in the frontend.
+  - Asserted zero inventory movements are generated via `test_phase_d_inventory.py`.
 
 ## Remaining
 
 - Infrastructure Hardening Task (Separate Task) to address `AsyncSession`/DI lifecycle connection leak warnings.
+- Phase 6/7 - Deprecate and physically remove legacy ShopDeck reconciliation code.
 
 ## Files Changed
 
@@ -527,6 +532,9 @@ Complete Phase D of ShopDeck Reconciliation, inferring PACK boundaries, using `S
 - `src/domains/operations/services/lifecycle_engine.py`
 - `src/domains/operations/services/reconciliation_orchestrator.py`
 - `src/domains/data_ingestion/services/adapters/shopdeck_order.py`
+- `src/app/services/pipeline_orchestrator.py`
+- `src/domains/connectors/services/shopdeck.py`
+- `frontend/src/pages/inventory/DailyUpdatePage.tsx`
 - `tests/operations/test_phase_d_inventory.py`
 - `tests/operations/test_reconciliation_orchestrator.py`
 

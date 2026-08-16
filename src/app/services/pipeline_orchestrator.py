@@ -49,9 +49,8 @@ class PipelineOrchestratorService:
                     processed_payment_ids.add(rel.source_id)
                     
         # 3. Direct Sales Order Processing (Daily Update Engine)
-        # For milestones where we only import Orders and not Invoices,
-        # we generate Inventory Movements directly from the Sales Order.
-        await self._process_unfulfilled_sales_orders(user_id)
+        # DISCONNECTED IN PHASE 3: We no longer generate Inventory Movements directly from Sales Orders.
+        pass
                 
         return job
 
@@ -76,71 +75,8 @@ class PipelineOrchestratorService:
             return
             
         # 1. Inventory Movements
-        # Using negative for INVOICE, positive for CREDIT (returns)
-        qty_multiplier = -1 if "INVOICE" in invoice.document_type.upper() else 1
-        
-        for item in order.items:
-            # Auto-resolve or create SKU
-            if not item.sku_id:
-                stmt_sku = select(SKUModel).where(SKUModel.sku_code == item.external_sku_code)
-                sku = (await self.session.execute(stmt_sku)).scalars().first()
-                if not sku:
-                    # For RC1, auto-create a skeleton SKU and Product
-                    # Find default category and UOM
-                    cat = (await self.session.execute(select(CategoryModel))).scalars().first()
-                    uom = (await self.session.execute(select(UnitOfMeasureModel))).scalars().first()
-                    if not cat or not uom:
-                        logging.error("Missing default Category or UOM. Cannot auto-create SKU.")
-                        continue
-                        
-                    product = ProductModel(
-                        id=uuid.uuid4(),
-                        product_code=f"AUTO-{item.external_sku_code}",
-                        product_name=item.external_sku_code,
-                        category_id=cat.id
-                    )
-                    self.session.add(product)
-                    
-                    sku = SKUModel(
-                        id=uuid.uuid4(),
-                        sku_code=item.external_sku_code,
-                        item_code=item.external_sku_code,
-                        product_id=product.id,
-                        uom_id=uom.id
-                    )
-                    self.session.add(sku)
-                    await self.session.commit()
-                    await self.session.refresh(sku)
-                
-                item.sku_id = sku.id
-                await self.session.commit()
-
-            if item.sku_id:
-                # We need a warehouse. Assuming a default warehouse exists and its ID is user_id or we fetch it.
-                from src.domains.masters.models.warehouse import WarehouseModel
-                wh = (await self.session.execute(select(WarehouseModel))).scalars().first()
-                warehouse_id = wh.id if wh else user_id
-                
-                movement = InventoryMovementCreate(
-                    movement_number=f"MOV-{order.external_order_id}-{item.id}",
-                    movement_type="SALES_FULFILLMENT" if qty_multiplier == -1 else "CUSTOMER_RETURN",
-                    movement_date=order.order_date,
-                    posting_date=date.today(),
-                    status="POSTED",
-                    warehouse_id=warehouse_id,
-                    sku_id=item.sku_id,
-                    quantity=item.quantity * qty_multiplier,
-                    unit_cost=item.unit_price,
-                    reference_type="TAX_INVOICE",
-                    reference_number=invoice.invoice_no,
-                    reference_id=invoice.id
-                )
-                try:
-                    await self.inventory_movement.create_movement(movement, user_id)
-                    # Trigger Balance Recalculation!
-                    await self.balance_calculator.recalculate_balance(warehouse_id, item.sku_id)
-                except Exception as e:
-                    logging.error(f"Failed to create movement for item {item.id}: {e}")
+        # DISCONNECTED IN PHASE 3: Physical inventory movements are now generated via Packer Events.
+        # This pipeline only handles Accounting Journals.
 
         # 2. Accounting Journal
         is_online = order.payment_method.upper() == "ONLINE"
@@ -222,89 +158,4 @@ class PipelineOrchestratorService:
             user_id=user_id
         )
 
-    async def _process_unfulfilled_sales_orders(self, user_id: UUID):
-        from sqlalchemy.orm import selectinload
-        from src.domains.masters.models.sku import SKUModel
-        from src.domains.inventory.models.movement import InventoryMovementModel
-        from src.domains.masters.models.warehouse import WarehouseModel
-        import uuid
-        import logging
-        
-        # Find all Sales Orders where there is NO InventoryMovement with reference_id = order.id
-        stmt = (
-            select(SalesOrderModel)
-            .options(selectinload(SalesOrderModel.items))
-            .outerjoin(InventoryMovementModel, InventoryMovementModel.reference_id == SalesOrderModel.id)
-            .where(InventoryMovementModel.id.is_(None))
-        )
-        
-        unfulfilled_orders = (await self.session.execute(stmt)).scalars().all()
-        
-        wh = (await self.session.execute(select(WarehouseModel))).scalars().first()
-        warehouse_id = wh.id if wh else user_id
-        
-        for order in unfulfilled_orders:
-            # We only generate movements for specific terminal statuses
-            status = str(order.status).upper()
-            if "DELIVERED" not in status and "RETURN" not in status and "RTO" not in status:
-                continue
-                
-            qty_multiplier = -1 if "DELIVERED" in status else 1
-            movement_type = "SALES_FULFILLMENT" if qty_multiplier == -1 else "CUSTOMER_RETURN"
-            
-            for item in order.items:
-                if not item.sku_id:
-                    # Auto-resolve or create SKU if missing
-                    stmt_sku = select(SKUModel).where(SKUModel.sku_code == item.external_sku_code)
-                    sku = (await self.session.execute(stmt_sku)).scalars().first()
-                    if not sku:
-                        from src.domains.masters.models.category import CategoryModel
-                        from src.domains.masters.models.unit_of_measure import UnitOfMeasureModel
-                        from src.domains.masters.models.product import ProductModel
-                        
-                        cat = (await self.session.execute(select(CategoryModel))).scalars().first()
-                        uom = (await self.session.execute(select(UnitOfMeasureModel))).scalars().first()
-                        if cat and uom:
-                            product = ProductModel(
-                                id=uuid.uuid4(),
-                                product_code=f"AUTO-{item.external_sku_code}",
-                                product_name=item.external_sku_code,
-                                category_id=cat.id
-                            )
-                            self.session.add(product)
-                            
-                            sku = SKUModel(
-                                id=uuid.uuid4(),
-                                sku_code=item.external_sku_code,
-                                item_code=item.external_sku_code,
-                                product_id=product.id,
-                                uom_id=uom.id
-                            )
-                            self.session.add(sku)
-                            await self.session.commit()
-                            await self.session.refresh(sku)
-                            
-                    if sku:
-                        item.sku_id = sku.id
-                        await self.session.commit()
-                
-                if item.sku_id:
-                    movement = InventoryMovementCreate(
-                        movement_number=f"MOV-{order.external_order_id}-{item.id}",
-                        movement_type=movement_type,
-                        movement_date=order.order_date,
-                        posting_date=date.today(),
-                        status="POSTED",
-                        warehouse_id=warehouse_id,
-                        sku_id=item.sku_id,
-                        quantity=item.quantity * qty_multiplier,
-                        unit_cost=item.unit_price,
-                        reference_type="SALES_ORDER",
-                        reference_number=order.external_order_id,
-                        reference_id=order.id
-                    )
-                    try:
-                        await self.inventory_movement.create_movement(movement, user_id)
-                        await self.balance_calculator.recalculate_balance(warehouse_id, item.sku_id)
-                    except Exception as e:
-                        logging.error(f"Failed to create movement for order {order.id}: {e}")
+    # `_process_unfulfilled_sales_orders` removed in Phase 3.
