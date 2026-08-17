@@ -30,3 +30,13 @@ If you are developing a production application, we recommend enabling type-aware
 ```
 
 See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+
+## Backend Configuration
+
+The frontend is completely decoupled from the backend URL via environment variables.
+The backend API URL is controlled through the `VITE_API_URL` environment variable. 
+
+By default (in development), the `VITE_API_URL` is set in the `.env.development` file to:
+`VITE_API_URL=http://127.0.0.1:8100/api/v1`
+
+Note: The `start_all.sh` script controls the ports for the servers (e.g., backend on 8100, frontend on 5173), while the frontend consumes this environment configuration to connect correctly to the API.

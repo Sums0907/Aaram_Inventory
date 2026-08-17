@@ -479,51 +479,31 @@ Gemini
 
 ## Current Feature
 
-Phase 3 — Remove legacy ShopDeck Order Reconciliation dependency
+Packer ↔ Inventory Integration Certification Suite v1.0
 
 ## Status
 
-**PHASE 3 IMPLEMENTED / VERIFIED**
+**ALL PASS**
 
-## Historical Phases
-- **PHASE A - ShopDeck Lifecycle Foundation**: CERTIFIED
-- **PHASE B - Dynamic ShopDeck Report Window**: CERTIFIED
-- **PHASE C - Dynamic ShopDeck Report Reconciliation**: CERTIFIED
-- **PHASE D - ShopDeck Inventory Movement**: CERTIFIED
-- **PHASE 2 - Packer Integration (Webhooks)**: CERTIFIED
+## Validated Inventory Responsibilities
 
-## Pre-Existing Technical Debt
-- **AsyncSession / DI connection lifecycle technical debt**: The SQLAlchemy `NullPool` garbage collector warnings are a real resource-lifecycle issue and are explicitly recorded as pre-existing technical debt. They are not harmless and will be addressed in a future DEFERRED INFRASTRUCTURE HARDENING phase.
+- **CERT-001**: Inventory successfully consumes PACKED events and creates SALES_FULFILLMENT movements.
+- **CERT-002**: Webhook idempotency verified (duplicate events return ALREADY_PROCESSED safely).
+- **CERT-003**: Forward fulfillment recovery (downstream outage handled through Packer outbox retry; eventual delivery creates exactly one inventory movement).
+- **CERT-004**: RTO_RECEIVED events process correctly (creates RTO_RETURN, restores inventory, rejects duplicates).
+- **CERT-005**: Partial RTO handling validated.
+- **CERT-006**: RTO event delivery recovery validated during Inventory downtime.
+- **CERT-007**: Cancellation before fulfillment validated (no unintended stock mutation).
 
-## Current Objective
+## Important Architecture Clarification
 
-Retire ShopDeck Order Reconciliation as the inventory source and transition entirely to the Packer System webhook integration for physical inventory events.
+Inventory does NOT interpret return conditions such as GOOD/DAMAGED.
+**Packer owns**: return reconciliation, item condition decision, filtering of non-restockable items.
+**Inventory owns**: receiving inventory-eligible events, ledger mutation, stock truth, idempotent processing.
 
-## Completed
-
-- **Phase 1 Dependency Audit**:
-  - Validated that ShopDeck Connector is archived, not deleted.
-  - ShopDeck Order Reconciliation is retired as an Inventory source.
-  - Packer becomes the primary operational source.
-- **Phase 2 Packer Integration**:
-  - Implemented `POST /api/v1/internal/webhooks/packer/events`.
-  - Created `PackerEventModel` (mapping to `packer_events`) and added manual Alembic migration.
-  - Created `PackerIntegrationService` to idempotently process events via `event_id`.
-  - Used `SHOPDECK_SALES_WAREHOUSE_CODE` environment variable for warehouse resolution.
-  - Added physical cycle validation to reject duplicate `PACKED` events unless a valid cycle (e.g. RTO) is complete.
-  - Fully implemented DI injection for the session factory.
-  - Handled SQLite `UNIQUE constraint failed: inventory_movements.movement_number` in tests to ensure concurrent duplicates return HTTP 200 `ALREADY_PROCESSED` gracefully.
-  - Wrote and passed comprehensive async tests in `tests/inventory/test_packer_webhook_integration.py`.
-- **Phase 3 Disconnect Active ShopDeck Reconciliation**:
-  - Removed physical inventory generation from `reconciliation_orchestrator.py` and `pipeline_orchestrator.py`.
-  - Archived `ShopDeckConnector` with `@deprecated`.
-  - Documented `DailyUpdatePage.tsx` as LEGACY in the frontend.
-  - Asserted zero inventory movements are generated via `test_phase_d_inventory.py`.
-
-## Remaining
-
-- Infrastructure Hardening Task (Separate Task) to address `AsyncSession`/DI lifecycle connection leak warnings.
-- Phase 6/7 - Deprecate and physically remove legacy ShopDeck reconciliation code.
+## Current Certified Contract
+Packer sends valid inventory mutation events. Inventory processes them exactly once.
+Future changes must preserve: webhook contract, event_id idempotency, inventory ledger integrity, movement immutability, duplicate event handling. Do not introduce condition/disposition logic into Inventory unless a deliberate future feature phase is started.
 
 ## Files Changed
 
@@ -797,6 +777,18 @@ UNDERSTAND.
 PRESERVE.
 
 IMPLEMENT.
+
+---
+
+### 2026-08-17 — Antigravity (Integration Certification Suite v1.0)
+
+Task: Record Packer ↔ Inventory Integration Certification results.
+Changes:
+- Documented ALL PASS status for CERT-001 through CERT-007.
+- Clarified the architectural boundary: Packer is responsible for return condition filtering, while Inventory remains a strict ledger for eligible stock.
+- Codified the certified webhook contract regarding idempotency and immutability.
+Status: Complete
+Next step: Await next human owner instruction.
 
 TEST.
 

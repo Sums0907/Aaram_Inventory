@@ -16,7 +16,7 @@ import {
 const INVENTORY_NAV_ITEMS = [
   { name: "Dashboard", href: "/inventory", icon: LayoutDashboard },
   { name: "Catalog", href: "/inventory/catalog", icon: Package },
-  { name: "Daily Update", href: "/inventory/daily-update", icon: Package },
+  // { name: "Daily Update", href: "/inventory/daily-update", icon: Package }, // Deprecated
   { name: "Products", href: "/inventory/products", icon: Package },
   { name: "BOMs", href: "/inventory/boms", icon: Settings2 },
   { name: "UOMs", href: "/inventory/units-of-measure", icon: Settings2 },

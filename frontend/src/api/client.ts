@@ -3,8 +3,20 @@ import { toast } from '@/hooks/use-toast';
 
 const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1MDJlYWMxMS0yMWUyLTRkNTMtYTllOS0yYmEyMWJjMDRiOWEiLCJ1c2VybmFtZSI6ImRlbW8iLCJyb2xlIjoiYWRtaW4iLCJleHAiOjE4MTc0NzI2MDZ9._cuQTw-7zam00atnpTsxsklre2ZsOFVKPkbvChQpSMM";
 
+// Add type declaration for window.AARAM_CONFIG
+declare global {
+  interface Window {
+    AARAM_CONFIG?: {
+      API_URL?: string;
+    };
+  }
+}
+
+const API_BASE_URL =
+  window.AARAM_CONFIG?.API_URL || "http://127.0.0.1:8100/api/v1";
+
 export const apiClient = axios.create({
-  baseURL: 'http://localhost:8000/api/v1',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${TOKEN}`,

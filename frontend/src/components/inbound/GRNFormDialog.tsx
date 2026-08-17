@@ -69,8 +69,8 @@ export function GRNFormDialog({ open, onOpenChange, defaultSkuId }: GRNFormDialo
   
   const suppliers = suppliersData?.data || []
 
-  // Hardcoded Test Warehouse ID (Since frontend doesn't have a warehouse selector yet)
-  const warehouseId = "06a7c7fc-f330-7f16-8000-705df40db495" 
+  // Hardcoded Test Warehouse ID (Matches test_inventory.db)
+  const warehouseId = "dbcfca97-fc1d-4466-815f-a843072a14be" 
 
   const generateGrnNumber = () => {
     const year = new Date().getFullYear();

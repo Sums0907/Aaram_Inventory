@@ -214,3 +214,61 @@ async def test_packer_webhook_concurrent_duplicates(async_client: AsyncClient, t
         
         movements = (await verify_session.execute(select(InventoryMovementModel).where(InventoryMovementModel.reference_number == "ORD-400"))).scalars().all()
         assert len(movements) == 1
+
+@pytest.mark.asyncio
+async def test_packer_webhook_rto_success(async_client: AsyncClient, test_session_factory):
+    async with test_session_factory() as session:
+        wh, sku = await setup_test_data(session)
+
+    # First, order must be packed
+    pack_event_id = str(uuid.uuid4())
+    await async_client.post("/api/v1/internal/webhooks/packer/events", json={
+        "event_id": pack_event_id,
+        "event_type": "PACKED",
+        "occurred_at": datetime.now(timezone.utc).isoformat(),
+        "order_id": "ORD-RTO-1",
+        "awb": "AWB-RTO-1",
+        "items": [{"sku": "SKU-PACK-1", "quantity": 2}]
+    })
+
+    # Now, process RTO
+    rto_event_id = str(uuid.uuid4())
+    rto_payload = {
+        "event_id": rto_event_id,
+        "event_type": "RTO_RECEIVED",
+        "occurred_at": datetime.now(timezone.utc).isoformat(),
+        "order_id": "ORD-RTO-1",
+        "awb": "REV-AWB-1",
+        "items": [{"sku": "SKU-PACK-1", "quantity": 1}] # Only 1 accepted
+    }
+
+    resp = await async_client.post("/api/v1/internal/webhooks/packer/events", json=rto_payload)
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "PROCESSED"
+
+    async with test_session_factory() as verify_session:
+        movements = (await verify_session.execute(select(InventoryMovementModel).where(
+            InventoryMovementModel.reference_number == "ORD-RTO-1",
+            InventoryMovementModel.movement_type == "RTO_RETURN"
+        ))).scalars().all()
+        assert len(movements) == 1
+        assert movements[0].quantity == 1
+
+@pytest.mark.asyncio
+async def test_packer_webhook_return_without_pack_fails(async_client: AsyncClient, test_session_factory):
+    async with test_session_factory() as session:
+        wh, sku = await setup_test_data(session)
+
+    ret_event_id = str(uuid.uuid4())
+    ret_payload = {
+        "event_id": ret_event_id,
+        "event_type": "CUSTOMER_RETURN_RECEIVED",
+        "occurred_at": datetime.now(timezone.utc).isoformat(),
+        "order_id": "ORD-RET-NO-PACK",
+        "awb": "REV-AWB-2",
+        "items": [{"sku": "SKU-PACK-1", "quantity": 1}]
+    }
+
+    resp = await async_client.post("/api/v1/internal/webhooks/packer/events", json=ret_payload)
+    assert resp.status_code == 400
+    assert "cannot be returned before being packed" in resp.text

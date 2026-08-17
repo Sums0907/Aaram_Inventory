@@ -34,7 +34,6 @@ class PackerIntegrationService:
     async def _validate_physical_cycle(self, session: AsyncSession, order_id: str, event_type: str) -> None:
         """
         Validates whether the new event type is permitted given the physical event history.
-        For Phase 2, we only accept the first PACKED event.
         """
         if event_type == "PACKED":
             # Check if this order has already been fulfilled
@@ -46,8 +45,17 @@ class PackerIntegrationService:
             res = await session.execute(stmt)
             if res.scalars().first():
                 # A sales fulfillment already exists for this order. 
-                # Since we don't have RTO boundaries yet in Phase 2, reject a second PACKED event.
                 raise ValidationException(f"Invalid physical cycle: order '{order_id}' has already been packed.")
+        elif event_type in ("RTO_RECEIVED", "CUSTOMER_RETURN_RECEIVED"):
+            # Check if this order has been fulfilled before it can be returned
+            stmt = select(InventoryMovementModel).where(
+                InventoryMovementModel.reference_type == "PACKER_ORDER",
+                InventoryMovementModel.reference_number == order_id,
+                InventoryMovementModel.movement_type == "SALES_FULFILLMENT"
+            ).limit(1)
+            res = await session.execute(stmt)
+            if not res.scalars().first():
+                raise ValidationException(f"Invalid physical cycle: order '{order_id}' cannot be returned before being packed.")
         else:
             raise ValidationException(f"Event type '{event_type}' is not yet supported.")
 
@@ -95,15 +103,28 @@ class PackerIntegrationService:
             if not sku_obj:
                 raise ValidationException(f"SKU '{item.sku}' not found in SKU master.")
 
+            if payload.event_type == "PACKED":
+                mov_type = "SALES_FULFILLMENT"
+                qty = -item.quantity
+                prefix = "PACK"
+            elif payload.event_type == "RTO_RECEIVED":
+                mov_type = "RTO_RETURN"
+                qty = item.quantity
+                prefix = "RTO"
+            elif payload.event_type == "CUSTOMER_RETURN_RECEIVED":
+                mov_type = "CUSTOMER_RETURN"
+                qty = item.quantity
+                prefix = "RET"
+
             mov_create = InventoryMovementCreate(
-                movement_number=f"PACK-{payload.order_id}-{sku_obj.id}-{payload.event_id}",
-                movement_type="SALES_FULFILLMENT",
+                movement_number=f"{prefix}-{payload.order_id}-{sku_obj.id}-{payload.event_id}",
+                movement_type=mov_type,
                 movement_date=payload.occurred_at.date(),
                 posting_date=datetime.now(timezone.utc).date(),
                 status="POSTED",
                 warehouse_id=warehouse_id,
                 sku_id=sku_obj.id,
-                quantity=-item.quantity,  # Negative for SALES_FULFILLMENT
+                quantity=qty,
                 reference_type="PACKER_ORDER",
                 reference_number=payload.order_id,
                 reference_id=payload.event_id # Use event_id as the authoritative reference
