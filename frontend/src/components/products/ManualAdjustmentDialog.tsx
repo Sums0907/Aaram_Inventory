@@ -43,8 +43,8 @@ const DECREASE_REASONS = [
   "Other"
 ]
 
-// Hardcoded for now until warehouse API is built
-const WAREHOUSE_ID = "96c6b20c-d119-4f97-b635-c8e5ef87fd52"
+// Hardcoded for now until warehouse API is built (Matches test_inventory.db)
+const WAREHOUSE_ID = "dbcfca97-fc1d-4466-815f-a843072a14be"
 
 export function ManualAdjustmentDialog({ skuId, open, onOpenChange, type, onSuccess }: ManualAdjustmentDialogProps) {
   const createMutation = useCreateManualAdjustment()
