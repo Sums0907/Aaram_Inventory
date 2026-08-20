@@ -10,6 +10,7 @@ services:
       - ENVIRONMENT=production
       - AUTH_MODE=${AUTH_MODE}
       - AARAMIDENTITY_PUBLIC_KEY=${AARAMIDENTITY_PUBLIC_KEY}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
       - HOST=0.0.0.0
       - PORT=8000
     ports:
