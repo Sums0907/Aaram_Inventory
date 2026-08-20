@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   api:
-    image: ghcr.io/sums0907/aaraminventory-backend:latest
+    image: ghcr.io/sums0907/aaram_inventory-backend:main
     restart: always
     environment:
       # Expecting the bare-metal postgres connection URL in the VPS .env file
@@ -20,7 +20,7 @@ services:
              uvicorn src.app.main:app --host 0.0.0.0 --port 8000 --workers 4"
 
   frontend:
-    image: ghcr.io/sums0907/aaraminventory-frontend:latest
+    image: ghcr.io/sums0907/aaram_inventory-frontend:main
     restart: always
     ports:
       # Map to 3100 locally to avoid conflict with Identity on 3000
