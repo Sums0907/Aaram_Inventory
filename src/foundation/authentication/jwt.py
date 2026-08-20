@@ -30,7 +30,7 @@ def decode_aaramidentity_token(token: str) -> Optional[Dict[str, Any]]:
             # Fallback or error if not configured
             raise ValueError("AARAMIDENTITY_PUBLIC_KEY is not configured")
         # Format the public key properly if it's missing the PEM header
-        public_key = settings.AARAMIDENTITY_PUBLIC_KEY
+        public_key = settings.AARAMIDENTITY_PUBLIC_KEY.replace('\\n', '\n')
         if "-----BEGIN PUBLIC KEY-----" not in public_key:
             public_key = f"-----BEGIN PUBLIC KEY-----\n{public_key}\n-----END PUBLIC KEY-----"
             
