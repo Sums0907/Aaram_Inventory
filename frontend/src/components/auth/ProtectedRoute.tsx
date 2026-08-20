@@ -7,7 +7,8 @@ export function ProtectedRoute() {
 
   if (!isAuthenticated) {
     // In a real AaramIdentity setup, we redirect the user to the Identity provider
-    window.location.href = `http://localhost:9001/login?redirect=${encodeURIComponent(window.location.href)}`;
+    const identityUrl = window.AARAM_CONFIG?.IDENTITY_URL || "http://localhost:9001";
+    window.location.href = `${identityUrl}/login?redirect=${encodeURIComponent(window.location.href)}`;
     return null;
   }
 
