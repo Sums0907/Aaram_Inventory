@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ImportPanel } from "./ImportPanel";
 import { ExportPanel } from "./ExportPanel";

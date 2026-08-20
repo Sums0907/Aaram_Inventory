@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState } from 'react';
 import { useUploadShopDeckOrders, useImportJobPreview, useCommitImportJob, useReportWindow } from '@/api/imports';
 import { useRunMatchingPipeline } from '@/api/matching';

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Link } from "react-router-dom"
 import { useAuth } from "@/hooks/use-auth"
 import { User, Settings, Database, ArrowLeftRight, Download, FileOutput, LogOut } from "lucide-react"

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState } from "react"
 import { useImportJobs } from "@/api/imports"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"

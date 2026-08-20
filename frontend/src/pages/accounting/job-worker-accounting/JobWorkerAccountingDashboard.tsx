@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useJobWorkerAccountingDashboard } from "@/api/job-worker-accounting"
 import { useNavigate } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"

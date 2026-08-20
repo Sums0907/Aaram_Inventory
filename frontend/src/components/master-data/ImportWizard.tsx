@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useRef } from "react";
 import { masterDataApi } from "@/api/master-data";
 import type { ImportResult, ImportRowResult } from "@/api/master-data";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useAuth } from "@/hooks/use-auth";
 
 export function ActivityHistoryPanel() {

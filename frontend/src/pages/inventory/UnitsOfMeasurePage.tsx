@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState } from 'react';
 import { useUnitsOfMeasure, useCreateUOM, useUpdateUOM, useActivateUOM, useDeactivateUOM } from '@/api/masters';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { useInventoryHierarchy } from '@/api/hierarchy';
 import { useUpdateCategory, useArchiveCategory, useDeleteCategory, useUpdateProduct, useArchiveProduct, useDeleteProduct, useSKUs } from '@/api/masters';

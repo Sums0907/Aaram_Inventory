@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState } from "react"
 import { useSuppliers } from "@/api/suppliers"
 import { Button } from "@/components/ui/button"

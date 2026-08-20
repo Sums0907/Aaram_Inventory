@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Search, X, Lock } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"

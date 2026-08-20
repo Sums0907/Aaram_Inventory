@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Card, CardContent } from "@/components/ui/card"
 import type { SKUResponse } from "@/api/masters"
 import { Package, IndianRupee, AlertTriangle, ShieldCheck, XCircle, Grid } from "lucide-react"

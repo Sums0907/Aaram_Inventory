@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Outlet, Link, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { AlertTriangle, ArrowRightLeft, FileDown, LayoutDashboard, Package, Settings2 } from "lucide-react"

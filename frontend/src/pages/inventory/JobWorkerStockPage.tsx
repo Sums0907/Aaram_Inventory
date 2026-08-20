@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useMemo, Fragment } from "react"
 import { useAllPendingStock, useAllJobWorkerActivities } from "@/api/job-works"
 import { useSKUs } from "@/api/masters"

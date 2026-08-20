@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Link, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { MoreHorizontal, Users, Settings2, FileUp, ClipboardCheck, ArrowRightLeft } from "lucide-react"

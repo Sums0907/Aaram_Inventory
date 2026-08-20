@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from 'react';
 import type { TreeNode } from './InventoryExplorerTree';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

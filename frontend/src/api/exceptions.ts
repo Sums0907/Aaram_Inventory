@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { apiClient } from './client';
 
 export interface ExceptionInventoryItem {

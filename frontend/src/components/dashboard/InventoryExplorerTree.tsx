@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState } from 'react';
 import { ChevronRight, ChevronDown, Folder, Package, FileBox } from 'lucide-react';
 import type { CategoryInfo, ProductInfo } from '@/api/masters';

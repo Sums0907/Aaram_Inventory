@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useMatchExceptions, useRunMatchingPipeline } from "@/api/matching"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"

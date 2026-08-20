@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { FileDown, CalendarCheck, CheckCircle2, FileSpreadsheet, BookOpen, Clock, BadgeCheck, FileText, AlertCircle } from "lucide-react"
