@@ -11,6 +11,7 @@ from src.domains.data_ingestion.services.import_record import ImportRecordServic
 from src.domains.data_ingestion.services.import_error import ImportErrorService
 from src.domains.data_ingestion.services.import_summary import ImportSummaryService
 from src.domains.data_ingestion.services.commit import CommitService
+from src.domains.data_ingestion.services.master_data_application_service import MasterDataApplicationService
 from src.domains.data_ingestion.services.adapters.shopdeck_order import ShopDeckOrderAdapter
 from src.domains.data_ingestion.services.adapters.shopdeck_tax import ShopDeckTaxAdapter
 from src.domains.data_ingestion.services.adapters.shopdeck_cod_settlement import ShopDeckCODSettlementAdapter
@@ -88,6 +89,11 @@ class DataIngestionContainer(containers.DeclarativeContainer):
         tax_invoice_service=tax_invoice_service,
         payment_service=payment_service,
         settlement_service=settlement_service,
+    )
+    
+    master_data_application_service = providers.Factory(
+        MasterDataApplicationService,
+        session=db.provided._session_factory.call(),
     )
     
     shopdeck_order_adapter = providers.Factory(

@@ -4,6 +4,7 @@ import uuid
 from typing import List, Callable, AsyncContextManager
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.foundation.api.responses import SuccessResponse
+from src.foundation.authentication.dependencies import require_permission, CurrentUser
 from src.app.container import DomainsContainer
 from src.domains.inventory.services.job_work import JobWorkService
 from src.domains.inventory.schemas.job_work import (
@@ -25,9 +26,10 @@ router = APIRouter(prefix="/inventory", tags=["inventory-job-works"])
 @inject
 async def issue_material(
     request: JobWorkIssueCreate,
-    service: JobWorkService = Depends(Provide[DomainsContainer.inventory.job_work_service])
+    service: JobWorkService = Depends(Provide[DomainsContainer.inventory.job_work_service]),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_JOBWORK_MANAGE"))
 ):
-    sys_user = uuid.UUID("00000000-0000-0000-0000-000000000001")
+    sys_user = uuid.UUID(current_user.id)
     issue = await service.issue_material(request, sys_user)
     return SuccessResponse(data=issue)
 
@@ -35,9 +37,10 @@ async def issue_material(
 @inject
 async def return_material(
     request: JobWorkReturnCreate,
-    service: JobWorkService = Depends(Provide[DomainsContainer.inventory.job_work_service])
+    service: JobWorkService = Depends(Provide[DomainsContainer.inventory.job_work_service]),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_JOBWORK_MANAGE"))
 ):
-    sys_user = uuid.UUID("00000000-0000-0000-0000-000000000001")
+    sys_user = uuid.UUID(current_user.id)
     job_return = await service.return_material(request, sys_user)
     return SuccessResponse(data=job_return)
 
@@ -45,7 +48,8 @@ async def return_material(
 @inject
 async def get_pending_stock(
     supplier_id: uuid.UUID,
-    service: JobWorkService = Depends(Provide[DomainsContainer.inventory.job_work_service])
+    service: JobWorkService = Depends(Provide[DomainsContainer.inventory.job_work_service]),
+    _=Depends(require_permission("INVENTORY_JOBWORK_VIEW"))
 ):
     stock = await service.get_pending_stock(supplier_id)
     return SuccessResponse(data=stock)
@@ -53,7 +57,8 @@ async def get_pending_stock(
 @router.get("/job-works/pending-stock", response_model=SuccessResponse[JobWorkerPendingStockResponse])
 @inject
 async def get_all_pending_stock(
-    service: JobWorkService = Depends(Provide[DomainsContainer.inventory.job_work_service])
+    service: JobWorkService = Depends(Provide[DomainsContainer.inventory.job_work_service]),
+    _=Depends(require_permission("INVENTORY_JOBWORK_VIEW"))
 ):
     items = await service.get_all_pending_stock()
     kpis = await service.get_pending_stock_kpis()
@@ -64,7 +69,8 @@ async def get_all_pending_stock(
 async def get_custody_ledger(
     supplier_id: uuid.UUID,
     item_id: Optional[uuid.UUID] = None,
-    service: JobWorkService = Depends(Provide[DomainsContainer.inventory.job_work_service])
+    service: JobWorkService = Depends(Provide[DomainsContainer.inventory.job_work_service]),
+    _=Depends(require_permission("INVENTORY_JOBWORK_VIEW"))
 ):
     ledger = await service.get_custody_ledger(supplier_id, item_id)
     return SuccessResponse(data=ledger)
@@ -73,7 +79,8 @@ async def get_custody_ledger(
 @inject
 async def get_job_worker_activities(
     supplier_id: uuid.UUID,
-    session_factory: Callable[..., AsyncContextManager[AsyncSession]] = Depends(Provide[DomainsContainer.core.db.provided._session_factory])
+    session_factory: Callable[..., AsyncContextManager[AsyncSession]] = Depends(Provide[DomainsContainer.core.db.provided._session_factory]),
+    _=Depends(require_permission("INVENTORY_JOBWORK_VIEW"))
 ):
     from sqlalchemy import select, or_, and_
     from src.domains.inventory.models.movement import InventoryMovementModel
@@ -114,7 +121,8 @@ async def get_job_worker_activities(
 @router.get("/job-works/activities")
 @inject
 async def get_all_job_work_activities(
-    session_factory: Callable[..., AsyncContextManager[AsyncSession]] = Depends(Provide[DomainsContainer.core.db.provided._session_factory])
+    session_factory: Callable[..., AsyncContextManager[AsyncSession]] = Depends(Provide[DomainsContainer.core.db.provided._session_factory]),
+    _=Depends(require_permission("INVENTORY_JOBWORK_VIEW"))
 ):
     from sqlalchemy import select
     from src.domains.inventory.models.movement import InventoryMovementModel
@@ -150,7 +158,8 @@ async def get_all_job_work_activities(
 @router.get("/transformations", response_model=SuccessResponse[List[InventoryTransformationRecordResponse]])
 @inject
 async def get_transformations(
-    session_factory: Callable[..., AsyncContextManager[AsyncSession]] = Depends(Provide[DomainsContainer.core.db.provided._session_factory])
+    session_factory: Callable[..., AsyncContextManager[AsyncSession]] = Depends(Provide[DomainsContainer.core.db.provided._session_factory]),
+    _=Depends(require_permission("INVENTORY_TRANSFORMATION_CREATE"))
 ):
     from src.domains.inventory.models.job_work import InventoryTransformationRecord
     from sqlalchemy import select

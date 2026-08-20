@@ -21,6 +21,7 @@ class BOMModel(BaseModel):
 
     # Relationships
     items: Mapped[List["BOMItemModel"]] = relationship("BOMItemModel", back_populates="bom", cascade="all, delete-orphan")
+    target_item: Mapped["SKUModel"] = relationship("SKUModel", foreign_keys=[target_item_id])
 
 
 class BOMItemModel(BaseModel):
@@ -39,3 +40,4 @@ class BOMItemModel(BaseModel):
     # Relationships
     bom: Mapped["BOMModel"] = relationship("BOMModel", back_populates="items")
     uom: Mapped[Optional["UnitOfMeasureModel"]] = relationship("UnitOfMeasureModel")
+    component_item: Mapped["SKUModel"] = relationship("SKUModel", foreign_keys=[component_item_id])

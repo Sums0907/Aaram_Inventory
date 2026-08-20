@@ -15,3 +15,4 @@ __all__ = [
     "ImportSummaryModel",
     "PackerEventModel"
 ]
+from .import_audit_log import ImportAuditLogModel

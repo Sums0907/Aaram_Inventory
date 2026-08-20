@@ -12,6 +12,7 @@ class SKUModel(BaseModel):
 
     item_code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
     sku_code: Mapped[Optional[str]] = mapped_column(String(50), unique=True, nullable=True, index=True)
+    shopdeck_sku_id: Mapped[Optional[str]] = mapped_column(String(100), unique=True, nullable=True, index=True)
     
     product_id: Mapped[UUID] = mapped_column(ForeignKey("products.id"), nullable=False)
     

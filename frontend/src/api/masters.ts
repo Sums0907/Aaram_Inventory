@@ -110,15 +110,11 @@ export interface SKUUpdatePayload {
   attribute_values?: Record<string, string>;
 }
 
-const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1MDJlYWMxMS0yMWUyLTRkNTMtYTllOS0yYmEyMWJjMDRiOWEiLCJ1c2VybmFtZSI6ImRlbW8iLCJyb2xlIjoiYWRtaW4iLCJleHAiOjE4MTc0NzI2MDZ9._cuQTw-7zam00atnpTsxsklre2ZsOFVKPkbvChQpSMM";
-
 export function useSKUs() {
   return useQuery({
     queryKey: ['masters-skus'],
     queryFn: async () => {
-      const payload = await apiClient.get<any>('/masters/skus', {
-        headers: { Authorization: `Bearer ${TOKEN}` }
-      }) as any;
+      const payload = await apiClient.get<any>('/masters/skus') as any;
       return (payload?.data || []) as SKUResponse[];
     },
   });
@@ -130,9 +126,7 @@ export function useProducts() {
     queryFn: async () => {
       // Mocking for now since there might not be a direct products endpoint matching SKUResponse structure.
       // But let's call it and hope it returns the list of products for dropdown selection.
-      const payload = await apiClient.get<any>('/masters/products', {
-        headers: { Authorization: `Bearer ${TOKEN}` }
-      }).catch(() => ({ data: [] })) as any;
+      const payload = await apiClient.get<any>('/masters/products').catch(() => ({ data: [] })) as any;
       return (payload?.data || []) as ProductInfo[];
     },
   });
@@ -143,9 +137,7 @@ export function useCategories(itemType?: string) {
     queryKey: ['masters-categories', itemType],
     queryFn: async () => {
       const url = itemType ? `/masters/categories?item_type=${itemType}` : '/masters/categories';
-      const payload = await apiClient.get<any>(url, {
-        headers: { Authorization: `Bearer ${TOKEN}` }
-      }).catch(() => ({ data: [] })) as any;
+      const payload = await apiClient.get<any>(url).catch(() => ({ data: [] })) as any;
       return (payload?.data || []) as CategoryInfo[];
     },
   });
@@ -165,9 +157,7 @@ export function useUnitsOfMeasure() {
   return useQuery({
     queryKey: ['masters-uoms'],
     queryFn: async () => {
-      const payload = await apiClient.get<any>('/masters/units-of-measure', {
-        headers: { Authorization: `Bearer ${TOKEN}` }
-      }).catch(() => ({ data: [] })) as any;
+      const payload = await apiClient.get<any>('/masters/units-of-measure').catch(() => ({ data: [] })) as any;
       return (payload?.data || []) as UnitOfMeasureInfo[];
     },
   });
@@ -177,9 +167,7 @@ export function useCreateUOM() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Omit<UnitOfMeasureInfo, 'id' | 'status'>) => {
-      const payload = await apiClient.post<any>('/masters/units-of-measure', data, {
-        headers: { Authorization: `Bearer ${TOKEN}` }
-      });
+      const payload = await apiClient.post<any>('/masters/units-of-measure', data);
       return payload?.data;
     },
     onSuccess: () => {
@@ -192,9 +180,7 @@ export function useUpdateUOM() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string, data: Partial<UnitOfMeasureInfo> }) => {
-      const payload = await apiClient.put<any>(`/masters/units-of-measure/${id}`, data, {
-        headers: { Authorization: `Bearer ${TOKEN}` }
-      });
+      const payload = await apiClient.put<any>(`/masters/units-of-measure/${id}`, data);
       return payload?.data;
     },
     onSuccess: () => {
@@ -207,9 +193,7 @@ export function useActivateUOM() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const payload = await apiClient.patch<any>(`/masters/units-of-measure/${id}/activate`, {}, {
-        headers: { Authorization: `Bearer ${TOKEN}` }
-      });
+      const payload = await apiClient.patch<any>(`/masters/units-of-measure/${id}/activate`, {});
       return payload?.data;
     },
     onSuccess: () => {
@@ -222,9 +206,7 @@ export function useDeactivateUOM() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const payload = await apiClient.patch<any>(`/masters/units-of-measure/${id}/deactivate`, {}, {
-        headers: { Authorization: `Bearer ${TOKEN}` }
-      });
+      const payload = await apiClient.patch<any>(`/masters/units-of-measure/${id}/deactivate`, {});
       return payload?.data;
     },
     onSuccess: () => {
@@ -237,9 +219,7 @@ export function useCreateCategory() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: { category_name: string; category_code?: string; item_type: string; parent_id?: string }) => {
-      const payload = await apiClient.post<any>('/masters/categories', data, {
-        headers: { Authorization: `Bearer ${TOKEN}` }
-      });
+      const payload = await apiClient.post<any>('/masters/categories', data);
       return payload?.data;
     },
     onSuccess: () => {
@@ -253,9 +233,7 @@ export function useUpdateCategory() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string, data: any }) => {
-      const payload = await apiClient.put<any>(`/masters/categories/${id}`, data, {
-        headers: { Authorization: `Bearer ${TOKEN}` }
-      });
+      const payload = await apiClient.put<any>(`/masters/categories/${id}`, data);
       return payload?.data;
     },
     onSuccess: () => {
@@ -269,9 +247,7 @@ export function useArchiveCategory() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const payload = await apiClient.patch<any>(`/masters/categories/${id}/archive`, {}, {
-        headers: { Authorization: `Bearer ${TOKEN}` }
-      });
+      const payload = await apiClient.patch<any>(`/masters/categories/${id}/archive`, {});
       return payload?.data;
     },
     onSuccess: () => {
@@ -285,9 +261,7 @@ export function useDeleteCategory() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const payload = await apiClient.delete<any>(`/masters/categories/${id}`, {
-        headers: { Authorization: `Bearer ${TOKEN}` }
-      });
+      const payload = await apiClient.delete<any>(`/masters/categories/${id}`);
       return payload?.data;
     },
     onSuccess: () => {
@@ -301,9 +275,7 @@ export function useCreateInventoryItem() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: InventoryItemCreatePayload) => {
-      const payload = await apiClient.post<any>('/masters/inventory-items', data, {
-        headers: { Authorization: `Bearer ${TOKEN}` }
-      });
+      const payload = await apiClient.post<any>('/masters/inventory-items', data);
       return payload?.data;
     },
     onSuccess: () => {
@@ -319,9 +291,7 @@ export function useCreateSKU() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: SKUCreatePayload) => {
-      const payload = await apiClient.post<any>('/masters/skus', data, {
-        headers: { Authorization: `Bearer ${TOKEN}` }
-      });
+      const payload = await apiClient.post<any>('/masters/skus', data);
       return payload?.data;
     },
     onSuccess: () => {
@@ -334,9 +304,7 @@ export function useUpdateSKU() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: SKUUpdatePayload }) => {
-      const payload = await apiClient.put<any>(`/masters/skus/${id}`, data, {
-        headers: { Authorization: `Bearer ${TOKEN}` }
-      });
+      const payload = await apiClient.put<any>(`/masters/skus/${id}`, data);
       return payload?.data;
     },
     onSuccess: () => {
@@ -349,9 +317,7 @@ export function useDeactivateSKU() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const payload = await apiClient.patch<any>(`/masters/skus/${id}/deactivate`, {}, {
-        headers: { Authorization: `Bearer ${TOKEN}` }
-      });
+      const payload = await apiClient.patch<any>(`/masters/skus/${id}/deactivate`, {});
       return payload?.data;
     },
     onSuccess: () => {
@@ -364,9 +330,7 @@ export function useArchiveSKU() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const payload = await apiClient.patch<any>(`/masters/skus/${id}/archive`, {}, {
-        headers: { Authorization: `Bearer ${TOKEN}` }
-      });
+      const payload = await apiClient.patch<any>(`/masters/skus/${id}/archive`, {});
       return payload?.data;
     },
     onSuccess: () => {
@@ -379,9 +343,7 @@ export function useArchiveProduct() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const payload = await apiClient.patch<any>(`/masters/products/${id}/archive`, {}, {
-        headers: { Authorization: `Bearer ${TOKEN}` }
-      });
+      const payload = await apiClient.patch<any>(`/masters/products/${id}/archive`, {});
       return payload?.data;
     },
     onSuccess: () => {
@@ -395,9 +357,7 @@ export function useUpdateProduct() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string, data: { product_name: string } }) => {
-      const payload = await apiClient.put<any>(`/masters/products/${id}`, data, {
-        headers: { Authorization: `Bearer ${TOKEN}` }
-      });
+      const payload = await apiClient.put<any>(`/masters/products/${id}`, data);
       return payload?.data;
     },
     onSuccess: () => {
@@ -411,9 +371,7 @@ export function useDeleteProduct() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const payload = await apiClient.delete<any>(`/masters/products/${id}`, {
-        headers: { Authorization: `Bearer ${TOKEN}` }
-      });
+      const payload = await apiClient.delete<any>(`/masters/products/${id}`);
       return payload?.data;
     },
     onSuccess: () => {

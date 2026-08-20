@@ -1,6 +1,7 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends
 from dependency_injector.wiring import Provide, inject
+from src.foundation.authentication.dependencies import require_permission
 
 from src.foundation.api.responses import SuccessResponse
 from src.app.container import DomainsContainer
@@ -18,7 +19,8 @@ async def get_item_workspace(
     sku_repository: SKURepository = Depends(Provide[DomainsContainer.masters.sku_repository]),
     bom_repository: BOMRepository = Depends(Provide[DomainsContainer.masters.bom_repository]),
     movement_repository: InventoryMovementRepository = Depends(Provide[DomainsContainer.inventory.movement_repository]),
-    balance_repository: InventoryBalanceRepository = Depends(Provide[DomainsContainer.inventory.balance_repository])
+    balance_repository: InventoryBalanceRepository = Depends(Provide[DomainsContainer.inventory.balance_repository]),
+    _=Depends(require_permission("PRODUCT_VIEW"))
 ):
     # 1. Identity
     sku = await sku_repository.get_by_id(sku_id)

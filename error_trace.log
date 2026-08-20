@@ -26,7 +26,9 @@
     |     raise app_exc
     |   File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
     |     await self.app(scope, receive_or_disconnect, send_no_error)
-    |   File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 85, in __call__
+    |   File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    |     await self.simple_response(scope, receive, send, request_headers=headers)
+    |   File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 148, in simple_response
     |     await self.app(scope, receive, send)
     |   File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 65, in __call__
     |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
@@ -59,9 +61,10 @@
     |     return await _async_inject(
     |            ^^^^^^^^^^^^^^^^^^^^
     |   File "src/dependency_injector/_cwiring.pyx", line 66, in _async_inject
-    |   File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/src/domains/operations/api/lifecycle_router.py", line 36, in reconcile_shopdeck_report
-    |     from src.foundation.exceptions.base import BadRequestException
-    | ImportError: cannot import name 'BadRequestException' from 'src.foundation.exceptions.base' (/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/src/foundation/exceptions/base.py)
+    |   File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/src/api/v1/master_data_router.py", line 26, in import_master_data
+    |     app_service.validate_permissions([current_user.role], ["SUPER_ADMIN"])
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    | AttributeError: 'Provide' object has no attribute 'validate_permissions'
     +------------------------------------
 
 During handling of the above exception, another exception occurred:
@@ -85,7 +88,9 @@ Traceback (most recent call last):
     raise app_exc
   File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
     await self.app(scope, receive_or_disconnect, send_no_error)
-  File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 85, in __call__
+  File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 93, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/venv/lib/python3.11/site-packages/starlette/middleware/cors.py", line 148, in simple_response
     await self.app(scope, receive, send)
   File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/venv/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 65, in __call__
     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
@@ -118,6 +123,7 @@ Traceback (most recent call last):
     return await _async_inject(
            ^^^^^^^^^^^^^^^^^^^^
   File "src/dependency_injector/_cwiring.pyx", line 66, in _async_inject
-  File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/src/domains/operations/api/lifecycle_router.py", line 36, in reconcile_shopdeck_report
-    from src.foundation.exceptions.base import BadRequestException
-ImportError: cannot import name 'BadRequestException' from 'src.foundation.exceptions.base' (/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/src/foundation/exceptions/base.py)
+  File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/src/api/v1/master_data_router.py", line 26, in import_master_data
+    app_service.validate_permissions([current_user.role], ["SUPER_ADMIN"])
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Provide' object has no attribute 'validate_permissions'

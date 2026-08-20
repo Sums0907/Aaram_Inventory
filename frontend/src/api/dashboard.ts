@@ -29,15 +29,10 @@ export function useDashboardSummary() {
   return useQuery({
     queryKey: ['dashboard-summary'],
     queryFn: async () => {
-      // Valid token for Version 1 MVP demonstration (expires in 1 year)
-      const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0IiwidXNlcm5hbWUiOiJkZW1vIiwicm9sZSI6ImFkbWluIiwiZXhwIjoxODE3NDcyNjA2fQ.J4sb028IFN8h3OBlYq1RatBHZKs0SH6p8eGuKVXKp_c";
-      
-      const response = await apiClient.get<SummaryResponse>('/dashboard/summary', {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      return response.data;
+      // The apiClient interceptor already returns the response payload (response.data).
+      // Since it returns SummaryResponse directly, we just return response.data to get DashboardSummary.
+      const response = await apiClient.get<SummaryResponse>('/dashboard/summary');
+      return (response as any).data;
     },
     refetchInterval: 10000, // Refetch every 10 seconds to auto-update pipeline status
   });

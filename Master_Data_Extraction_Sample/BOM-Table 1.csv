@@ -1,0 +1,3 @@
+BOM Number,BOM Name,Finished SKU,Base Quantity,Component Item Code,Component Quantity,Wastage %
+BOM-01,Test BOM,SKU-FG,1,ITM-RM,2.875,0
+BOM-BED-TERRA-01,,SKU-BED-TERRA-01,1,ITM-FB-TERRA-01,2.875,0

@@ -41,6 +41,7 @@ class ProductModel(BaseModel):
     category_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("categories.id"), nullable=True)
     
     # Relationships
+    category: Mapped[Optional["CategoryModel"]] = relationship("CategoryModel", foreign_keys=[category_id])
     skus: Mapped[List["SKUModel"]] = relationship("SKUModel", back_populates="product", cascade="all, delete-orphan")
     
     attributes: Mapped[List["ProductAttributeModel"]] = relationship(

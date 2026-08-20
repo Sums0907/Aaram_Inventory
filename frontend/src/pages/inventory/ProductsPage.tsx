@@ -11,8 +11,10 @@ import { ExecutiveSummary } from "@/components/products/ExecutiveSummary"
 import { InventoryItemFormDialog } from "@/components/products/InventoryItemFormDialog"
 import { ProductWorkspaceDialog } from "@/components/products/ProductWorkspaceDialog"
 import { formatQuantityValue } from "@/lib/utils"
+import { useAuth } from "@/hooks/use-auth"
 
 export function ProductsPage() {
+  const { hasPermission } = useAuth()
   const { data: skus, isLoading: isLoadingSkus } = useSKUs()
   const { data: balances, isLoading: isLoadingBalances } = useInventoryBalances()
   const { data: uoms } = useUnitsOfMeasure()
@@ -252,25 +254,29 @@ export function ProductsPage() {
                   <option value="stock_desc">Stock (Highest)</option>
                 </select>
                 
-                <Button className="h-[46px] gap-2 bg-indigo-600 hover:bg-indigo-700" onClick={() => setIsAddDialogOpen(true)}>
-                  <Plus className="h-4 w-4" /> Add Item
-                </Button>
-                
-                <input 
-                  type="file" 
-                  accept=".csv" 
-                  className="hidden" 
-                  ref={fileInputRef} 
-                  onChange={handleFileUpload} 
-                />
-                <Button 
-                  variant="outline" 
-                  className="h-[46px] gap-2 border-slate-200 text-slate-700 hover:bg-slate-50" 
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isImporting}
-                >
-                  <Upload className="h-4 w-4" /> {isImporting ? "Importing..." : "Import CSV"}
-                </Button>
+                {hasPermission("PRODUCT_CREATE") && (
+                  <>
+                    <Button className="h-[46px] gap-2 bg-indigo-600 hover:bg-indigo-700" onClick={() => setIsAddDialogOpen(true)}>
+                      <Plus className="h-4 w-4" /> Add Item
+                    </Button>
+                    
+                    <input 
+                      type="file" 
+                      accept=".csv" 
+                      className="hidden" 
+                      ref={fileInputRef} 
+                      onChange={handleFileUpload} 
+                    />
+                    <Button 
+                      variant="outline" 
+                      className="h-[46px] gap-2 border-slate-200 text-slate-700 hover:bg-slate-50" 
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isImporting}
+                    >
+                      <Upload className="h-4 w-4" /> {isImporting ? "Importing..." : "Import CSV"}
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
             

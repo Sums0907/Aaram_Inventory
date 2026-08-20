@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 from dependency_injector.wiring import Provide, inject
+from src.foundation.authentication.dependencies import require_permission
 
 from src.foundation.api.responses import SuccessResponse
 from src.app.container import DomainsContainer
@@ -17,7 +18,8 @@ async def get_dashboard_kpis(
     balance_repository: InventoryBalanceRepository = Depends(Provide[DomainsContainer.inventory.balance_repository]),
     movement_repository: InventoryMovementRepository = Depends(Provide[DomainsContainer.inventory.movement_repository]),
     sku_repository: SKURepository = Depends(Provide[DomainsContainer.masters.sku_repository]),
-    job_work_repository: JobWorkRepository = Depends(Provide[DomainsContainer.inventory.job_work_repository])
+    job_work_repository: JobWorkRepository = Depends(Provide[DomainsContainer.inventory.job_work_repository]),
+    _=Depends(require_permission("CATALOG_VIEW"))
 ):
     """
     Returns aggregate KPIs for the Inventory Dashboard.
@@ -38,7 +40,8 @@ async def get_dashboard_kpis(
 @router.get("/exceptions", response_model=SuccessResponse[list])
 @inject
 async def get_dashboard_exceptions(
-    exception_repository: InventoryExceptionRepository = Depends(Provide[DomainsContainer.inventory.exception_repository])
+    exception_repository: InventoryExceptionRepository = Depends(Provide[DomainsContainer.inventory.exception_repository]),
+    _=Depends(require_permission("CATALOG_VIEW"))
 ):
     """
     Returns a list of open inventory exceptions for the Exceptions Workbench.
@@ -66,7 +69,8 @@ async def get_dashboard_exceptions(
 @router.get("/recent-activity", response_model=SuccessResponse[list])
 @inject
 async def get_dashboard_recent_activity(
-    movement_repository: InventoryMovementRepository = Depends(Provide[DomainsContainer.inventory.movement_repository])
+    movement_repository: InventoryMovementRepository = Depends(Provide[DomainsContainer.inventory.movement_repository]),
+    _=Depends(require_permission("CATALOG_VIEW"))
 ):
     """
     Returns a feed of recent inventory activity for the dashboard.

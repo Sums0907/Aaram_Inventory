@@ -1,0 +1,5 @@
+Item Code,Item Name,Item Type,Category Code,Base UoM Code,Barcode,Description,Status
+ITM-RM,Cotton Fabric,RAW_MATERIAL,,MTR-T,,,ACTIVE
+ITM-FG,Cotton Bedsheet,FINISHED_GOODS,,,,,ACTIVE
+ITM-BED-TERRA-01,Terracotta Bloom Bedsheet,FINISHED_GOODS,BED,PCS,,Terracotta Bloom Bedsheet with matching pillow covers,ACTIVE
+ITM-FB-TERRA-01,Terracotta Fabric,FINISHED_GOODS,BED,M,,,ACTIVE

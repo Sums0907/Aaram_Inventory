@@ -1,0 +1,13 @@
+Category Code,Category Name,Item Type,Parent Category Code,Description,Status
+CAT-511948,Frill Fabric,RAW_MATERIAL,,,ACTIVE
+CAT-F7A4DE,Courier Polybags,PACKAGING_MATERIAL,,,ACTIVE
+CAT-12AE6A,Frill King PVC Bag,PACKAGING_MATERIAL,CAT-F7A4DE,,ACTIVE
+CAT-09927A,home__home_furnishing__bed_linen,FINISHED_GOODS,,,ACTIVE
+CAT-7B59D0,Uncategorized,FINISHED_GOODS,,,ACTIVE
+CAT-311B7B,home__home_improvement__utility,FINISHED_GOODS,,,ACTIVE
+CAT-1F4A56,kids_baby__home_dcor__bedsheets,FINISHED_GOODS,,,ACTIVE
+CAT-CFAF58,others_68c015dd317e68f10e190e4c__others__bedsheets,FINISHED_GOODS,,,ACTIVE
+CAT-6F30FA,others_68c015dd317e68f10e190e4c__others__kids_dohar,FINISHED_GOODS,,,ACTIVE
+CAT-6F6833,others_68c015dd317e68f10e190e4c__others__cushions,FINISHED_GOODS,,,ACTIVE
+CAT-A3DD9D,home__home_furnishing__cushions_covers,FINISHED_GOODS,,,ACTIVE
+BED,Bedsheets,FINISHED_GOODS,,Bedsheets,ACTIVE

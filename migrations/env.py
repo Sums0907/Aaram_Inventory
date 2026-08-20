@@ -29,6 +29,8 @@ from src.domains.operations.models.sales_order import SalesOrderModel, SalesOrde
 from src.domains.operations.models.tax_invoice import TaxInvoiceModel, TaxInvoiceItemModel
 from src.domains.operations.models.payment import PaymentModel
 from src.domains.operations.models.settlement import SettlementModel
+from src.domains.operations.models.lifecycle import CustomerReturnPolicyModel, OrderStateTransitionModel
+from src.domains.operations.models.refund import RefundModel
 from src.domains.matching.models.job import MatchJobModel
 from src.domains.matching.models.relationship import MatchRelationshipModel
 from src.domains.matching.models.exception import MatchExceptionModel

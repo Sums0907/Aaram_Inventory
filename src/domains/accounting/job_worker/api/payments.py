@@ -3,7 +3,7 @@ from dependency_injector.wiring import Provide, inject
 from uuid import UUID
 from typing import List
 from src.foundation.api.responses import SuccessResponse
-from src.foundation.authentication.dependencies import get_current_user, CurrentUser
+from src.foundation.authentication.dependencies import get_current_user, CurrentUser, require_permission
 from src.app.container import DomainsContainer
 from src.domains.accounting.job_worker.services.payment_service import PaymentService
 from src.domains.accounting.job_worker.schemas.job_worker_payment import (
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/job-worker-accounting/payments", tags=["Job Worker P
 @inject
 async def record_payment(
     schema: JobWorkerPaymentCreate,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_JOBWORK_MANAGE")),
     service: PaymentService = Depends(Provide[DomainsContainer.accounting.jw_payment_service]),
 ):
     from uuid import UUID as _UUID
@@ -33,7 +33,7 @@ async def record_payment(
 async def list_payments(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_JOBWORK_VIEW")),
     service: PaymentService = Depends(Provide[DomainsContainer.accounting.jw_payment_service]),
 ):
     payments = await service.get_all(skip, limit)
@@ -46,7 +46,7 @@ async def list_payments(
 @inject
 async def list_payments_for_worker(
     job_worker_id: UUID,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_JOBWORK_VIEW")),
     service: PaymentService = Depends(Provide[DomainsContainer.accounting.jw_payment_service]),
 ):
     payments = await service.get_all_for_worker(job_worker_id)

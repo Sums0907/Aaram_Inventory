@@ -18,15 +18,11 @@ interface ListMatchExceptionsResponse {
   data: MatchExceptionResponse[];
 }
 
-const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0IiwidXNlcm5hbWUiOiJkZW1vIiwicm9sZSI6ImFkbWluIiwiZXhwIjoxODE3NDcyNjA2fQ.J4sb028IFN8h3OBlYq1RatBHZKs0SH6p8eGuKVXKp_c";
-
 export function useMatchExceptions() {
   return useQuery({
     queryKey: ['match-exceptions'],
     queryFn: async () => {
-      const response = await apiClient.get<ListMatchExceptionsResponse>('/matching/exceptions', {
-        headers: { Authorization: `Bearer ${TOKEN}` }
-      });
+      const response = await apiClient.get<ListMatchExceptionsResponse>('/matching/exceptions');
       return response.data.data;
     },
   });
@@ -35,9 +31,7 @@ export function useMatchExceptions() {
 export function useRunMatchingPipeline() {
   return useMutation({
     mutationFn: async () => {
-      const response = await apiClient.post('/matching/jobs', {}, {
-        headers: { Authorization: `Bearer ${TOKEN}` }
-      });
+      const response = await apiClient.post('/matching/jobs', {});
       return response.data;
     }
   });

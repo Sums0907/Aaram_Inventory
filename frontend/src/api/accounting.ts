@@ -21,15 +21,11 @@ interface ListJournalsResponse {
   data: JournalEntryResponse[];
 }
 
-const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0IiwidXNlcm5hbWUiOiJkZW1vIiwicm9sZSI6ImFkbWluIiwiZXhwIjoxODE3NDcyNjA2fQ.J4sb028IFN8h3OBlYq1RatBHZKs0SH6p8eGuKVXKp_c";
-
 export function useJournals() {
   return useQuery({
     queryKey: ['journals'],
     queryFn: async () => {
-      const response = await apiClient.get<ListJournalsResponse>('/accounting/journals', {
-        headers: { Authorization: `Bearer ${TOKEN}` }
-      });
+      const response = await apiClient.get<ListJournalsResponse>('/accounting/journals');
       return response.data.data;
     },
   });
