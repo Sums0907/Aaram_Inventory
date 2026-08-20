@@ -43,3 +43,8 @@ This log should be referenced and updated during future module deployments (e.g.
   sudo -u postgres psql -d inventory_prod -c "GRANT ALL ON SCHEMA public TO inventory_user;"
   ```
   Updated `.env.production` to use `inventory_user` in the `DATABASE_URL` and recreated the container.
+
+## 6. Nginx Routing & Missing Server Block (Frontend 404)
+- **Symptom:** Visiting the frontend domain (`inventory.aarambooks.cloud`) returned `{"detail":"Not Found"}`.
+- **Root Cause:** A raw JSON response like `{"detail":"Not Found"}` is the signature of a FastAPI application when a route doesn't exist, proving Nginx was routing frontend traffic to a backend API. The API server block (`api.inventory.aarambooks.cloud`) was completely missing from `/etc/nginx/sites-available`. Because it was missing, when the React app attempted to make API calls to the API domain, Nginx fell back to the default server block (the AaramIdentity API), which returned a 404 since it didn't recognize the inventory routes.
+- **Final Working Solution:** Created the missing Nginx server block for `api.inventory.aarambooks.cloud` pointing to the backend container port `8100`, enabled the site, reloaded Nginx, and secured it with Certbot. This properly separated frontend and backend traffic.
