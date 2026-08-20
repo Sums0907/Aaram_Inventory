@@ -1,40 +1,35 @@
 version: '3.8'
 
 services:
-  db:
-    image: postgres:15-alpine
-    restart: always
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-aarambooks}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - aarambooks_network
-
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/sums0907/aaraminventory-backend:latest
     restart: always
-    depends_on:
-      - db
     environment:
-      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-aarambooks}
+      # Expecting the bare-metal postgres connection URL in the VPS .env file
+      - DATABASE_URL=${DATABASE_URL}
       - ENVIRONMENT=production
       - HOST=0.0.0.0
       - PORT=8000
     ports:
-      - "8000:8000"
+      # Map to 8100 locally to avoid conflict with Identity on 8000
+      - "127.0.0.1:8100:8000"
     networks:
       - aarambooks_network
     command: >
       sh -c "alembic upgrade head &&
              uvicorn src.app.main:app --host 0.0.0.0 --port 8000 --workers 4"
 
-volumes:
-  postgres_data:
+  frontend:
+    image: ghcr.io/sums0907/aaraminventory-frontend:latest
+    restart: always
+    ports:
+      # Map to 3100 locally to avoid conflict with Identity on 3000
+      - "127.0.0.1:3100:80"
+    volumes:
+      # Inject the production config at runtime
+      - ./config.prod.js:/usr/share/nginx/html/config.js:ro
+    networks:
+      - aarambooks_network
 
 networks:
   aarambooks_network:

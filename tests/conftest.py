@@ -10,8 +10,8 @@ from src.foundation.database.models import BaseModel
 from src.app.main import app
 
 settings = get_settings()
-# Use aiosqlite for tests because docker/postgres is not installed
-TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
+# Use local Postgres for tests
+TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL", "postgresql+asyncpg://postgres:password@localhost:5433/inventory_dev")
 
 test_engine = create_async_engine(TEST_DATABASE_URL, echo=False)
 TestingSessionLocal = async_sessionmaker(bind=test_engine, class_=AsyncSession, expire_on_commit=False)
