@@ -63,7 +63,13 @@ async def async_client() -> AsyncClient:
     from uuid_extensions import uuid7
     
     # Mock Auth
-    mock_user = CurrentUser(id=str(uuid7()), username="test_admin", role="admin")
+    mock_user = CurrentUser(
+        user_id=str(uuid7()),
+        name="test_admin",
+        applications=["AARAM_BOOKS"],
+        roles=["OWNER"],
+        permissions=["PRODUCT_VIEW", "PRODUCT_CREATE", "PRODUCT_UPDATE", "INVENTORY_RECEIPT_VIEW", "INVENTORY_RECEIPT_CREATE", "INVENTORY_RETURN_VIEW", "INVENTORY_RETURN_CREATE", "INVENTORY_ADJUSTMENT_CREATE", "INVENTORY_VERIFICATION_EXECUTE", "INVENTORY_EXCEPTION_VIEW", "INVENTORY_EXCEPTION_RESOLVE", "INVENTORY_TRANSFORMATION_CREATE", "INVENTORY_JOBWORK_VIEW", "INVENTORY_JOBWORK_MANAGE", "INVENTORY_ACTIVITY_VIEW", "CATALOG_VIEW", "MASTER_DATA_IMPORT"]
+    )
     app.dependency_overrides[get_current_user] = lambda: mock_user
     
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:

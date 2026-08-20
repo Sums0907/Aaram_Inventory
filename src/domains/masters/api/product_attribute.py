@@ -2,7 +2,7 @@ from typing import List
 from uuid import UUID
 from fastapi import APIRouter, Depends, status, Query
 from dependency_injector.wiring import Provide, inject
-from src.foundation.authentication.dependencies import get_current_user, CurrentUser
+from src.foundation.authentication.dependencies import get_current_user, CurrentUser, require_permission
 from src.foundation.api.responses import SuccessResponse
 from src.domains.masters.schemas.product_attribute import ProductAttributeCreate, ProductAttributeUpdate, ProductAttributeResponse
 from src.domains.masters.services.product_attribute import ProductAttributeService
@@ -15,7 +15,7 @@ router = APIRouter(prefix="/product-attributes", tags=["Product Attribute"])
 async def list_attributes(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("CATALOG_VIEW")),
     service: ProductAttributeService = Depends(Provide[MastersContainer.product_attribute_service])
 ):
     attributes = await service.list_attributes(skip=skip, limit=limit)
@@ -26,7 +26,7 @@ async def list_attributes(
 @inject
 async def get_attribute(
     attribute_id: UUID,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("CATALOG_VIEW")),
     service: ProductAttributeService = Depends(Provide[MastersContainer.product_attribute_service])
 ):
     attribute = await service.get_attribute(attribute_id)
@@ -36,7 +36,7 @@ async def get_attribute(
 @inject
 async def create_attribute(
     schema: ProductAttributeCreate,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("PRODUCT_CREATE")),
     service: ProductAttributeService = Depends(Provide[MastersContainer.product_attribute_service])
 ):
     from uuid import UUID
@@ -49,7 +49,7 @@ async def create_attribute(
 async def update_attribute(
     attribute_id: UUID,
     schema: ProductAttributeUpdate,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
     service: ProductAttributeService = Depends(Provide[MastersContainer.product_attribute_service])
 ):
     from uuid import UUID
@@ -61,7 +61,7 @@ async def update_attribute(
 @inject
 async def activate_attribute(
     attribute_id: UUID,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
     service: ProductAttributeService = Depends(Provide[MastersContainer.product_attribute_service])
 ):
     from uuid import UUID
@@ -73,7 +73,7 @@ async def activate_attribute(
 @inject
 async def deactivate_attribute(
     attribute_id: UUID,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
     service: ProductAttributeService = Depends(Provide[MastersContainer.product_attribute_service])
 ):
     from uuid import UUID
@@ -85,7 +85,7 @@ async def deactivate_attribute(
 @inject
 async def archive_attribute(
     attribute_id: UUID,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
     service: ProductAttributeService = Depends(Provide[MastersContainer.product_attribute_service])
 ):
     from uuid import UUID

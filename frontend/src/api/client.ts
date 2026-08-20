@@ -1,8 +1,6 @@
 import axios from 'axios';
 import { toast } from '@/hooks/use-toast';
 
-const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1MDJlYWMxMS0yMWUyLTRkNTMtYTllOS0yYmEyMWJjMDRiOWEiLCJ1c2VybmFtZSI6ImRlbW8iLCJyb2xlIjoiYWRtaW4iLCJleHAiOjE4MTc0NzI2MDZ9._cuQTw-7zam00atnpTsxsklre2ZsOFVKPkbvChQpSMM";
-
 // Add type declaration for window.AARAM_CONFIG
 declare global {
   interface Window {
@@ -13,21 +11,33 @@ declare global {
 }
 
 const API_BASE_URL =
-  window.AARAM_CONFIG?.API_URL || "http://127.0.0.1:8100/api/v1";
+  window.AARAM_CONFIG?.API_URL || "http://localhost:8100/api/v1";
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${TOKEN}`,
   },
 });
 
-// We can add interceptors here later if we need to handle auth tokens or global error logging
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('aaram_identity_token');
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 apiClient.interceptors.response.use(
   (response) => response.data, 
   (error) => {
+    if (error.response?.status === 401) {
+      // Clear token and reload to force AaramIdentity redirect via useAuth
+      localStorage.removeItem('aaram_identity_token');
+      window.location.href = '/';
+      return Promise.reject(error);
+    }
+    
     console.error('API Error:', error.response?.data || error.message);
     
     // Extract error message safely

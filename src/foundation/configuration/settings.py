@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     SECRET_KEY: str = Field(default="super-secret-key-change-in-production")
     ALGORITHM: str = Field(default="HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=30)
+    
+    # AaramIdentity Consumer Integration
+    AUTH_MODE: str = Field(default="local", description="Set to 'aaramidentity' for production RS256 token verification")
+    AARAMIDENTITY_URL: str = Field(default="http://localhost:8001")
+    AARAMIDENTITY_PUBLIC_KEY: str = Field(default="")
 
     # Logging
     LOG_LEVEL: str = Field(default="INFO")
@@ -42,4 +47,7 @@ class Settings(BaseSettings):
 
 @lru_cache()
 def get_settings() -> Settings:
-    return Settings()
+    settings = Settings()
+    if settings.ENVIRONMENT == "production" and settings.AUTH_MODE == "local":
+        raise ValueError("AUTH_MODE='local' is forbidden in production. Must use 'aaramidentity'.")
+    return settings

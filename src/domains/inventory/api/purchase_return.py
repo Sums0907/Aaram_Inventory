@@ -3,7 +3,7 @@ from uuid import UUID
 from dependency_injector.wiring import Provide, inject
 
 from src.foundation.api.responses import SuccessResponse, PaginatedResponse
-from src.foundation.authentication.dependencies import get_current_user, CurrentUser
+from src.foundation.authentication.dependencies import get_current_user, CurrentUser, require_permission
 from src.app.container import DomainsContainer
 from src.domains.inventory.services.purchase_return import PurchaseReturnService
 from src.domains.inventory.schemas.purchase_return import PurchaseReturnCreate, PurchaseReturnResponse
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/purchase-returns", tags=["Purchase Returns"])
 @inject
 async def create_return(
     schema: PurchaseReturnCreate,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_RETURN_CREATE")),
     service: PurchaseReturnService = Depends(Provide[DomainsContainer.inventory.purchase_return_service])
 ):
     user_uuid = UUID(current_user.id)
@@ -28,7 +28,7 @@ from src.foundation.api.responses import SuccessResponse, PaginatedResponse, Pag
 async def get_returns(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_RETURN_VIEW")),
     service: PurchaseReturnService = Depends(Provide[DomainsContainer.inventory.purchase_return_service])
 ):
     items, total = await service.get_all(skip=skip, limit=limit)
@@ -45,7 +45,7 @@ async def get_returns(
 @inject
 async def get_return(
     return_id: UUID,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_RETURN_VIEW")),
     service: PurchaseReturnService = Depends(Provide[DomainsContainer.inventory.purchase_return_service])
 ):
     result = await service.get_by_id(return_id)

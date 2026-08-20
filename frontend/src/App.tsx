@@ -31,6 +31,7 @@ import { SettingsPage } from "@/pages/SettingsPage"
 import { BOMSetupPage } from "@/pages/inventory/BOMSetupPage"
 import { TransformationsPage } from "@/pages/inventory/TransformationsPage"
 import UnitsOfMeasurePage from "@/pages/inventory/UnitsOfMeasurePage"
+import { MasterDataOperationsPage } from "@/pages/master-data/MasterDataOperationsPage"
 
 const queryClient = new QueryClient()
 
@@ -58,13 +59,16 @@ function GlobalErrorFallback({ error, resetErrorBoundary }: any) {
   );
 }
 
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <ErrorBoundary FallbackComponent={GlobalErrorFallback} onReset={() => window.location.href = '/'}>
           <Routes>
-            <Route element={<AppLayout />}>
+            <Route element={<ProtectedRoute />}>
+              <Route element={<AppLayout />}>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="imports" element={<ImportsPage />} />
@@ -100,7 +104,9 @@ function App() {
               </Route>
               <Route path="exports" element={<ExportsPage />} />
               <Route path="settings" element={<SettingsPage />} />
+              <Route path="admin/master-data" element={<MasterDataOperationsPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
+              </Route>
             </Route>
           </Routes>
 

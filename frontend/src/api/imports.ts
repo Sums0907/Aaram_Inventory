@@ -24,7 +24,7 @@ export function useImportJobs() {
     queryKey: ['import-jobs'],
     queryFn: async () => {
       const response = await apiClient.get<ListImportJobsResponse>('/data-ingestion/import-jobs');
-      return response.data;
+      return response.data.data;
     },
     refetchInterval: 5000,
   });

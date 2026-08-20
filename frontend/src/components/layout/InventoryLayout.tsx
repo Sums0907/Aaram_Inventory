@@ -1,45 +1,28 @@
 import { Outlet, Link, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
-import { 
-  LayoutDashboard, 
-  Package, 
-  ArrowRightLeft, 
-  ClipboardCheck, 
-  Settings2, 
-  AlertTriangle, 
-  ShieldCheck,
-  Users,
-  FileDown,
-  FileUp
-} from "lucide-react"
+import { AlertTriangle, ArrowRightLeft, FileDown, LayoutDashboard, Package, Settings2 } from "lucide-react"
+import { InventoryOthersDropdown } from "./InventoryOthersDropdown"
+import { useAuth } from "@/hooks/use-auth"
 
 const INVENTORY_NAV_ITEMS = [
-  { name: "Dashboard", href: "/inventory", icon: LayoutDashboard },
-  { name: "Catalog", href: "/inventory/catalog", icon: Package },
-  // { name: "Daily Update", href: "/inventory/daily-update", icon: Package }, // Deprecated
-  { name: "Products", href: "/inventory/products", icon: Package },
-  { name: "BOMs", href: "/inventory/boms", icon: Settings2 },
-  { name: "UOMs", href: "/inventory/units-of-measure", icon: Settings2 },
-  { name: "Suppliers", href: "/inventory/suppliers", icon: Users },
-  { name: "Goods Receipts", href: "/inventory/goods-receipts", icon: FileDown },
-  { name: "Purchase Returns", href: "/inventory/purchase-returns", icon: FileUp },
-  { name: "Activity", href: "/inventory/activity", icon: ArrowRightLeft },
-  { name: "Verification", href: "/inventory/verification", icon: ClipboardCheck },
-  { name: "Adjustments", href: "/inventory/adjustments", icon: Settings2 },
-  { name: "Exceptions", href: "/inventory/exceptions", icon: AlertTriangle },
-  { name: "Transformations", href: "/inventory/transformations", icon: ArrowRightLeft },
-  { name: "Job Worker Stock", href: "/inventory/job-worker-stock", icon: Package },
-  { name: "Confidence", href: "/inventory/confidence", icon: ShieldCheck },
+  { name: "Dashboard", href: "/inventory", icon: LayoutDashboard, permission: "CATALOG_VIEW" },
+  { name: "Catalog", href: "/inventory/catalog", icon: Package, permission: "CATALOG_VIEW" },
+  { name: "Products", href: "/inventory/products", icon: Package, permission: "PRODUCT_VIEW" },
+  { name: "Goods Receipts", href: "/inventory/goods-receipts", icon: FileDown, permission: "INVENTORY_RECEIPT_VIEW" },
+  { name: "Job Worker Stock", href: "/inventory/job-worker-stock", icon: Package, permission: "INVENTORY_JOBWORK_VIEW" },
+  { name: "Activity", href: "/inventory/activity", icon: ArrowRightLeft, permission: "INVENTORY_ACTIVITY_VIEW" },
+  { name: "Exceptions", href: "/inventory/exceptions", icon: AlertTriangle, permission: "INVENTORY_EXCEPTION_VIEW" },
 ]
 
 export function InventoryLayout() {
   const location = useLocation()
+  const { hasPermission } = useAuth()
 
   return (
     <div className="flex h-full flex-col w-full relative">
       <div className="border-b border-slate-200 bg-white px-6 py-3 shrink-0 sticky top-0 z-10 w-full">
         <nav className="flex space-x-1 overflow-x-auto no-scrollbar">
-          {INVENTORY_NAV_ITEMS.map((item) => {
+          {INVENTORY_NAV_ITEMS.filter(item => !item.permission || hasPermission(item.permission)).map((item) => {
             // Determine active state
             const isActive = location.pathname === item.href
 
@@ -66,6 +49,9 @@ export function InventoryLayout() {
               </Link>
             )
           })}
+          
+          {/* Append the Others dropdown */}
+          <InventoryOthersDropdown />
         </nav>
       </div>
       <div className="flex-1 overflow-y-auto bg-slate-50 p-6">

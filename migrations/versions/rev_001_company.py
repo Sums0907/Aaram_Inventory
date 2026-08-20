@@ -18,8 +18,10 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
-    # Create ENUM types
-    op.execute("CREATE TYPE generic_status AS ENUM ('ACTIVE', 'INACTIVE', 'ARCHIVED')")
+    # Create ENUM types conditionally
+    bind = op.get_bind()
+    if bind.dialect.name == 'postgresql':
+        op.execute("CREATE TYPE generic_status AS ENUM ('ACTIVE', 'INACTIVE', 'ARCHIVED')")
 
     op.create_table('companies',
         sa.Column('company_code', sa.String(length=50), nullable=False),
@@ -55,4 +57,6 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.drop_index(op.f('ix_companies_company_code'), table_name='companies')
     op.drop_table('companies')
-    op.execute("DROP TYPE generic_status")
+    bind = op.get_bind()
+    if bind.dialect.name == 'postgresql':
+        op.execute("DROP TYPE generic_status")

@@ -6,8 +6,10 @@ import { Plus, Eye } from "lucide-react"
 import { GRNFormDialog } from "@/components/inbound/GRNFormDialog"
 import { GoodsReceiptDetailDialog } from "@/components/inbound/GoodsReceiptDetailDialog"
 import { useSuppliers } from "@/api/suppliers"
+import { useAuth } from "@/hooks/use-auth"
 
 export function GoodsReceiptsPage() {
+  const { hasPermission } = useAuth()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [detailOpen, setDetailOpen] = useState(false)
   const [selectedGrn, setSelectedGrn] = useState<string | null>(null)
@@ -35,10 +37,12 @@ export function GoodsReceiptsPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => setDialogOpen(true)} className="bg-indigo-600 hover:bg-indigo-700">
-            <Plus className="mr-2 h-4 w-4" />
-            Receive Goods
-          </Button>
+          {hasPermission("INVENTORY_RECEIPT_CREATE") && (
+            <Button onClick={() => setDialogOpen(true)} className="bg-indigo-600 hover:bg-indigo-700">
+              <Plus className="mr-2 h-4 w-4" />
+              Receive Goods
+            </Button>
+          )}
         </div>
       </div>
       

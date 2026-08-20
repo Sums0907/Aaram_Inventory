@@ -3,6 +3,7 @@ from dependency_injector.wiring import inject, Provide
 import uuid
 
 from src.foundation.api.responses import SuccessResponse
+from src.foundation.authentication.dependencies import require_permission, CurrentUser
 from src.domains.inventory.services.exception import InventoryExceptionService
 from src.domains.inventory.schemas.exception import (
     ExceptionListResponse,
@@ -17,7 +18,8 @@ router = APIRouter(prefix="/inventory/exceptions", tags=["inventory-exceptions"]
 @inject
 async def get_exceptions(
     limit: int = 50,
-    exception_service: InventoryExceptionService = Depends(Provide[DomainsContainer.inventory.exception_service])
+    exception_service: InventoryExceptionService = Depends(Provide[DomainsContainer.inventory.exception_service]),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_EXCEPTION_VIEW"))
 ):
     exceptions = await exception_service.get_all_open_exceptions(limit=limit)
     response_data = ExceptionListResponse(
@@ -31,7 +33,8 @@ async def get_exceptions(
 async def resolve_exception(
     exception_id: uuid.UUID,
     request: ResolveExceptionRequest,
-    exception_service: InventoryExceptionService = Depends(Provide[DomainsContainer.inventory.exception_service])
+    exception_service: InventoryExceptionService = Depends(Provide[DomainsContainer.inventory.exception_service]),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_EXCEPTION_RESOLVE"))
 ):
     resolved = await exception_service.resolve_exception(
         exception_id=exception_id, 

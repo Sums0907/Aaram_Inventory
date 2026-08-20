@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, status
 from dependency_injector.wiring import Provide, inject
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.foundation.authentication.dependencies import get_current_user, CurrentUser
+from src.foundation.authentication.dependencies import get_current_user, CurrentUser, require_permission
 from src.foundation.api.responses import SuccessResponse
 from src.domains.masters.schemas.inventory_item import InventoryItemCreate
 from src.domains.masters.schemas.sku import SKUResponse
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/inventory-items", tags=["Inventory Item"])
 @inject
 async def create_inventory_item(
     schema: InventoryItemCreate,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("PRODUCT_CREATE")),
     service: InventoryItemService = Depends(Provide[MastersContainer.inventory_item_service])
 ):
     from uuid import UUID

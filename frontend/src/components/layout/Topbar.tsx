@@ -3,29 +3,24 @@ import { cn } from "@/lib/utils"
 import { 
   RefreshCw, 
   Bell, 
-  User, 
   LayoutDashboard, 
-  Download, 
-  ArrowLeftRight, 
   Package, 
-  BookOpen, 
-  FileOutput, 
-  Settings 
+  BookOpen 
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { AccountMenu } from "./AccountMenu"
 
 const GLOBAL_NAV_ITEMS = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Imports", href: "/imports", icon: Download },
-  { name: "Matching", href: "/matching", icon: ArrowLeftRight },
   { name: "Inventory", href: "/inventory", icon: Package },
   { name: "Accounting", href: "/accounting", icon: BookOpen },
-  { name: "Exports", href: "/exports", icon: FileOutput },
-  { name: "Settings", href: "/settings", icon: Settings },
 ]
+
+import { useAuth } from "@/hooks/use-auth"
 
 export function Topbar() {
   const location = useLocation()
+  const { hasPermission } = useAuth()
 
   return (
     <header className="flex h-16 shrink-0 items-center justify-between border-b bg-slate-950 text-slate-50 px-6 sticky top-0 z-50">
@@ -69,18 +64,18 @@ export function Topbar() {
       
       {/* Global Actions */}
       <div className="flex items-center gap-4 shrink-0">
-        <Button variant="outline" size="sm" className="gap-2 border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white">
-          <RefreshCw className="h-4 w-4" />
-          Sync ShopDeck
-        </Button>
+        {hasPermission("PRODUCT_CREATE") && (
+          <Button variant="outline" size="sm" className="gap-2 border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white">
+            <RefreshCw className="h-4 w-4" />
+            Sync ShopDeck
+          </Button>
+        )}
         
         <div className="flex items-center gap-2 border-l border-slate-800 pl-4 ml-2">
           <Button variant="ghost" size="icon" className="text-slate-400 hover:bg-slate-800 hover:text-white rounded-full">
             <Bell className="h-5 w-5" />
           </Button>
-          <Button variant="ghost" size="icon" className="text-slate-400 hover:bg-slate-800 hover:text-white rounded-full">
-            <User className="h-5 w-5" />
-          </Button>
+          <AccountMenu />
         </div>
       </div>
     </header>

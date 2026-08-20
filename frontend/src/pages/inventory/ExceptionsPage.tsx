@@ -8,8 +8,10 @@ import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Textarea } from "@/components/ui/textarea"
+import { useAuth } from "@/hooks/use-auth"
 
 export function ExceptionsPage() {
+  const { hasPermission } = useAuth()
   const queryClient = useQueryClient()
   const [selectedException, setSelectedException] = useState<any>(null)
   const [resolutionNotes, setResolutionNotes] = useState("")
@@ -37,7 +39,7 @@ export function ExceptionsPage() {
   const exceptions = data?.items || []
 
   return (
-    <div className="h-full flex flex-col space-y-6 max-w-5xl mx-auto w-full pb-8">
+    <div className="h-full flex flex-col space-y-6 max-w-7xl mx-auto w-full pb-8 px-4 md:px-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">Inventory Exceptions</h1>
         <p className="text-sm text-slate-500">Manage anomalies and discrepancies across the system.</p>
@@ -53,42 +55,44 @@ export function ExceptionsPage() {
             <p>No open exceptions to review.</p>
           </div>
         ) : (
-          <table className="w-full text-sm text-left">
-            <thead className="bg-slate-50 text-slate-500 border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-3 font-medium">Issue</th>
-                <th className="px-6 py-3 font-medium">Date</th>
-                <th className="px-6 py-3 font-medium">Item</th>
-                <th className="px-6 py-3 font-medium">Source</th>
-                <th className="px-6 py-3 font-medium text-right">Variance</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {exceptions.map(exc => (
-                <tr 
-                  key={exc.id} 
-                  className="hover:bg-slate-50 cursor-pointer"
-                  onClick={() => setSelectedException(exc)}
-                >
-                  <td className="px-6 py-4 font-medium text-slate-900">{exc.resolution_notes || 'Discrepancy reported'}</td>
-                  <td className="px-6 py-4 text-slate-600">{format(new Date(exc.exception_date), "MMM d, yyyy")}</td>
-                  <td className="px-6 py-4">
-                    <div className="font-medium text-slate-900">{exc.inventory_item.name}</div>
-                    <div className="text-xs text-slate-500">{exc.inventory_item.inventory_code}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                      {exc.source_system}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="text-rose-600 font-mono font-medium">{exc.difference > 0 ? '+' : ''}{exc.difference}</div>
-                    <div className="text-xs text-slate-400">Sys: {formatQuantityValue(exc.expected_quantity)} → Act: {formatQuantityValue(exc.actual_quantity)}</div>
-                  </td>
+          <div className="overflow-auto flex-1">
+            <table className="w-full text-sm text-left whitespace-nowrap">
+              <thead className="bg-slate-50 text-slate-500 border-b border-slate-200 sticky top-0 z-10">
+                <tr>
+                  <th className="px-6 py-3 font-medium">Issue</th>
+                  <th className="px-6 py-3 font-medium">Date</th>
+                  <th className="px-6 py-3 font-medium">Item</th>
+                  <th className="px-6 py-3 font-medium">Source</th>
+                  <th className="px-6 py-3 font-medium text-right">Variance</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {exceptions.map(exc => (
+                  <tr 
+                    key={exc.id} 
+                    className="hover:bg-slate-50 cursor-pointer"
+                    onClick={() => setSelectedException(exc)}
+                  >
+                    <td className="px-6 py-4 font-medium text-slate-900">{exc.resolution_notes || 'Discrepancy reported'}</td>
+                    <td className="px-6 py-4 text-slate-600">{format(new Date(exc.exception_date), "MMM d, yyyy")}</td>
+                    <td className="px-6 py-4">
+                      <div className="font-medium text-slate-900">{exc.inventory_item.name}</div>
+                      <div className="text-xs text-slate-500">{exc.inventory_item.inventory_code}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                        {exc.source_system}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="text-rose-600 font-mono font-medium">{exc.difference > 0 ? '+' : ''}{exc.difference}</div>
+                      <div className="text-xs text-slate-400">Sys: {formatQuantityValue(exc.expected_quantity)} → Act: {formatQuantityValue(exc.actual_quantity)}</div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
@@ -119,25 +123,33 @@ export function ExceptionsPage() {
                 <div className="text-sm text-slate-500 font-mono">{selectedException.inventory_item.inventory_code}</div>
               </div>
               
-              <div>
-                <h3 className="text-sm font-medium text-slate-500 mb-1">Resolution Notes</h3>
-                <Textarea 
-                  placeholder="Explain how this variance was investigated and resolved..."
-                  value={resolutionNotes}
-                  onChange={(e) => setResolutionNotes(e.target.value)}
-                  className="min-h-[120px]"
-                />
-              </div>
+              {hasPermission("INVENTORY_EXCEPTION_RESOLVE") ? (
+                <>
+                  <div>
+                    <h3 className="text-sm font-medium text-slate-500 mb-1">Resolution Notes</h3>
+                    <Textarea 
+                      placeholder="Explain how this variance was investigated and resolved..."
+                      value={resolutionNotes}
+                      onChange={(e) => setResolutionNotes(e.target.value)}
+                      className="min-h-[120px]"
+                    />
+                  </div>
 
-              <div className="pt-4 flex gap-3">
-                <Button 
-                  onClick={handleResolve} 
-                  disabled={resolveMutation.isPending || !resolutionNotes.trim()}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700"
-                >
-                  {resolveMutation.isPending ? "Resolving..." : "Mark as Resolved"}
-                </Button>
-              </div>
+                  <div className="pt-4 flex gap-3">
+                    <Button 
+                      onClick={handleResolve} 
+                      disabled={resolveMutation.isPending || !resolutionNotes.trim()}
+                      className="w-full bg-indigo-600 hover:bg-indigo-700"
+                    >
+                      {resolveMutation.isPending ? "Resolving..." : "Mark as Resolved"}
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <div className="pt-4 text-sm text-slate-500 italic">
+                  You do not have permission to resolve exceptions.
+                </div>
+              )}
             </div>
           )}
         </SheetContent>

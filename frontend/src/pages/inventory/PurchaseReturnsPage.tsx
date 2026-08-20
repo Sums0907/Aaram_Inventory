@@ -1,7 +1,9 @@
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
+import { useAuth } from "@/hooks/use-auth"
 
 export function PurchaseReturnsPage() {
+  const { hasPermission } = useAuth()
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -12,10 +14,12 @@ export function PurchaseReturnsPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button className="bg-indigo-600 hover:bg-indigo-700">
-            <Plus className="mr-2 h-4 w-4" />
-            Create Return
-          </Button>
+          {hasPermission("INVENTORY_RETURN_CREATE") && (
+            <Button className="bg-indigo-600 hover:bg-indigo-700">
+              <Plus className="mr-2 h-4 w-4" />
+              Create Return
+            </Button>
+          )}
         </div>
       </div>
       

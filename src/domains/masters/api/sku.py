@@ -2,7 +2,7 @@ from typing import List
 from uuid import UUID
 from fastapi import APIRouter, Depends, status, Query
 from dependency_injector.wiring import Provide, inject
-from src.foundation.authentication.dependencies import get_current_user, CurrentUser
+from src.foundation.authentication.dependencies import get_current_user, CurrentUser, require_permission
 from src.foundation.api.responses import SuccessResponse
 from src.domains.masters.schemas.sku import SKUCreate, SKUUpdate, SKUResponse
 from src.domains.masters.services.sku import SKUService
@@ -15,7 +15,7 @@ router = APIRouter(prefix="/skus", tags=["SKU"])
 async def list_skus(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("CATALOG_VIEW")),
     service: SKUService = Depends(Provide[MastersContainer.sku_service])
 ):
     skus = await service.list_skus(skip=skip, limit=limit)
@@ -26,7 +26,7 @@ async def list_skus(
 @inject
 async def get_sku(
     sku_id: UUID,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("CATALOG_VIEW")),
     service: SKUService = Depends(Provide[MastersContainer.sku_service])
 ):
     sku = await service.get_sku(sku_id)
@@ -36,7 +36,7 @@ async def get_sku(
 @inject
 async def create_sku(
     schema: SKUCreate,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("PRODUCT_CREATE")),
     service: SKUService = Depends(Provide[MastersContainer.sku_service])
 ):
     from uuid import UUID
@@ -49,7 +49,7 @@ async def create_sku(
 async def update_sku(
     sku_id: UUID,
     schema: SKUUpdate,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
     service: SKUService = Depends(Provide[MastersContainer.sku_service])
 ):
     from uuid import UUID
@@ -61,7 +61,7 @@ async def update_sku(
 @inject
 async def activate_sku(
     sku_id: UUID,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
     service: SKUService = Depends(Provide[MastersContainer.sku_service])
 ):
     from uuid import UUID
@@ -73,7 +73,7 @@ async def activate_sku(
 @inject
 async def deactivate_sku(
     sku_id: UUID,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
     service: SKUService = Depends(Provide[MastersContainer.sku_service])
 ):
     from uuid import UUID
@@ -85,7 +85,7 @@ async def deactivate_sku(
 @inject
 async def archive_sku(
     sku_id: UUID,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
     service: SKUService = Depends(Provide[MastersContainer.sku_service])
 ):
     from uuid import UUID
@@ -97,7 +97,7 @@ async def archive_sku(
 @inject
 async def delete_sku(
     sku_id: UUID,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
     service: SKUService = Depends(Provide[MastersContainer.sku_service])
 ):
     await service.delete_sku(sku_id)

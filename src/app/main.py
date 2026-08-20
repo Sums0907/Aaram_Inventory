@@ -15,6 +15,7 @@ from src.domains.accounting.api.export_router import router as accounting_export
 from src.app.api.dashboard import router as dashboard_router
 from src.app.api.setup import router as setup_router
 from src.api.v1.read_api_router import read_api_router
+from src.api.v1.master_data_router import master_data_router
 
 def create_app() -> FastAPI:
     settings = get_settings()
@@ -42,13 +43,14 @@ def create_app() -> FastAPI:
     domains_container.core().wire(packages=["src.app", "src.foundation"])
     domains_container.masters().wire(packages=["src.domains.masters"])
     domains_container.operations().wire(packages=["src.domains.operations"])
-    domains_container.data_ingestion().wire(packages=["src.domains.data_ingestion"])
+    domains_container.data_ingestion().wire(packages=["src.domains.data_ingestion", "src.api.v1"])
     domains_container.matching().wire(packages=["src.domains.matching"])
     domains_container.inventory().wire(packages=["src.domains.inventory", "src.api.v1"])
     domains_container.accounting().wire(packages=["src.domains.accounting", "src.api.v1"])
     domains_container.connectors().wire(packages=["src.domains.connectors"])
     domains_container.wire(modules=[
         "src.api.v1.read_api_router", 
+        "src.api.v1.master_data_router",
         "src.domains.matching.api.router", 
         "src.app.api.dashboard", 
         "src.domains.accounting.api.export_router",
@@ -134,8 +136,28 @@ def create_app() -> FastAPI:
     api_v1_router.include_router(jw_payables_router)
     api_v1_router.include_router(dashboard_router, prefix="/dashboard")
     api_v1_router.include_router(read_api_router)
+    api_v1_router.include_router(master_data_router)
     
     app.include_router(api_v1_router)
+    
+    import os
+    from fastapi.staticfiles import StaticFiles
+    from fastapi.responses import FileResponse
+    
+    # Serve Single Page Application (SPA) if dist exists
+    frontend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../frontend/dist"))
+    if os.path.isdir(frontend_dir):
+        # Mount assets directory
+        assets_dir = os.path.join(frontend_dir, "assets")
+        if os.path.isdir(assets_dir):
+            app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+            
+        @app.get("/{full_path:path}")
+        async def serve_frontend(full_path: str):
+            file_path = os.path.join(frontend_dir, full_path)
+            if os.path.isfile(file_path):
+                return FileResponse(file_path)
+            return FileResponse(os.path.join(frontend_dir, "index.html"))
     
     return app
 

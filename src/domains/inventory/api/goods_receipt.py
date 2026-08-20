@@ -3,7 +3,7 @@ from uuid import UUID
 from dependency_injector.wiring import Provide, inject
 
 from src.foundation.api.responses import SuccessResponse, PaginatedResponse
-from src.foundation.authentication.dependencies import get_current_user, CurrentUser
+from src.foundation.authentication.dependencies import get_current_user, CurrentUser, require_permission
 from src.app.container import DomainsContainer
 from src.domains.inventory.services.goods_receipt import GoodsReceiptService
 from src.domains.inventory.schemas.goods_receipt import GoodsReceiptCreate, GoodsReceiptResponse
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/goods-receipts", tags=["Goods Receipts"])
 @inject
 async def create_grn(
     schema: GoodsReceiptCreate,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_RECEIPT_CREATE")),
     service: GoodsReceiptService = Depends(Provide[DomainsContainer.goods_receipt_service_with_accounting])
 ):
     user_uuid = UUID(current_user.id)
@@ -28,7 +28,7 @@ from src.foundation.api.responses import SuccessResponse, PaginatedResponse, Pag
 async def get_grns(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_RECEIPT_VIEW")),
     service: GoodsReceiptService = Depends(Provide[DomainsContainer.inventory.goods_receipt_service])
 ):
     items, total = await service.get_all(skip=skip, limit=limit)
@@ -45,7 +45,7 @@ async def get_grns(
 @inject
 async def get_grn(
     grn_id: UUID,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_RECEIPT_VIEW")),
     service: GoodsReceiptService = Depends(Provide[DomainsContainer.inventory.goods_receipt_service])
 ):
     result = await service.get_by_id(grn_id)

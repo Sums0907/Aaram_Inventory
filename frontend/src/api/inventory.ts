@@ -54,16 +54,12 @@ export interface InventoryConfidenceResponse {
   negative_signals: string[];
 }
 
-const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1MDJlYWMxMS0yMWUyLTRkNTMtYTllOS0yYmEyMWJjMDRiOWEiLCJ1c2VybmFtZSI6ImRlbW8iLCJyb2xlIjoiYWRtaW4iLCJleHAiOjE4MTc0NzI2MDZ9._cuQTw-7zam00atnpTsxsklre2ZsOFVKPkbvChQpSMM";
-
 export function useInventoryBalances() {
   return useQuery({
     queryKey: ['inventory-balances'],
     queryFn: async () => {
       // apiClient interceptor unwraps AxiosResponse into the JSON body { success, data }
-      const payload = await apiClient.get<any>('/inventory/balances', {
-        headers: { Authorization: `Bearer ${TOKEN}` }
-      }) as any;
+      const payload = await apiClient.get<any>('/inventory/balances') as any;
       return Array.isArray(payload) ? payload : (payload?.data || []);
     },
   });
@@ -74,9 +70,7 @@ export function useInventoryLedger(skuId: string | null) {
     queryKey: ['inventory-ledger', skuId],
     queryFn: async () => {
       if (!skuId) return null;
-      const payload = await apiClient.get<any>(`/inventory/ledger/${skuId}`, {
-        headers: { Authorization: `Bearer ${TOKEN}` }
-      }) as any;
+      const payload = await apiClient.get<any>(`/inventory/ledger/${skuId}`) as any;
       return payload?.data;
     },
     enabled: !!skuId,
@@ -88,9 +82,7 @@ export function useInventoryConfidence(skuId: string | null) {
     queryKey: ['inventory-confidence', skuId],
     queryFn: async () => {
       if (!skuId) return null;
-      const payload = await apiClient.get<any>(`/inventory/confidence/${skuId}`, {
-        headers: { Authorization: `Bearer ${TOKEN}` }
-      }) as any;
+      const payload = await apiClient.get<any>(`/inventory/confidence/${skuId}`) as any;
       return payload?.data;
     },
     enabled: !!skuId,
@@ -101,9 +93,7 @@ export function useDashboardKPIs() {
   return useQuery({
     queryKey: ['inventory-dashboard-kpis'],
     queryFn: async () => {
-      const payload = await apiClient.get<any>('/inventory/dashboard/kpis', {
-        headers: { Authorization: `Bearer ${TOKEN}` }
-      }) as any;
+      const payload = await apiClient.get<any>('/inventory/dashboard/kpis') as any;
       return payload?.data || {};
     }
   });
@@ -113,9 +103,7 @@ export function useDashboardExceptions() {
   return useQuery({
     queryKey: ['inventory-dashboard-exceptions'],
     queryFn: async () => {
-      const payload = await apiClient.get<any>('/inventory/dashboard/exceptions', {
-        headers: { Authorization: `Bearer ${TOKEN}` }
-      }) as any;
+      const payload = await apiClient.get<any>('/inventory/dashboard/exceptions') as any;
       return payload?.data || [];
     }
   });
@@ -145,9 +133,7 @@ export function useCreateManualAdjustment() {
 
   return useMutation({
     mutationFn: async (data: ManualAdjustmentRequest) => {
-      const response = await apiClient.post<any>('/inventory/movements/manual-adjustments', data, {
-        headers: { Authorization: `Bearer ${TOKEN}` }
-      });
+      const response = await apiClient.post<any>('/inventory/movements/manual-adjustments', data);
       return response;
     },
     onSuccess: (_, variables) => {

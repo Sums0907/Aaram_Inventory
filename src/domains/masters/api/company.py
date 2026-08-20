@@ -1,7 +1,7 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends, status
 from dependency_injector.wiring import Provide, inject
-from src.foundation.authentication.dependencies import get_current_user, CurrentUser
+from src.foundation.authentication.dependencies import get_current_user, CurrentUser, require_permission
 from src.foundation.api.responses import SuccessResponse
 from src.domains.masters.schemas.company import CompanyCreate, CompanyUpdate, CompanyResponse
 from src.domains.masters.services.company import CompanyService
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/companies", tags=["Company"])
 @inject
 async def get_company(
     company_id: UUID,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("CATALOG_VIEW")),
     service: CompanyService = Depends(Provide[MastersContainer.company_service])
 ):
     company = await service.get_company(company_id)
@@ -24,7 +24,7 @@ async def get_company(
 async def update_company(
     company_id: UUID,
     schema: CompanyUpdate,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
     service: CompanyService = Depends(Provide[MastersContainer.company_service])
 ):
     from uuid import UUID
@@ -36,7 +36,7 @@ async def update_company(
 @inject
 async def activate_company(
     company_id: UUID,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
     service: CompanyService = Depends(Provide[MastersContainer.company_service])
 ):
     from uuid import UUID
@@ -48,7 +48,7 @@ async def activate_company(
 @inject
 async def deactivate_company(
     company_id: UUID,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
     service: CompanyService = Depends(Provide[MastersContainer.company_service])
 ):
     from uuid import UUID

@@ -9,8 +9,10 @@ import { Button } from "@/components/ui/button"
 import { formatQuantityValue } from "@/lib/utils"
 import { JobWorkReturnDialog } from "@/components/suppliers/JobWorkReturnDialog"
 import { JobWorkerWorkspace } from "@/components/suppliers/JobWorkerWorkspace"
+import { useAuth } from "@/hooks/use-auth"
 
 export function JobWorkerStockPage() {
+  const { hasPermission } = useAuth()
   const { data: stockData, isLoading } = useAllPendingStock()
   const { data: activities, isLoading: isLoadingActivities } = useAllJobWorkerActivities()
   const { data: skus } = useSKUs()
@@ -194,20 +196,22 @@ export function JobWorkerStockPage() {
                             <BookOpen className="h-3.5 w-3.5 mr-1" />
                             Ledger
                           </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => setReturnDialogState({ 
-                              open: true, 
-                              supplierId: item.job_worker_id, 
-                              supplierName: item.job_worker_name,
-                              skuId: item.item_id
-                            })}
-                            className="h-8"
-                          >
-                            <Undo2 className="h-3.5 w-3.5 mr-1" />
-                            Return
-                          </Button>
+                          {hasPermission("INVENTORY_JOBWORK_MANAGE") && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setReturnDialogState({ 
+                                open: true, 
+                                supplierId: item.job_worker_id, 
+                                supplierName: item.job_worker_name,
+                                skuId: item.item_id
+                              })}
+                              className="h-8"
+                            >
+                              <Undo2 className="h-3.5 w-3.5 mr-1" />
+                              Return
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>

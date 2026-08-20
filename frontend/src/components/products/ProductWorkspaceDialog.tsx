@@ -10,6 +10,7 @@ import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { inventoryActivitiesApi } from "@/api/activities"
 import { formatQuantityValue } from "@/lib/utils"
+import { useAuth } from "@/hooks/use-auth"
 
 import { QuickInventoryActionCard } from "./QuickInventoryActionCard"
 
@@ -25,6 +26,7 @@ export function ProductWorkspaceDialog({ sku, open, onOpenChange, inventoryCount
   const [activeTab, setActiveTab] = useState("overview")
   const deactivateMutation = useDeactivateSKU()
   const archiveMutation = useArchiveSKU()
+  const { hasPermission } = useAuth()
 
   const { data: activitiesData, isLoading: isLoadingActivities } = useQuery({
     queryKey: ['activities', sku?.id],
@@ -121,9 +123,11 @@ export function ProductWorkspaceDialog({ sku, open, onOpenChange, inventoryCount
           </div>
           
           <div className="flex items-center gap-2 mt-4 sm:mt-0 mr-8">
-            <Button variant="outline" size="sm" className="gap-2" onClick={() => setIsEditDialogOpen(true)}>
-              <Edit className="h-4 w-4" /> Edit
-            </Button>
+            {hasPermission("PRODUCT_UPDATE") && (
+              <Button variant="outline" size="sm" className="gap-2" onClick={() => setIsEditDialogOpen(true)}>
+                <Edit className="h-4 w-4" /> Edit
+              </Button>
+            )}
             {sku.status?.toUpperCase() === 'ACTIVE' && (
               <Button variant="outline" size="sm" className="gap-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200" onClick={handleHide} disabled={deactivateMutation.isPending}>
                 <EyeOff className="h-4 w-4" /> {deactivateMutation.isPending ? "Hiding..." : "Hide"}

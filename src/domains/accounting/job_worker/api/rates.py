@@ -3,7 +3,7 @@ from dependency_injector.wiring import Provide, inject
 from uuid import UUID
 from typing import List
 from src.foundation.api.responses import SuccessResponse
-from src.foundation.authentication.dependencies import get_current_user, CurrentUser
+from src.foundation.authentication.dependencies import get_current_user, CurrentUser, require_permission
 from src.app.container import DomainsContainer
 from src.domains.accounting.job_worker.services.rate_service import RateService
 from src.domains.accounting.job_worker.schemas.job_work_rate import (
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/job-worker-accounting/rates", tags=["Job Worker Rate
 @inject
 async def create_rate(
     schema: JobWorkRateCreate,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_JOBWORK_MANAGE")),
     service: RateService = Depends(Provide[DomainsContainer.accounting.jw_rate_service]),
 ):
     from uuid import UUID as _UUID
@@ -31,7 +31,7 @@ async def create_rate(
 @router.get("", response_model=SuccessResponse[List[JobWorkRateResponse]])
 @inject
 async def list_rates(
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_JOBWORK_VIEW")),
     service: RateService = Depends(Provide[DomainsContainer.accounting.jw_rate_service]),
 ):
     rates = await service.get_all()
@@ -44,7 +44,7 @@ async def list_rates(
 @inject
 async def list_rates_for_worker(
     job_worker_id: UUID,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_JOBWORK_VIEW")),
     service: RateService = Depends(Provide[DomainsContainer.accounting.jw_rate_service]),
 ):
     rates = await service.get_all_for_worker(job_worker_id)

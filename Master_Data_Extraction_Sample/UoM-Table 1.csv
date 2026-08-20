@@ -1,0 +1,4 @@
+UoM Code,UoM Name,Short Name,Type,Description
+MTR-T,Meter-T,m-t,DECIMAL,
+PCS,Pieces,pcs,INTEGER,
+M,Meter,m,DECIMAL,

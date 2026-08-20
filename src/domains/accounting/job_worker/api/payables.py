@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from dependency_injector.wiring import Provide, inject
 from uuid import UUID
 from src.foundation.api.responses import SuccessResponse
-from src.foundation.authentication.dependencies import get_current_user, CurrentUser
+from src.foundation.authentication.dependencies import get_current_user, CurrentUser, require_permission
 from src.app.container import DomainsContainer
 from src.domains.accounting.job_worker.services.payable_service import PayableService
 from src.domains.accounting.job_worker.schemas.payable import (
@@ -15,7 +15,7 @@ router = APIRouter(prefix="/job-worker-accounting", tags=["Job Worker Payables"]
 @router.get("/dashboard", response_model=SuccessResponse[PayableDashboardResponse])
 @inject
 async def get_dashboard(
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_JOBWORK_VIEW")),
     service: PayableService = Depends(Provide[DomainsContainer.accounting.jw_payable_service]),
 ):
     from sqlalchemy import select
@@ -35,7 +35,7 @@ async def get_dashboard(
 @inject
 async def get_payable_ledger(
     job_worker_id: UUID,
-    current_user: CurrentUser = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_JOBWORK_VIEW")),
     service: PayableService = Depends(Provide[DomainsContainer.accounting.jw_payable_service]),
 ):
     from sqlalchemy import select
