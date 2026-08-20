@@ -48,3 +48,23 @@ This log should be referenced and updated during future module deployments (e.g.
 - **Symptom:** Visiting the frontend domain (`inventory.aarambooks.cloud`) returned `{"detail":"Not Found"}`.
 - **Root Cause:** A raw JSON response like `{"detail":"Not Found"}` is the signature of a FastAPI application when a route doesn't exist, proving Nginx was routing frontend traffic to a backend API. The API server block (`api.inventory.aarambooks.cloud`) was completely missing from `/etc/nginx/sites-available`. Because it was missing, when the React app attempted to make API calls to the API domain, Nginx fell back to the default server block (the AaramIdentity API), which returned a 404 since it didn't recognize the inventory routes.
 - **Final Working Solution:** Created the missing Nginx server block for `api.inventory.aarambooks.cloud` pointing to the backend container port `8100`, enabled the site, reloaded Nginx, and secured it with Certbot. This properly separated frontend and backend traffic.
+
+## 7. Infinite SSO Redirect Loop & JWT Literal Newline Bug
+- **Symptom:** The user was successfully logging in to AaramIdentity, getting redirected back to the Aaram_Inventory dashboard, but the backend immediately threw a 401 Unauthorized, deleted the token, and redirected back to AaramIdentity in an infinite loop.
+- **Root Cause 1:** The `AARAMIDENTITY_PUBLIC_KEY` inside the `.env.production` file was passed by Docker Compose as a literal string containing `\n` (backslash n) rather than true newline characters. `jwt.decode` silently failed to parse this as a valid PEM key.
+- **Root Cause 2:** AaramIdentity automatically generates dynamic RSA keys internally on startup if `private.pem` is absent, ignoring the static `JWT_PUBLIC_KEY` in its `.env` file. The static key copied from the Identity `.env` file was a 'ghost key' mismatched with the live signing key.
+- **Final Working Solution:** 
+  1. Patched `src/foundation/authentication/jwt.py` to explicitly call `public_key.replace('\\n', '\n')` to immunize the application against Docker Compose environment variable escaping quirks.
+  2. Extracted the live `public.pem` directly from the running AaramIdentity container using `docker exec` and placed it into Aaram_Inventory's `.env.production`.
+
+## 8. Deployment Checklist for Future Modules (e.g. AaramPackerApp)
+To completely avoid all the above issues when deploying the next application, follow this exact sequence:
+1. **GitHub Actions Frontend:** If building a React app in Docker, pre-build it locally (`npm run build`) and use `COPY dist/ /usr/share/nginx/html` in your Dockerfile to completely avoid GitHub Actions memory limits and lockfile errors. Don't forget to `git add -f dist/`.
+2. **Database:** Log into PostgreSQL via `sudo -u postgres psql` and manually create the database and user (e.g., `packer_user`) before deploying. Do NOT use the default `postgres` user in `.env.production`.
+3. **pg_hba.conf:** Ensure the Docker subnet (`172.16.0.0/12`) is whitelisted in `/etc/postgresql/16/main/pg_hba.conf` if this is a new server.
+4. **Environment Variables:** Verify that your `docker-compose.prod.yml` has explicit mappings under the `environment` section for every variable you expect the container to read from `.env.production` (e.g. `- AUTH_MODE=${AUTH_MODE}`).
+5. **Nginx:** Ensure you have *two* separate server blocks in `/etc/nginx/sites-available` — one for the frontend (e.g. `packer.aarambooks.cloud`) and one for the backend (e.g. `api.packer.aarambooks.cloud`).
+6. **AaramIdentity Key Sync (CRITICAL):** Because AaramIdentity generates dynamic RSA keys, you MUST fetch the live public key from the running container:
+   - Run `docker exec aaram_identity_backend_prod cat public.pem`
+   - Use a tool to convert the multiline output into a single string with `\n` characters.
+   - Paste that single string into your `.env.production` under `AARAMIDENTITY_PUBLIC_KEY="..."`.

@@ -1077,3 +1077,18 @@ Changes:
 Status: VPS DEPLOYMENT UNBLOCKED — Images are actively pulling on the VPS.
 
 Next Step: Finalize VPS database configuration and integration verification once containers are up.
+
+### 2026-08-20 — Antigravity (VPS Deployment JWT Signature & Redirect Fixes)
+
+Task: Resolve infinite SSO redirect loops and JWT verification failures on the Hostinger VPS production environment.
+
+Changes:
+- **Nginx & HTTPS**: Validated Nginx routing and Certbot SSL for `inventory.aarambooks.cloud` (frontend) and `api.inventory.aarambooks.cloud` (backend).
+- **Frontend Redirect Fix**: Replaced hardcoded `localhost:9001` redirect in `ProtectedRoute.tsx` with dynamic `window.AARAM_CONFIG.IDENTITY_URL` loaded from `config.prod.js` at runtime.
+- **Vite Build Cache Bug**: Fixed a bug where Vite build artifacts inside `.gitignore` (`dist/`) were missing from GitHub Actions by force-adding the directory (`git add -f frontend/dist`).
+- **JWT Literal Newline Fix**: Discovered that Docker Compose `.env` files parse `\n` as literal slash-n characters, breaking RSA key serialization. Modified `src/foundation/authentication/jwt.py` to aggressively `.replace('\\n', '\n')` before decoding.
+- **AaramIdentity Dynamic Keys**: Diagnosed that AaramIdentity generates dynamic RSA keys internally if `private.pem` is absent, causing the static `JWT_PUBLIC_KEY` in `.env` to be mismatched with the tokens. Instructed user to extract the live `public.pem` from the AaramIdentity container to fix the `Signature verification failed` 401 loop.
+
+Status: PRODUCTION STABILIZED — Frontend and backend are connected, and SSO with AaramIdentity is actively working.
+
+Next Step: Await further instructions for data seeding or operational handoff.
