@@ -54,8 +54,10 @@ def decode_aaramidentity_token(token: str) -> Optional[Dict[str, Any]]:
             audience="AARAM_ECOSYSTEM"
         )
     except jwt.ExpiredSignatureError:
+        with open("/tmp/aaram_auth_debug.log", "a") as f:
+            f.write("JWT Decode failed: Token expired\n")
         return None
-    except JWTError:
+    except JWTError as e:
         # Error-Triggered Cache Invalidation
         _cached_public_key = _fetch_public_key()
         try:
@@ -65,7 +67,9 @@ def decode_aaramidentity_token(token: str) -> Optional[Dict[str, Any]]:
                 algorithms=["RS256"], 
                 audience="AARAM_ECOSYSTEM"
             )
-        except JWTError:
+        except JWTError as e2:
+            with open("/tmp/aaram_auth_debug.log", "a") as f:
+                f.write(f"JWT Decode failed (JWTError): {str(e)} | Retry failed: {str(e2)}\n")
             return None
     except Exception as e:
         with open("/tmp/aaram_auth_debug.log", "a") as f:
