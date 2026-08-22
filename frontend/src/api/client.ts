@@ -7,6 +7,7 @@ declare global {
   interface Window {
     AARAM_CONFIG?: {
       API_URL?: string;
+      IDENTITY_URL?: string;
     };
   }
 }
@@ -61,7 +62,10 @@ apiClient.interceptors.response.use(
         isRefreshing = true;
 
         try {
-          const refreshRes = await axios.post(`${API_BASE_URL}/auth/refresh`, {
+          const identityUrl = window.AARAM_CONFIG?.IDENTITY_URL || "https://identity.aarambooks.cloud";
+          const refreshUrl = `${identityUrl.replace(/\/$/, "")}/auth/refresh`;
+          
+          const refreshRes = await axios.post(refreshUrl, {
             refresh_token: refreshToken,
             platform: 'AARAM_INVENTORY_WEB'
           });
