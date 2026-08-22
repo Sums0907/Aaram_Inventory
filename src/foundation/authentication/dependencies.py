@@ -88,7 +88,9 @@ class require_permission:
             # If not provided, we fallback to bypass only if explicitly configured (though here we just enforce).
             pass
 
-        if self.required_permission not in user.permissions:
+        has_admin_role = "AARAM_BOOKS_ADMIN" in user.roles or "AARAM_INVENTORY_ADMIN" in user.roles
+
+        if self.required_permission not in user.permissions and not has_admin_role:
             from src.foundation.exceptions.base import ForbiddenException
             raise ForbiddenException(message=f"Missing required permission: {self.required_permission}")
         return user
