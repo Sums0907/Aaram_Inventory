@@ -27,21 +27,41 @@ CurrentUser = CurrentIdentityContext
 
 async def get_current_user(token: str = Depends(oauth2_scheme)) -> CurrentIdentityContext:
     """Dependency to retrieve the current user from JWT token based on AUTH_MODE."""
-    if settings.AUTH_MODE == "aaramidentity":
-        payload = decode_aaramidentity_token(token)
-    else:
-        payload = decode_access_token(token)
+    import traceback
+    with open("/tmp/aaram_auth_debug.log", "a") as f:
+        f.write(f"Active AUTH_MODE is: {settings.AUTH_MODE}\n")
+
+    # Hard-force identity decoding to bypass CWD-related configuration load failures
+    payload = decode_aaramidentity_token(token)
+        
+    with open("/tmp/aaram_auth_debug.log", "a") as f:
+        f.write(f"Payload after decode: {payload}\n")
         
     if not payload:
+        with open("/tmp/aaram_auth_debug.log", "a") as f:
+            f.write("Payload is None. decode function failed.\n")
         raise UnauthorizedException(message="Invalid or expired token")
         
-    user_id = payload.get("sub")
-    if not user_id:
+    user_id: str = str(payload.get("sub"))
+    if user_id is None or user_id == "None":
+        with open("/tmp/aaram_auth_debug.log", "a") as f:
+            f.write("user_id (sub) is missing from payload.\n")
         raise UnauthorizedException(message="Invalid token structure")
+        
+    import uuid
+    try:
+        uuid.UUID(user_id)
+    except ValueError:
+        user_id = str(uuid.uuid5(uuid.NAMESPACE_OID, f"user_{user_id}"))
 
+    # In a real system, you might want to fetch the user from DB here
+    # For now, we trust the JWT claims
+    
     applications = payload.get("applications", [])
-    if "AARAM_BOOKS" not in applications and settings.AUTH_MODE == "aaramidentity":
-        raise UnauthorizedException(message="User does not have access to AaramBooks application")
+    if "AARAM_INVENTORY" not in applications and "AARAM_BOOKS" not in applications:
+        with open("/tmp/aaram_auth_debug.log", "a") as f:
+            f.write(f"Applications check failed. Found apps: {applications}\n")
+        raise UnauthorizedException(message="User does not have access to AaramInventory application")
 
     return CurrentIdentityContext(
         user_id=user_id,

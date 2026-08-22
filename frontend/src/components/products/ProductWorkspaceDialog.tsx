@@ -124,7 +124,7 @@ export function ProductWorkspaceDialog({ sku, open, onOpenChange, inventoryCount
           </div>
           
           <div className="flex items-center gap-2 mt-4 sm:mt-0 mr-8">
-            {hasPermission("PRODUCT_UPDATE") && (
+            {hasPermission("INVENTORY_PRODUCT_UPDATE") && (
               <Button variant="outline" size="sm" className="gap-2" onClick={() => setIsEditDialogOpen(true)}>
                 <Edit className="h-4 w-4" /> Edit
               </Button>

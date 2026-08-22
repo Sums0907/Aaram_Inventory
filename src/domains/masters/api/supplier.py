@@ -14,7 +14,7 @@ router = APIRouter(prefix="/suppliers", tags=["Suppliers"])
 @inject
 async def create_supplier(
     supplier: SupplierCreate,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_CREATE")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_CREATE")),
     service: SupplierService = Depends(Provide[DomainsContainer.masters.supplier_service])
 ):
     user_uuid = UUID(current_user.id)
@@ -26,7 +26,7 @@ async def create_supplier(
 async def get_suppliers(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),
-    current_user: CurrentUser = Depends(require_permission("CATALOG_VIEW")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_CATALOG_VIEW")),
     service: SupplierService = Depends(Provide[DomainsContainer.masters.supplier_service])
 ):
     items, total = await service.get_all(skip=skip, limit=limit)
@@ -43,7 +43,7 @@ async def get_suppliers(
 @inject
 async def get_supplier(
     supplier_id: UUID,
-    current_user: CurrentUser = Depends(require_permission("CATALOG_VIEW")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_CATALOG_VIEW")),
     service: SupplierService = Depends(Provide[DomainsContainer.masters.supplier_service])
 ):
     result = await service.get_by_id(supplier_id)
@@ -54,7 +54,7 @@ async def get_supplier(
 async def update_supplier(
     supplier_id: UUID,
     supplier: SupplierUpdate,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_UPDATE")),
     service: SupplierService = Depends(Provide[DomainsContainer.masters.supplier_service])
 ):
     user_uuid = UUID(current_user.id)
@@ -65,7 +65,7 @@ async def update_supplier(
 @inject
 async def delete_supplier(
     supplier_id: UUID,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_UPDATE")),
     service: SupplierService = Depends(Provide[DomainsContainer.masters.supplier_service])
 ):
     await service.delete(supplier_id)

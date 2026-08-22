@@ -19,7 +19,7 @@
     |   File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
     |     response = await self.dispatch_func(request, call_next)
     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    |   File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/src/foundation/api/middleware.py", line 15, in dispatch
+    |   File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/src/foundation/api/middleware.py", line 16, in dispatch
     |     response: Response = await call_next(request)
     |                          ^^^^^^^^^^^^^^^^^^^^^^^^
     |   File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
@@ -61,10 +61,13 @@
     |     return await _async_inject(
     |            ^^^^^^^^^^^^^^^^^^^^
     |   File "src/dependency_injector/_cwiring.pyx", line 66, in _async_inject
-    |   File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/src/api/v1/master_data_router.py", line 26, in import_master_data
-    |     app_service.validate_permissions([current_user.role], ["SUPER_ADMIN"])
-    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    | AttributeError: 'Provide' object has no attribute 'validate_permissions'
+    |   File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/src/domains/inventory/api/dashboard_router.py", line 79, in get_dashboard_recent_activity
+    |     data = [
+    |            ^
+    |   File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/src/domains/inventory/api/dashboard_router.py", line 86, in <listcomp>
+    |     "reference_document": m.reference_document,
+    |                           ^^^^^^^^^^^^^^^^^^^^
+    | AttributeError: 'InventoryMovementModel' object has no attribute 'reference_document'
     +------------------------------------
 
 During handling of the above exception, another exception occurred:
@@ -81,7 +84,7 @@ Traceback (most recent call last):
   File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
     response = await self.dispatch_func(request, call_next)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/src/foundation/api/middleware.py", line 15, in dispatch
+  File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/src/foundation/api/middleware.py", line 16, in dispatch
     response: Response = await call_next(request)
                          ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/venv/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
@@ -123,7 +126,10 @@ Traceback (most recent call last):
     return await _async_inject(
            ^^^^^^^^^^^^^^^^^^^^
   File "src/dependency_injector/_cwiring.pyx", line 66, in _async_inject
-  File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/src/api/v1/master_data_router.py", line 26, in import_master_data
-    app_service.validate_permissions([current_user.role], ["SUPER_ADMIN"])
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'Provide' object has no attribute 'validate_permissions'
+  File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/src/domains/inventory/api/dashboard_router.py", line 79, in get_dashboard_recent_activity
+    data = [
+           ^
+  File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/src/domains/inventory/api/dashboard_router.py", line 86, in <listcomp>
+    "reference_document": m.reference_document,
+                          ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'InventoryMovementModel' object has no attribute 'reference_document'

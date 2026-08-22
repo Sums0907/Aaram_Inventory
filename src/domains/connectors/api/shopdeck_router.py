@@ -23,7 +23,7 @@ class SyncRequest(BaseModel):
 @inject
 async def sync_shopdeck(
     request: SyncRequest,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_CREATE")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_CREATE")),
     shopdeck_sync_service = Depends(Provide[ConnectorsContainer.shopdeck_sync_service])
 ):
     """
@@ -40,21 +40,21 @@ async def sync_shopdeck(
 @router.get("/status", response_model=SuccessResponse[Dict[str, Any]])
 @inject
 async def get_shopdeck_status(
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_VIEW"))
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_VIEW"))
 ):
     return SuccessResponse(data={"status": "CONNECTED"})
 
 @router.get("/history", response_model=SuccessResponse[Dict[str, Any]])
 @inject
 async def get_shopdeck_history(
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_VIEW"))
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_VIEW"))
 ):
     return SuccessResponse(data={"history": []})
 
 @router.get("/reports", response_model=SuccessResponse[Dict[str, Any]])
 @inject
 async def get_shopdeck_reports(
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_VIEW"))
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_VIEW"))
 ):
     return SuccessResponse(data={"reports": []})
 
@@ -69,7 +69,7 @@ from src.domains.connectors.services.storage import StorageManager
 @inject
 async def download_shopdeck_report(
     filename: str,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_VIEW")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_VIEW")),
     storage_manager: StorageManager = Depends(Provide[ConnectorsContainer.storage_manager])
 ):
     storage_dir = os.path.join(storage_manager.base_storage_dir, "shopdeck")

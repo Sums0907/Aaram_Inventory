@@ -20,7 +20,7 @@ async def get_item_workspace(
     bom_repository: BOMRepository = Depends(Provide[DomainsContainer.masters.bom_repository]),
     movement_repository: InventoryMovementRepository = Depends(Provide[DomainsContainer.inventory.movement_repository]),
     balance_repository: InventoryBalanceRepository = Depends(Provide[DomainsContainer.inventory.balance_repository]),
-    _=Depends(require_permission("PRODUCT_VIEW"))
+    _=Depends(require_permission("INVENTORY_PRODUCT_VIEW"))
 ):
     # 1. Identity
     sku = await sku_repository.get_by_id(sku_id)

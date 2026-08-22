@@ -17,8 +17,8 @@ class SKUModel(BaseModel):
     product_id: Mapped[UUID] = mapped_column(ForeignKey("products.id"), nullable=False)
     
     # Variant attributes that make this SKU unique
-    size: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    color: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    size: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    color: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     pattern: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     material: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     thread_count: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)

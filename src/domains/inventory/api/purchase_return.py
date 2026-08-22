@@ -28,7 +28,7 @@ from src.foundation.api.responses import SuccessResponse, PaginatedResponse, Pag
 async def get_returns(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),
-    current_user: CurrentUser = Depends(require_permission("INVENTORY_RETURN_VIEW")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_ACTIVITY_VIEW")),
     service: PurchaseReturnService = Depends(Provide[DomainsContainer.inventory.purchase_return_service])
 ):
     items, total = await service.get_all(skip=skip, limit=limit)
@@ -45,7 +45,7 @@ async def get_returns(
 @inject
 async def get_return(
     return_id: UUID,
-    current_user: CurrentUser = Depends(require_permission("INVENTORY_RETURN_VIEW")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_ACTIVITY_VIEW")),
     service: PurchaseReturnService = Depends(Provide[DomainsContainer.inventory.purchase_return_service])
 ):
     result = await service.get_by_id(return_id)

@@ -14,7 +14,7 @@ router = APIRouter(prefix="/inventory-items", tags=["Inventory Item"])
 @inject
 async def create_inventory_item(
     schema: InventoryItemCreate,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_CREATE")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_CREATE")),
     service: InventoryItemService = Depends(Provide[MastersContainer.inventory_item_service])
 ):
     from uuid import UUID

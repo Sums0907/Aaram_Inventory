@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge"
 import { Search, X, Package, AlertCircle, Plus, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import Papa from "papaparse"
 import { ExecutiveSummary } from "@/components/products/ExecutiveSummary"
 import { InventoryItemFormDialog } from "@/components/products/InventoryItemFormDialog"
 import { ProductWorkspaceDialog } from "@/components/products/ProductWorkspaceDialog"
@@ -33,65 +32,8 @@ export function ProductsPage() {
   const createMutation = useCreateSKU()
   const createInventoryItemMutation = useCreateInventoryItem()
   const updateMutation = useUpdateSKU()
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [isImporting, setIsImporting] = useState(false)
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
 
-    setIsImporting(true)
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: async (results) => {
-        try {
-          let updated = 0
-          let created = 0
-          for (const row of results.data as any[]) {
-            const skuId = row["Sku Id"] || row["sku_code"];
-            const name = row["Name"] || row["new_product_name"];
-            const category = row["Product Type"] || row["new_category_name"];
-            if (!skuId || !name) continue;
-            
-            const existingSku = skus?.find(s => s.item_code === skuId || s.sku_code === skuId)
-
-            if (existingSku) {
-              const payload = {
-                color: row["Colour"] || row.color,
-                size: row["Size"] || row.size,
-                material: row["attr_Material"] || row.material,
-                thread_count: row["attr_Thread Count (TC)"] || row.thread_count,
-              }
-              await updateMutation.mutateAsync({ id: existingSku.id, data: payload })
-              updated++
-            } else {
-              const payload = {
-                item_type: "FINISHED_GOODS",
-                new_category_name: category || "Uncategorized",
-                new_product_name: name,
-                item_code: skuId,
-                sku_code: skuId,
-                color: row["Colour"] || row.color,
-                size: row["Size"] || row.size,
-                material: row["attr_Material"] || row.material,
-                thread_count: row["attr_Thread Count (TC)"] || row.thread_count,
-              }
-              await createInventoryItemMutation.mutateAsync(payload)
-              created++
-            }
-          }
-          alert(`Import complete: ${created} created, ${updated} updated.`)
-        } catch (error) {
-          console.error("Import failed:", error)
-          alert("Import failed. Check console for details.")
-        } finally {
-          setIsImporting(false)
-          if (fileInputRef.current) fileInputRef.current.value = ""
-        }
-      }
-    })
-  }
 
   const isLoading = isLoadingSkus || isLoadingBalances
 
@@ -255,27 +197,13 @@ export function ProductsPage() {
                   <option value="stock_desc">Stock (Highest)</option>
                 </select>
                 
-                {hasPermission("PRODUCT_CREATE") && (
+                {hasPermission("INVENTORY_PRODUCT_CREATE") && (
                   <>
                     <Button className="h-[46px] gap-2 bg-indigo-600 hover:bg-indigo-700" onClick={() => setIsAddDialogOpen(true)}>
                       <Plus className="h-4 w-4" /> Add Item
                     </Button>
                     
-                    <input 
-                      type="file" 
-                      accept=".csv" 
-                      className="hidden" 
-                      ref={fileInputRef} 
-                      onChange={handleFileUpload} 
-                    />
-                    <Button 
-                      variant="outline" 
-                      className="h-[46px] gap-2 border-slate-200 text-slate-700 hover:bg-slate-50" 
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={isImporting}
-                    >
-                      <Upload className="h-4 w-4" /> {isImporting ? "Importing..." : "Import CSV"}
-                    </Button>
+
                   </>
                 )}
               </div>

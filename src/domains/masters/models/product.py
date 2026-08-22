@@ -1,7 +1,7 @@
 from typing import Optional, List
 from uuid import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, ForeignKey, Table, Column
+from sqlalchemy import String, Text, ForeignKey, Table, Column
 from src.foundation.database.models import BaseModel
 from sqlalchemy import Enum as SQLAlchemyEnum
 from src.foundation.enums import ItemType, GenericStatus
@@ -19,7 +19,7 @@ class ProductModel(BaseModel):
 
     product_code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
     product_name: Mapped[str] = mapped_column(String(150), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     brand: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     product_type: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     

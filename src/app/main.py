@@ -17,6 +17,8 @@ from src.app.api.setup import router as setup_router
 from src.api.v1.read_api_router import read_api_router
 from src.api.v1.master_data_router import master_data_router
 
+from src.app.lifespan import lifespan
+
 def create_app() -> FastAPI:
     settings = get_settings()
     
@@ -26,7 +28,8 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.APP_NAME,
         version=settings.APP_VERSION,
-        debug=settings.DEBUG
+        debug=settings.DEBUG,
+        lifespan=lifespan
     )
     
     print(f"\nAARAMBOOKS {'CERTIFICATION' if settings.DATABASE_ENV.lower() == 'test' else 'DATABASE'}")

@@ -43,6 +43,17 @@ class InventoryMovementRepository:
         balance = result.scalar()
         return Decimal(str(balance)) if balance is not None else Decimal("0")
 
+    async def get_global_balance(self, sku_id: UUID, session: AsyncSession = None) -> Decimal:
+        db_session = session or self.session
+        stmt = select(func.sum(InventoryMovementModel.quantity)).where(
+            InventoryMovementModel.sku_id == sku_id,
+            InventoryMovementModel.status == "POSTED"
+        )
+        result = await db_session.execute(stmt)
+        balance = result.scalar()
+        return Decimal(str(balance)) if balance is not None else Decimal("0")
+
+
     async def get_movements_for_sku(self, sku_id: UUID) -> List[InventoryMovementModel]:
         stmt = (
             select(InventoryMovementModel)

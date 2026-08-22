@@ -12,7 +12,7 @@ router = APIRouter(prefix="/hierarchy", tags=["Inventory Hierarchy"])
 @inject
 async def get_hierarchy(
     only_archived: bool = False,
-    current_user: CurrentUser = Depends(require_permission("CATALOG_VIEW")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_CATALOG_VIEW")),
     service: InventoryHierarchyService = Depends(Provide[MastersContainer.inventory_hierarchy_service])
 ):
     data = await service.get_hierarchy(only_archived)

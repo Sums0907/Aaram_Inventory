@@ -68,5 +68,36 @@ class BalanceCalculatorService:
             balance.confidence_reasons = confidence_reasons
             balance.last_movement_date = datetime.now(timezone.utc)
             
-        # 4. Save to DB
+        # 4. Generate Stock Sync Outbox Event
+        db_session = session or self.balance_repository.session
+        from src.domains.inventory.models.outbox import InventoryOutboundEventModel
+        from uuid_extensions import uuid7
+        
+        global_quantity = await self.movement_repository.get_global_balance(sku_id, session=session)
+        
+        from src.domains.masters.models.sku import SKUModel
+        from sqlalchemy import select
+        
+        sku_stmt = select(SKUModel).where(SKUModel.id == sku_id)
+        sku_result = await db_session.execute(sku_stmt)
+        sku = sku_result.scalars().first()
+        item_code = sku.item_code if sku else str(sku_id)
+        
+        payload = {
+            "inventory_sku_id": item_code,
+            "available_qty": float(global_quantity),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        
+        event = InventoryOutboundEventModel(
+            event_id=f"evt_{uuid7()}",
+            event_type="STOCK_BALANCE_CHANGED",
+            aggregate_type="SKU_STOCK",
+            aggregate_id=item_code,
+            payload_json=payload,
+            status="PENDING"
+        )
+        db_session.add(event)
+
+        # 5. Save to DB
         return await self.balance_repository.save(balance, session=session)

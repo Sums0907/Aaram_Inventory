@@ -13,7 +13,7 @@ router = APIRouter(prefix="/companies", tags=["Company"])
 @inject
 async def get_company(
     company_id: UUID,
-    current_user: CurrentUser = Depends(require_permission("CATALOG_VIEW")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_CATALOG_VIEW")),
     service: CompanyService = Depends(Provide[MastersContainer.company_service])
 ):
     company = await service.get_company(company_id)
@@ -24,7 +24,7 @@ async def get_company(
 async def update_company(
     company_id: UUID,
     schema: CompanyUpdate,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_UPDATE")),
     service: CompanyService = Depends(Provide[MastersContainer.company_service])
 ):
     from uuid import UUID
@@ -36,7 +36,7 @@ async def update_company(
 @inject
 async def activate_company(
     company_id: UUID,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_UPDATE")),
     service: CompanyService = Depends(Provide[MastersContainer.company_service])
 ):
     from uuid import UUID
@@ -48,7 +48,7 @@ async def activate_company(
 @inject
 async def deactivate_company(
     company_id: UUID,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_UPDATE")),
     service: CompanyService = Depends(Provide[MastersContainer.company_service])
 ):
     from uuid import UUID

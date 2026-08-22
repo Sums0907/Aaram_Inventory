@@ -10,6 +10,8 @@ from src.domains.masters.models.pricing import PricingModel
 from src.domains.masters.models.packaging import PackagingModel
 from src.domains.masters.models.category import CategoryModel
 from src.domains.masters.models.unit_of_measure import UnitOfMeasureModel
+from src.domains.inventory.models.outbox import InventoryOutboundEventModel
+from uuid_extensions import uuid7
 from src.domains.data_ingestion.services.master_data_importer import (
     BaseMasterDataImporter, ImportResult, ImportRowResult, ImportAction
 )
@@ -22,6 +24,33 @@ class ProductSKUImporter(BaseMasterDataImporter):
             return float(val) if val else 0.0
         except (ValueError, TypeError):
             return 0.0
+
+    def _create_sku_outbound_event(self, event_type: str, sku: SKUModel, prod: ProductModel, cat_code: str):
+        if prod.item_type != ItemType.FINISHED_GOODS:
+            return
+            
+        payload = {
+            "inventory_sku_id": str(sku.id),
+            "sku_code": sku.sku_code,
+            "barcode": sku.barcode,
+            "name": prod.product_name,
+            "category": cat_code,
+            "variant": None,
+            "size": sku.size,
+            "color": sku.color,
+            "status": sku.status.value if hasattr(sku.status, 'value') else str(sku.status)
+        }
+        
+        event = InventoryOutboundEventModel(
+            event_id=f"evt_{uuid7()}",
+            event_type=event_type,
+            aggregate_type="SKU",
+            aggregate_id=str(sku.id),
+            payload_json=payload,
+            status="PENDING"
+        )
+        self.session.add(event)
+
 
     async def import_data(self, data: List[Dict[str, Any]], is_dry_run: bool = True) -> ImportResult:
         result = ImportResult(entity_type="PRODUCT_SKU", total_records=len(data))
@@ -93,48 +122,12 @@ class ProductSKUImporter(BaseMasterDataImporter):
             status_str = str(row.get("Status", "ACTIVE")).strip().upper()
             status = GenericStatus.ACTIVE if status_str == "ACTIVE" else GenericStatus.INACTIVE
             
-            # ── FG Boundary Guard ──────────────────────────────────────────────────────
+            # ── Item Type Resolution ────────────────────────────────────────────────────
             # A non-empty 'Sku Id' column is the ShopDeck Finished Goods identifier.
-            # The Raw Material Sub-Engine must never create FINISHED_GOODS records.
-            # FG SKUs belong exclusively to the SKU Master Data Sub-Engine (future).
-            if row.get("Sku Id") and str(row.get("Sku Id")).strip():
-                result.failed_count += 1
-                result.row_results.append(ImportRowResult(
-                    row_index=row_num, action=ImportAction.FAILED, identifier=item_code,
-                    errors=[
-                        f"Row '{item_code}' contains a 'Sku Id' field which identifies a "
-                        f"Finished Goods SKU. Finished Goods SKUs are managed by the "
-                        f"SKU Master Data Sub-Engine, not the Raw Material importer."
-                    ]
-                ))
-                continue
-
-            # Verify category domain if category is provided
-            if cat_code:
-                try:
-                    resolver = CategoryOwnershipResolver(self.session)
-                    # Use cats_by_code as memory_cache for unresolved categories in same transaction if needed,
-                    # but categories must be pre-created before item import.
-                    resolved = await resolver.resolve(cat_code)
-                    if resolved["domain"] == "FINISHED_GOODS":
-                        result.failed_count += 1
-                        result.row_results.append(ImportRowResult(
-                            row_index=row_num, action=ImportAction.FAILED, identifier=item_code,
-                            errors=[
-                                f"Category '{cat_code}' resolves to the Finished Goods taxonomy. "
-                                f"Raw Material items must be assigned to Operational categories."
-                            ]
-                        ))
-                        continue
-                except ValueError as e:
-                    result.failed_count += 1
-                    result.row_results.append(ImportRowResult(
-                        row_index=row_num, action=ImportAction.FAILED, identifier=item_code,
-                        errors=[str(e)]
-                    ))
-                    continue
-
-            item_type = ItemType.RAW_MATERIAL
+            # Rows WITH a Sku Id are FINISHED_GOODS (ShopDeck catalogue sync).
+            # Rows WITHOUT a Sku Id are RAW_MATERIAL (operational items).
+            has_sku_id = bool(row.get("Sku Id") and str(row.get("Sku Id")).strip())
+            item_type = ItemType.FINISHED_GOODS if has_sku_id else ItemType.RAW_MATERIAL
             
             # Check Product Identity
             prod = products_by_code.get(product_code)
@@ -180,6 +173,7 @@ class ProductSKUImporter(BaseMasterDataImporter):
                         id=uuid.uuid4(),
                         item_code=item_code,
                         sku_code=sku_code if sku_code else None,
+                        shopdeck_sku_id=product_code if product_code else None,
                         product_id=prod.id,
                         barcode=barcode if barcode else None,
                         size=size,
@@ -202,6 +196,8 @@ class ProductSKUImporter(BaseMasterDataImporter):
                     if barcode: skus_by_barcode[barcode] = sku
                     if sku_code: skus_by_sku_code[sku_code] = sku
                     
+                    self._create_sku_outbound_event("SKU_CREATED", sku, prod, cat_code)
+                    
                 result.created_count += 1
                 result.row_results.append(ImportRowResult(row_index=row_num, action=ImportAction.CREATED, identifier=item_code))
             else:
@@ -215,13 +211,23 @@ class ProductSKUImporter(BaseMasterDataImporter):
                     continue
                 
                 # Compare for Exact match
+                # Use normalised helpers to avoid false-positives from:
+                #   - None vs "" (empty string from CSV)
+                #   - Decimal (from PostgreSQL) vs float (from CSV)
+                #   - None vs 0.0 for unset numeric fields
+                def _eq_str(db_val, csv_val):
+                    return (db_val or "") == (csv_val or "")
+
+                def _eq_num(db_val, csv_val):
+                    return float(db_val or 0) == float(csv_val or 0)
+
                 pr = sku.pricing
                 pa = sku.packaging
                 
                 is_exact = True
-                if sku.size != size or sku.color != color or sku.status != status: is_exact = False
-                if not pr or pr.selling_price != selling_price or pr.mrp != mrp or pr.cost_price != cost_price or pr.gst_percentage != gst: is_exact = False
-                if not pa or pa.length != p_len or pa.breadth != p_bre or pa.height != p_hei or pa.weight != p_wei: is_exact = False
+                if not _eq_str(sku.size, size) or not _eq_str(sku.color, color) or sku.status != status: is_exact = False
+                if not pr or not _eq_num(pr.selling_price, selling_price) or not _eq_num(pr.mrp, mrp) or not _eq_num(pr.cost_price, cost_price) or not _eq_num(pr.gst_percentage, gst): is_exact = False
+                if not pa or not _eq_num(pa.length, p_len) or not _eq_num(pa.breadth, p_bre) or not _eq_num(pa.height, p_hei) or not _eq_num(pa.weight, p_wei): is_exact = False
                 
                 if is_exact:
                     result.ignored_count += 1
@@ -244,6 +250,9 @@ class ProductSKUImporter(BaseMasterDataImporter):
                             pa.breadth = p_bre
                             pa.height = p_hei
                             pa.weight = p_wei
+                            
+                        evt_type = "SKU_DEACTIVATED" if status == GenericStatus.INACTIVE else "SKU_UPDATED"
+                        self._create_sku_outbound_event(evt_type, sku, prod, cat_code)
                             
                     result.updated_count += 1
                     result.row_results.append(ImportRowResult(row_index=row_num, action=ImportAction.UPDATED, identifier=item_code))

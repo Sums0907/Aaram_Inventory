@@ -29,14 +29,70 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+let isRefreshing = false;
+let refreshSubscribers: ((token: string) => void)[] = [];
+
+function subscribeTokenRefresh(cb: (token: string) => void) {
+  refreshSubscribers.push(cb);
+}
+
+function onRefreshed(token: string) {
+  refreshSubscribers.forEach(cb => cb(token));
+  refreshSubscribers = [];
+}
+
 apiClient.interceptors.response.use(
   (response) => response.data, 
-  (error) => {
-    if (error.response?.status === 401) {
-      // Clear token and reload to force AaramIdentity redirect via useAuth
-      localStorage.removeItem('aaram_identity_token');
-      window.location.href = '/';
-      return Promise.reject(error);
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      const refreshToken = localStorage.getItem('aaram_refresh_token');
+
+      if (!refreshToken) {
+        localStorage.removeItem('aaram_identity_token');
+        localStorage.removeItem('aaram_refresh_token');
+        window.location.href = '/';
+        return Promise.reject(error);
+      }
+
+      if (!isRefreshing) {
+        isRefreshing = true;
+
+        try {
+          const refreshRes = await axios.post(`${API_BASE_URL}/auth/refresh`, {
+            refresh_token: refreshToken,
+            platform: 'AARAM_INVENTORY_WEB'
+          });
+
+          // Handle potentially nested response.data.data
+          const data = refreshRes.data?.data || refreshRes.data;
+          
+          if (data.access_token) {
+            localStorage.setItem('aaram_identity_token', data.access_token);
+            localStorage.setItem('aaram_refresh_token', data.refresh_token);
+            
+            isRefreshing = false;
+            onRefreshed(data.access_token);
+          } else {
+            throw new Error("No tokens in response");
+          }
+        } catch (refreshError) {
+          isRefreshing = false;
+          localStorage.removeItem('aaram_identity_token');
+          localStorage.removeItem('aaram_refresh_token');
+          window.location.href = '/';
+          return Promise.reject(refreshError);
+        }
+      }
+
+      return new Promise((resolve) => {
+        subscribeTokenRefresh((newToken) => {
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          resolve(axios(originalRequest));
+        });
+      });
     }
     
     console.error('API Error:', error.response?.data || error.message);

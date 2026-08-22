@@ -15,7 +15,7 @@ router = APIRouter(prefix="/units-of-measure", tags=["Unit of Measure"])
 async def list_units(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    current_user: CurrentUser = Depends(require_permission("CATALOG_VIEW")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_CATALOG_VIEW")),
     service: UnitOfMeasureService = Depends(Provide[MastersContainer.unit_of_measure_service])
 ):
     units = await service.list_units(skip=skip, limit=limit)
@@ -26,7 +26,7 @@ async def list_units(
 @inject
 async def get_unit(
     unit_id: UUID,
-    current_user: CurrentUser = Depends(require_permission("CATALOG_VIEW")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_CATALOG_VIEW")),
     service: UnitOfMeasureService = Depends(Provide[MastersContainer.unit_of_measure_service])
 ):
     unit = await service.get_unit(unit_id)
@@ -36,7 +36,7 @@ async def get_unit(
 @inject
 async def create_unit(
     schema: UnitOfMeasureCreate,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_CREATE")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_CREATE")),
     service: UnitOfMeasureService = Depends(Provide[MastersContainer.unit_of_measure_service])
 ):
     from uuid import UUID
@@ -49,7 +49,7 @@ async def create_unit(
 async def update_unit(
     unit_id: UUID,
     schema: UnitOfMeasureUpdate,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_UPDATE")),
     service: UnitOfMeasureService = Depends(Provide[MastersContainer.unit_of_measure_service])
 ):
     from uuid import UUID
@@ -61,7 +61,7 @@ async def update_unit(
 @inject
 async def activate_unit(
     unit_id: UUID,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_UPDATE")),
     service: UnitOfMeasureService = Depends(Provide[MastersContainer.unit_of_measure_service])
 ):
     from uuid import UUID
@@ -73,7 +73,7 @@ async def activate_unit(
 @inject
 async def deactivate_unit(
     unit_id: UUID,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_UPDATE")),
     service: UnitOfMeasureService = Depends(Provide[MastersContainer.unit_of_measure_service])
 ):
     from uuid import UUID
@@ -85,7 +85,7 @@ async def deactivate_unit(
 @inject
 async def archive_unit(
     unit_id: UUID,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_UPDATE")),
     service: UnitOfMeasureService = Depends(Provide[MastersContainer.unit_of_measure_service])
 ):
     from uuid import UUID

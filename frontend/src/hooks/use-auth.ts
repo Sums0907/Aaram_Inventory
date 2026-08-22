@@ -27,12 +27,16 @@ function decodeJWTPayload(token: string) {
 
 function getInitialAuthState(): AaramUser {
   if (typeof window !== 'undefined') {
-    // Intercept SSO token from URL
+    // Intercept SSO tokens from URL
     const params = new URLSearchParams(window.location.search);
     const urlToken = params.get('token');
+    const refreshToken = params.get('refresh_token');
     if (urlToken) {
       localStorage.setItem('aaram_identity_token', urlToken);
-      // Clean up the URL to remove the token
+      if (refreshToken) {
+        localStorage.setItem('aaram_refresh_token', refreshToken);
+      }
+      // Clean up the URL to remove the tokens
       const newUrl = window.location.pathname + window.location.hash;
       window.history.replaceState({}, document.title, newUrl);
     }
@@ -51,6 +55,7 @@ function getInitialAuthState(): AaramUser {
         };
       } else {
         localStorage.removeItem('aaram_identity_token');
+        localStorage.removeItem('aaram_refresh_token');
       }
     }
   }
@@ -74,6 +79,7 @@ export function useAuth() {
     isAuthenticated: user.isAuthenticated,
     logout: () => {
       localStorage.removeItem('aaram_identity_token');
+      localStorage.removeItem('aaram_refresh_token');
       window.location.href = '/';
     }
   };

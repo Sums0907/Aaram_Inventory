@@ -69,4 +69,8 @@ export const masterDataApi = {
   }): Promise<ImportAuditLog[]> => {
     return apiClient.get('/master-data/activity-history', { params });
   },
+
+  forcePackerSync: async (): Promise<{ status: string; message: string }> => {
+    return apiClient.post('/internal/webhooks/packer/force-sync');
+  },
 };

@@ -22,22 +22,22 @@ class AccountingContainer(containers.DeclarativeContainer):
 
     ledger_repository = providers.Factory(
         LedgerRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     
     journal_repository = providers.Factory(
         JournalRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     
     journal_aggregation_service = providers.Factory(
         JournalAggregationService,
-        session=db.provided._session_factory.call()
+        session=db.provided.scoped_session.call()
     )
     
     vyapar_export_service = providers.Factory(
         VyaparExportService,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
         aggregation_service=journal_aggregation_service
     )
     
@@ -57,19 +57,19 @@ class AccountingContainer(containers.DeclarativeContainer):
     # -----------------------------------------------------------------------
     jw_rate_repository = providers.Factory(
         JobWorkRateRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     jw_expense_repository = providers.Factory(
         JobWorkExpenseRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     jw_payment_repository = providers.Factory(
         JobWorkerPaymentRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     jw_payable_repository = providers.Factory(
         PayableRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
 
     jw_rate_service = providers.Factory(

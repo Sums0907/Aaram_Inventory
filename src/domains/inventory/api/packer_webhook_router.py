@@ -11,8 +11,29 @@ from src.foundation.exceptions.base import ValidationException
 from src.domains.inventory.schemas.packer_webhook import PackerEventPayload, PackerEventResponse
 from src.domains.inventory.services.packer_integration import PackerIntegrationService
 from src.domains.inventory.services.movement import InventoryMovementService
+from src.foundation.authentication.dependencies import require_permission
+from src.domains.inventory.tasks.daily_reconciliation import run_daily_sku_reconciliation
 
 router = APIRouter(prefix="/internal/webhooks/packer", tags=["Packer Integration"])
+
+@router.post("/force-sync", status_code=status.HTTP_200_OK)
+@inject
+async def force_packer_sync(
+    _=Depends(require_permission("INVENTORY_CATALOG_VIEW")),
+    session_factory: Callable[..., AsyncContextManager[AsyncSession]] = Depends(Provide[DomainsContainer.core.db.provided._session_factory])
+):
+    """
+    Forces an immediate generation of the Master Data and Stock Balance outbox events for AaramPacking.
+    """
+    try:
+        async with session_factory() as db:
+            async with db.begin():
+                await run_daily_sku_reconciliation(db)
+        return {"status": "SUCCESS", "message": "Sync successfully dispatched to outbox."}
+    except Exception as e:
+        logger.exception("Failed to run forced packer sync")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error during sync")
+
 
 @router.post("/events", response_model=PackerEventResponse, status_code=status.HTTP_200_OK)
 @inject

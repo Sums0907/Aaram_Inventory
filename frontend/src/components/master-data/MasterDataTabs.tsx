@@ -8,9 +8,9 @@ import { useAuth } from "@/hooks/use-auth";
 export function MasterDataTabs() {
   const { hasPermission } = useAuth();
   
-  const canImport = hasPermission("MASTER_DATA_IMPORT");
-  const canExport = hasPermission("MASTER_DATA_EXPORT");
-  const canHistory = hasPermission("MASTER_DATA_ACTIVITY_VIEW");
+  const canImport = hasPermission("INVENTORY_MASTER_DATA_IMPORT");
+  const canExport = hasPermission("INVENTORY_MASTER_DATA_EXPORT");
+  const canHistory = hasPermission("INVENTORY_MASTER_DATA_ACTIVITY_VIEW");
 
   // If user cannot do anything, render an empty state or access denied
   if (!canExport && !canHistory && !canImport) {

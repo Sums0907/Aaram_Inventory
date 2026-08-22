@@ -16,7 +16,7 @@ async def list_categories(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     item_type: Optional[str] = Query(None, description="Filter by Item Type"),
-    current_user: CurrentUser = Depends(require_permission("CATALOG_VIEW")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_CATALOG_VIEW")),
     service: CategoryService = Depends(Provide[MastersContainer.category_service])
 ):
     categories = await service.list_categories(skip=skip, limit=limit, item_type=item_type)
@@ -27,7 +27,7 @@ async def list_categories(
 @inject
 async def get_category(
     category_id: UUID,
-    current_user: CurrentUser = Depends(require_permission("CATALOG_VIEW")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_CATALOG_VIEW")),
     service: CategoryService = Depends(Provide[MastersContainer.category_service])
 ):
     category = await service.get_category(category_id)
@@ -37,7 +37,7 @@ async def get_category(
 @inject
 async def create_category(
     schema: CategoryCreate,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_CREATE")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_CREATE")),
     service: CategoryService = Depends(Provide[MastersContainer.category_service])
 ):
     from uuid import UUID
@@ -50,7 +50,7 @@ async def create_category(
 async def update_category(
     category_id: UUID,
     schema: CategoryUpdate,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_UPDATE")),
     service: CategoryService = Depends(Provide[MastersContainer.category_service])
 ):
     from uuid import UUID
@@ -62,7 +62,7 @@ async def update_category(
 @inject
 async def activate_category(
     category_id: UUID,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_UPDATE")),
     service: CategoryService = Depends(Provide[MastersContainer.category_service])
 ):
     from uuid import UUID
@@ -74,7 +74,7 @@ async def activate_category(
 @inject
 async def deactivate_category(
     category_id: UUID,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_UPDATE")),
     service: CategoryService = Depends(Provide[MastersContainer.category_service])
 ):
     from uuid import UUID
@@ -86,7 +86,7 @@ async def deactivate_category(
 @inject
 async def archive_category(
     category_id: UUID,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_UPDATE")),
     service: CategoryService = Depends(Provide[MastersContainer.category_service])
 ):
     from uuid import UUID
@@ -98,7 +98,7 @@ async def archive_category(
 @inject
 async def delete_category(
     category_id: UUID,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_UPDATE")),
     service: CategoryService = Depends(Provide[MastersContainer.category_service])
 ):
     await service.delete_category(category_id)

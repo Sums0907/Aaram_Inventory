@@ -20,27 +20,27 @@ class OperationsContainer(containers.DeclarativeContainer):
     # Repositories
     sales_order_repository = providers.Factory(
         SalesOrderRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     
     tax_invoice_repository = providers.Factory(
         TaxInvoiceRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     
     settlement_repository = providers.Factory(
         SettlementRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     
     payment_repository = providers.Factory(
         PaymentRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     
     refund_repository = providers.Factory(
         RefundRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
 
     # Services
@@ -73,20 +73,20 @@ class OperationsContainer(containers.DeclarativeContainer):
 
     report_window_service = providers.Factory(
         ShopDeckReportWindowService,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
         date_provider=date_provider
     )
 
     lifecycle_engine = providers.Factory(
         LifecycleEngine,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
 
     inventory_movement_service = providers.Dependency()
     
     reconciliation_orchestrator = providers.Factory(
         ReconciliationOrchestratorService,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
         window_service=report_window_service,
         lifecycle_engine=lifecycle_engine,
         movement_service=inventory_movement_service

@@ -1,12 +1,16 @@
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from asyncio import current_task
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession, async_scoped_session
 from sqlalchemy.orm import declarative_base
-
+from src.foundation.logging.context import get_request_id
 class Database:
     def __init__(self, db_url: str, debug: bool, pool_size: int, max_overflow: int):
         engine_kwargs = {"echo": debug}
         if not db_url.startswith("sqlite"):
             engine_kwargs["pool_size"] = pool_size
             engine_kwargs["max_overflow"] = max_overflow
+            engine_kwargs["pool_pre_ping"] = True   # Detect and discard stale/zombie connections
+            engine_kwargs["pool_recycle"] = 1800    # Recycle connections after 30 minutes
+            engine_kwargs["pool_timeout"] = 10      # Fail fast (10s) instead of hanging for 30s
 
         self._engine = create_async_engine(
             db_url,
@@ -17,6 +21,13 @@ class Database:
             class_=AsyncSession,
             expire_on_commit=False,
             autoflush=False,
+        )
+        # Scoped session: one session per HTTP request (via Request ID ContextVar).
+        # We use `get_request_id` instead of `current_task` because Starlette's BaseHTTPMiddleware 
+        # executes `call_next` in a different asyncio Task, which would leak connections.
+        self.scoped_session = async_scoped_session(
+            self._session_factory,
+            scopefunc=get_request_id,
         )
 
     async def session(self) -> AsyncSession:

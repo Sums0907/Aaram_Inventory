@@ -19,7 +19,7 @@ async def get_dashboard_kpis(
     movement_repository: InventoryMovementRepository = Depends(Provide[DomainsContainer.inventory.movement_repository]),
     sku_repository: SKURepository = Depends(Provide[DomainsContainer.masters.sku_repository]),
     job_work_repository: JobWorkRepository = Depends(Provide[DomainsContainer.inventory.job_work_repository]),
-    _=Depends(require_permission("CATALOG_VIEW"))
+    _=Depends(require_permission("INVENTORY_CATALOG_VIEW"))
 ):
     """
     Returns aggregate KPIs for the Inventory Dashboard.
@@ -41,7 +41,7 @@ async def get_dashboard_kpis(
 @inject
 async def get_dashboard_exceptions(
     exception_repository: InventoryExceptionRepository = Depends(Provide[DomainsContainer.inventory.exception_repository]),
-    _=Depends(require_permission("CATALOG_VIEW"))
+    _=Depends(require_permission("INVENTORY_CATALOG_VIEW"))
 ):
     """
     Returns a list of open inventory exceptions for the Exceptions Workbench.
@@ -70,7 +70,7 @@ async def get_dashboard_exceptions(
 @inject
 async def get_dashboard_recent_activity(
     movement_repository: InventoryMovementRepository = Depends(Provide[DomainsContainer.inventory.movement_repository]),
-    _=Depends(require_permission("CATALOG_VIEW"))
+    _=Depends(require_permission("INVENTORY_CATALOG_VIEW"))
 ):
     """
     Returns a feed of recent inventory activity for the dashboard.
@@ -83,7 +83,7 @@ async def get_dashboard_recent_activity(
             "sku_id": str(m.sku_id),
             "quantity": float(m.quantity),
             "movement_type": m.movement_type,
-            "reference_document": m.reference_document,
+            "reference_number": m.reference_number,
             "status": m.status,
             "posting_date": m.posting_date.isoformat() if m.posting_date else None,
             "created_on": m.created_on.isoformat()

@@ -97,7 +97,7 @@ class PackerIntegrationService:
 
         # 5. Resolve SKUs and create movements
         for item in payload.items:
-            stmt_sku = select(SKUModel).where(SKUModel.sku_code == item.sku)
+            stmt_sku = select(SKUModel).where(SKUModel.item_code == item.sku)
             sku_res = await session.execute(stmt_sku)
             sku_obj = sku_res.scalars().first()
             if not sku_obj:

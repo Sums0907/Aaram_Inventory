@@ -10,19 +10,19 @@ class MatchingContainer(containers.DeclarativeContainer):
     # Repositories
     job_repository = providers.Factory(
         MatchJobRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     relationship_repository = providers.Factory(
         MatchRelationshipRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     exception_repository = providers.Factory(
         MatchExceptionRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
 
     # Services
     engine_service = providers.Factory(
         MatchingEngineService,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )

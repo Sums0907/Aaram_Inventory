@@ -22,7 +22,7 @@ class InventoryContainer(containers.DeclarativeContainer):
 
     exception_repository = providers.Factory(
         InventoryExceptionRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     
     exception_service = providers.Factory(
@@ -32,27 +32,27 @@ class InventoryContainer(containers.DeclarativeContainer):
 
     movement_repository = providers.Factory(
         InventoryMovementRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     
     balance_repository = providers.Factory(
         InventoryBalanceRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     
     exception_repository = providers.Factory(
         InventoryExceptionRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     
     goods_receipt_repository = providers.Factory(
         GoodsReceiptRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
 
     purchase_return_repository = providers.Factory(
         PurchaseReturnRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
 
     confidence_engine = providers.Factory(
@@ -100,7 +100,7 @@ class InventoryContainer(containers.DeclarativeContainer):
 
     job_work_repository = providers.Factory(
         JobWorkRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
 
     job_work_service = providers.Factory(

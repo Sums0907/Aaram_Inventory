@@ -27,39 +27,39 @@ class MastersContainer(containers.DeclarativeContainer):
     # Repositories
     company_repository = providers.Factory(
         CompanyRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     unit_of_measure_repository = providers.Factory(
         UnitOfMeasureRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     warehouse_repository = providers.Factory(
         WarehouseRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     category_repository = providers.Factory(
         CategoryRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     product_attribute_repository = providers.Factory(
         ProductAttributeRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     product_repository = providers.Factory(
         ProductRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     sku_repository = providers.Factory(
         SKURepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     supplier_repository = providers.Factory(
         SupplierRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     bom_repository = providers.Factory(
         BOMRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
 
     # Services
@@ -100,11 +100,11 @@ class MastersContainer(containers.DeclarativeContainer):
     )
     inventory_item_service = providers.Factory(
         InventoryItemService,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     inventory_hierarchy_service = providers.Factory(
         InventoryHierarchyService,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     bom_service = providers.Factory(
         BOMService,

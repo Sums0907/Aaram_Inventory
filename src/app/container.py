@@ -60,13 +60,13 @@ class DomainsContainer(containers.DeclarativeContainer):
     
     connectors = providers.Container(
         ConnectorsContainer,
-        db_session=core.db.provided._session_factory.call(),
+        db_session=core.db.provided.scoped_session.call(),
         import_job_service=data_ingestion.import_job_service
     )
     
     pipeline_orchestrator = providers.Factory(
         PipelineOrchestratorService,
-        session=core.db.provided._session_factory.call(),
+        session=core.db.provided.scoped_session.call(),
         matching_engine=matching.engine_service,
         inventory_movement=inventory.movement_service,
         accounting_engine=accounting.engine_service,
@@ -75,12 +75,12 @@ class DomainsContainer(containers.DeclarativeContainer):
     
     verification_service = providers.Factory(
         VerificationService,
-        session=core.db.provided._session_factory.call()
+        session=core.db.provided.scoped_session.call()
     )
     
     from src.app.services.business_summary import BusinessSummaryService
     business_summary_service = providers.Factory(
         BusinessSummaryService,
-        session=core.db.provided._session_factory.call(),
+        session=core.db.provided.scoped_session.call(),
         verification_service=verification_service
     )

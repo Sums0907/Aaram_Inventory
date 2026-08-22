@@ -65,7 +65,7 @@ export function Topbar() {
       
       {/* Global Actions */}
       <div className="flex items-center gap-4 shrink-0">
-        {hasPermission("PRODUCT_CREATE") && (
+        {hasPermission("INVENTORY_PRODUCT_CREATE") && (
           <Button variant="outline" size="sm" className="gap-2 border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white">
             <RefreshCw className="h-4 w-4" />
             Sync ShopDeck

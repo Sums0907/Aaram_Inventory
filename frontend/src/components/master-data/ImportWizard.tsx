@@ -12,7 +12,7 @@ const DOMAINS = [
   { id: "SUPPLIER", label: "Suppliers" },
   { id: "RAW_MATERIAL", label: "Raw Materials" },
   { id: "BOM", label: "Bill of Materials (BOM)" },
-  { id: "SHOPDECK_SKU_SYNC", label: "ShopDeck SKU Sync" }
+  { id: "PRODUCT_SKU", label: "ShopDeck SKU Sync" }
 ];
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -224,52 +224,69 @@ export function ImportWizard() {
               </div>
             </div>
 
-            {/* Error Table */}
-            {(dryRunResult.failed_count > 0 || dryRunResult.ambiguous_count > 0 || dryRunResult.global_errors.length > 0) && (
-              <div className="border border-red-200 rounded-lg overflow-hidden mt-6">
-                <div className="bg-red-50 border-b border-red-200 px-4 py-3 flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-red-600" />
-                  <h4 className="text-sm font-semibold text-red-900">Validation Errors</h4>
+            {/* Full Line-Item Preview Table */}
+            {dryRunResult.row_results && dryRunResult.row_results.length > 0 && (
+              <div className="border border-slate-200 rounded-lg overflow-hidden mt-6 bg-white">
+                <div className="bg-slate-50 border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+                  <h4 className="text-sm font-semibold text-slate-900">Line-Item Preview</h4>
+                  <div className="flex gap-2 text-xs">
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Created</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500"></span> Updated</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-slate-300"></span> Ignored</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500"></span> Failed</span>
+                  </div>
                 </div>
-                
+
                 {dryRunResult.global_errors.length > 0 && (
-                  <div className="p-4 bg-white border-b border-slate-100">
-                    <p className="text-sm font-medium text-slate-900 mb-2">Global Errors:</p>
-                    <ul className="list-disc pl-5 space-y-1 text-sm text-red-600">
+                  <div className="p-4 bg-red-50 border-b border-red-100">
+                    <p className="text-sm font-medium text-red-900 mb-2 flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4" /> Global Validation Errors:
+                    </p>
+                    <ul className="list-disc pl-5 space-y-1 text-sm text-red-700">
                       {dryRunResult.global_errors.map((err, i) => <li key={i}>{err}</li>)}
                     </ul>
                   </div>
                 )}
 
-                <div className="overflow-x-auto">
+                <div className="max-h-96 overflow-y-auto">
                   <table className="w-full text-sm text-left">
-                    <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
+                    <thead className="bg-white sticky top-0 shadow-sm z-10 text-slate-500 font-medium border-b border-slate-200">
                       <tr>
                         <th className="px-4 py-3 w-20">Row</th>
                         <th className="px-4 py-3 w-48">Identifier</th>
                         <th className="px-4 py-3 w-32">Status</th>
-                        <th className="px-4 py-3">Error Reason</th>
+                        <th className="px-4 py-3">Details / Errors</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 bg-white">
-                      {dryRunResult.row_results
-                        .filter(r => r.action === 'FAILED' || r.action === 'AMBIGUOUS')
-                        .map((r, i) => (
-                        <tr key={i} className="hover:bg-slate-50/50">
-                          <td className="px-4 py-3 text-slate-500 font-medium">#{r.row_index}</td>
-                          <td className="px-4 py-3 font-mono text-xs">{r.identifier || '-'}</td>
-                          <td className="px-4 py-3">
-                            <span className={`px-2 py-1 rounded text-xs font-semibold ${r.action === 'FAILED' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'}`}>
-                              {r.action}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-red-600">
-                            <ul className="list-disc pl-4">
-                              {r.errors.map((e, ei) => <li key={ei}>{e}</li>)}
-                            </ul>
-                          </td>
-                        </tr>
-                      ))}
+                    <tbody className="divide-y divide-slate-100">
+                      {dryRunResult.row_results.map((r, i) => {
+                        let statusColor = "bg-slate-100 text-slate-700";
+                        if (r.action === 'CREATED') statusColor = "bg-emerald-100 text-emerald-700";
+                        if (r.action === 'UPDATED') statusColor = "bg-blue-100 text-blue-700";
+                        if (r.action === 'FAILED') statusColor = "bg-red-100 text-red-700";
+                        if (r.action === 'AMBIGUOUS') statusColor = "bg-orange-100 text-orange-700";
+                        
+                        return (
+                          <tr key={i} className="hover:bg-slate-50 transition-colors">
+                            <td className="px-4 py-3 text-slate-500 font-medium">#{r.row_index}</td>
+                            <td className="px-4 py-3 font-mono text-xs text-slate-700">{r.identifier || '-'}</td>
+                            <td className="px-4 py-3">
+                              <span className={`px-2 py-1 rounded text-xs font-semibold ${statusColor}`}>
+                                {r.action}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              {r.errors && r.errors.length > 0 ? (
+                                <ul className="list-disc pl-4 text-red-600 text-xs space-y-0.5">
+                                  {r.errors.map((e, ei) => <li key={ei}>{e}</li>)}
+                                </ul>
+                              ) : (
+                                <span className="text-slate-400 text-xs italic">No issues detected</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

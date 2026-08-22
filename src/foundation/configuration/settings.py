@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     # AaramIdentity Consumer Integration
     AUTH_MODE: str = Field(default="local", description="Set to 'aaramidentity' for production RS256 token verification")
     AARAMIDENTITY_URL: str = Field(default="http://localhost:8001")
-    AARAMIDENTITY_PUBLIC_KEY: str = Field(default="")
+    IDENTITY_SERVICE_URL: str = Field(default="http://localhost:9000")
 
     # Logging
     LOG_LEVEL: str = Field(default="INFO")

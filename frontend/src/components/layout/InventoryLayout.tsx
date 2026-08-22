@@ -6,9 +6,9 @@ import { InventoryOthersDropdown } from "./InventoryOthersDropdown"
 import { useAuth } from "@/hooks/use-auth"
 
 const INVENTORY_NAV_ITEMS = [
-  { name: "Dashboard", href: "/inventory", icon: LayoutDashboard, permission: "CATALOG_VIEW" },
-  { name: "Catalog", href: "/inventory/catalog", icon: Package, permission: "CATALOG_VIEW" },
-  { name: "Products", href: "/inventory/products", icon: Package, permission: "PRODUCT_VIEW" },
+  { name: "Dashboard", href: "/inventory", icon: LayoutDashboard, permission: "INVENTORY_CATALOG_VIEW" },
+  { name: "Catalog", href: "/inventory/catalog", icon: Package, permission: "INVENTORY_CATALOG_VIEW" },
+  { name: "Products", href: "/inventory/products", icon: Package, permission: "INVENTORY_PRODUCT_VIEW" },
   { name: "Goods Receipts", href: "/inventory/goods-receipts", icon: FileDown, permission: "INVENTORY_RECEIPT_VIEW" },
   { name: "Job Worker Stock", href: "/inventory/job-worker-stock", icon: Package, permission: "INVENTORY_JOBWORK_VIEW" },
   { name: "Activity", href: "/inventory/activity", icon: ArrowRightLeft, permission: "INVENTORY_ACTIVITY_VIEW" },

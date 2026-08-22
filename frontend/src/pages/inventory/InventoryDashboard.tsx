@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { AlertCircle, PackageSearch, Activity, Package, ArrowRight, ArrowDownToLine, ArrowUpFromLine, Search } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { apiClient } from "@/api/client";
 
 interface DashboardKPIs {
   total_skus_tracked: number;
@@ -35,18 +36,16 @@ export const InventoryPage: React.FC = () => {
     const fetchDashboardData = async () => {
       try {
         const [kpiRes, activityRes] = await Promise.all([
-          fetch("/api/v1/inventory/dashboard/kpis"),
-          fetch("/api/v1/inventory/dashboard/recent-activity")
+          apiClient.get("/inventory/dashboard/kpis"),
+          apiClient.get("/inventory/dashboard/recent-activity")
         ]);
         
-        if (kpiRes.ok) {
-          const data = await kpiRes.json();
-          setKpis(data.data);
+        if (kpiRes.data?.success) {
+          setKpis(kpiRes.data.data);
         }
         
-        if (activityRes.ok) {
-          const data = await activityRes.json();
-          setRecentActivity(data.data);
+        if (activityRes.data?.success) {
+          setRecentActivity(activityRes.data.data);
         }
       } catch (error) {
         console.error("Failed to load dashboard data:", error);

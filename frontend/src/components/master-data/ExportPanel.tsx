@@ -20,8 +20,8 @@ export function ExportPanel() {
   const [exportingDomain, setExportingDomain] = useState<string | null>(null);
   const [lastExport, setLastExport] = useState<{ domain: string, timestamp: string, filename: string } | null>(null);
 
-  // UX Enforcement: MASTER_DATA_EXPORT
-  if (!hasPermission("MASTER_DATA_EXPORT")) {
+  // UX Enforcement: INVENTORY_MASTER_DATA_EXPORT
+  if (!hasPermission("INVENTORY_MASTER_DATA_EXPORT")) {
     return (
       <div className="p-8 text-center text-slate-500">
         You do not have permission to access the Export Operations.

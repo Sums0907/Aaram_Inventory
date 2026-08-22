@@ -22,8 +22,8 @@ async def import_master_data(
     current_user: CurrentUser = Depends(get_current_user),
     app_service: MasterDataApplicationService = Depends(Provide[DataIngestionContainer.master_data_application_service])
 ):
-    # Permission Enforcement: Only users with MASTER_DATA_IMPORT permission can import
-    app_service.validate_permissions(current_user.permissions, ["MASTER_DATA_IMPORT"])
+    # Permission Enforcement: Only users with INVENTORY_MASTER_DATA_IMPORT permission can import
+    app_service.validate_permissions(current_user.permissions, ["INVENTORY_MASTER_DATA_IMPORT"])
 
     # Pre-execution file validation
     if not file.filename.endswith(('.xlsx', '.csv')):
@@ -63,7 +63,7 @@ async def export_master_data(
     app_service: MasterDataApplicationService = Depends(Provide[DataIngestionContainer.master_data_application_service])
 ):
     # Permission Enforcement:
-    app_service.validate_permissions(current_user.permissions, ["MASTER_DATA_EXPORT"])
+    app_service.validate_permissions(current_user.permissions, ["INVENTORY_MASTER_DATA_EXPORT"])
     
     # In a real system, domain might filter the export. The current exporter exports all.
     export_data = await app_service.execute_export()
@@ -98,7 +98,7 @@ async def get_activity_history(
     app_service: MasterDataApplicationService = Depends(Provide[DataIngestionContainer.master_data_application_service])
 ):
     # Permission Enforcement:
-    app_service.validate_permissions(current_user.permissions, ["MASTER_DATA_ACTIVITY_VIEW"])
+    app_service.validate_permissions(current_user.permissions, ["INVENTORY_MASTER_DATA_ACTIVITY_VIEW"])
     
     session = app_service.session
     from sqlalchemy import select

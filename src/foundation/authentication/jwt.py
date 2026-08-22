@@ -23,19 +23,52 @@ def decode_access_token(token: str) -> Optional[Dict[str, Any]]:
     except JWTError:
         return None
 
+_cached_public_key: Optional[str] = None
+
+def _fetch_public_key() -> str:
+    import httpx
+    url = f"{settings.IDENTITY_SERVICE_URL}/auth/public-key"
+    try:
+        r = httpx.get(url, timeout=10.0)
+        r.raise_for_status()
+        data = r.json()
+        return data["public_key"]
+    except Exception as e:
+        raise RuntimeError(f"Failed to fetch Identity public key from {url}: {e}")
+
 def decode_aaramidentity_token(token: str) -> Optional[Dict[str, Any]]:
     """Validate RS256 token using AaramIdentity public key."""
+    global _cached_public_key
+    if not _cached_public_key:
+        _cached_public_key = _fetch_public_key()
+        
     try:
-        if not settings.AARAMIDENTITY_PUBLIC_KEY:
-            # Fallback or error if not configured
-            raise ValueError("AARAMIDENTITY_PUBLIC_KEY is not configured")
-        # Format the public key properly if it's missing the PEM header
-        public_key = settings.AARAMIDENTITY_PUBLIC_KEY.replace('\\n', '\n')
-        if "-----BEGIN PUBLIC KEY-----" not in public_key:
-            public_key = f"-----BEGIN PUBLIC KEY-----\n{public_key}\n-----END PUBLIC KEY-----"
-            
-        decoded_data = jwt.decode(token, public_key, algorithms=["RS256"], audience="AARAM_ECOSYSTEM")
-        return decoded_data
-    except (JWTError, ValueError) as e:
-        # Log error in real implementation
+        decoded_data = jwt.decode(
+            token, 
+            _cached_public_key, 
+            algorithms=["RS256"], 
+            audience="AARAM_ECOSYSTEM"
+        )
+    except jwt.ExpiredSignatureError:
         return None
+    except JWTError:
+        # Error-Triggered Cache Invalidation
+        _cached_public_key = _fetch_public_key()
+        try:
+            decoded_data = jwt.decode(
+                token, 
+                _cached_public_key, 
+                algorithms=["RS256"], 
+                audience="AARAM_ECOSYSTEM"
+            )
+        except JWTError:
+            return None
+    except Exception as e:
+        with open("/tmp/aaram_auth_debug.log", "a") as f:
+            f.write(f"JWT Decode Exception: {type(e).__name__}: {str(e)}\n")
+        return None
+        
+    with open("/tmp/aaram_auth_debug.log", "a") as f:
+        f.write(f"JWT Decode Success: {decoded_data}\n")
+        
+    return decoded_data

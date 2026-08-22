@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { Link, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
-import { MoreHorizontal, Users, Settings2, FileUp, ClipboardCheck, ArrowRightLeft } from "lucide-react"
+import { MoreHorizontal, Users, Settings2, FileUp, ClipboardCheck, ArrowRightLeft, AlertTriangle } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,13 +11,15 @@ import {
 import { useAuth } from "@/hooks/use-auth"
 
 const OTHERS_NAV_ITEMS = [
-  { name: "Suppliers", href: "/inventory/suppliers", icon: Users, permission: "CATALOG_VIEW" },
-  { name: "BOMs", href: "/inventory/boms", icon: Settings2, permission: "PRODUCT_VIEW" },
-  { name: "UOMs", href: "/inventory/units-of-measure", icon: Settings2, permission: "CATALOG_VIEW" },
+  { name: "Exceptions", href: "/inventory/exceptions", icon: AlertTriangle, permission: "INVENTORY_EXCEPTION_VIEW" },
+  { name: "Suppliers", href: "/inventory/suppliers", icon: Users, permission: "INVENTORY_CATALOG_VIEW" },
+  { name: "BOMs", href: "/inventory/boms", icon: Settings2, permission: "INVENTORY_PRODUCT_VIEW" },
+  { name: "UOMs", href: "/inventory/units-of-measure", icon: Settings2, permission: "INVENTORY_CATALOG_VIEW" },
   { name: "Purchase Returns", href: "/inventory/purchase-returns", icon: FileUp, permission: "INVENTORY_RETURN_CREATE" },
   { name: "Verification", href: "/inventory/verification", icon: ClipboardCheck, permission: "INVENTORY_VERIFICATION_EXECUTE" },
   { name: "Adjustments", href: "/inventory/adjustments", icon: Settings2, permission: "INVENTORY_ADJUSTMENT_CREATE" },
   { name: "Transformations", href: "/inventory/transformations", icon: ArrowRightLeft, permission: "INVENTORY_TRANSFORMATION_CREATE" },
+  { name: "Master Data Extraction", href: "/admin/master-data", icon: FileUp, permission: "INVENTORY_PRODUCT_VIEW" },
 ]
 
 export function InventoryOthersDropdown() {

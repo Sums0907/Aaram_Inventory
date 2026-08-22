@@ -5,6 +5,7 @@ from src.domains.inventory.models.exception import InventoryExceptionModel
 from src.domains.inventory.models.goods_receipt import GoodsReceipt, GoodsReceiptItem
 from src.domains.inventory.models.purchase_return import PurchaseReturn, PurchaseReturnItem
 from src.domains.inventory.models.job_work import JobWorkIssueModel, JobWorkReceiptModel, JobWorkerInventoryModel, InventoryTransformationRecord
+from src.domains.inventory.models.outbox import InventoryOutboundEventModel
 
 __all__ = [
     "InventoryMovementModel",
@@ -14,9 +15,9 @@ __all__ = [
     "GoodsReceiptItem",
     "PurchaseReturn",
     "PurchaseReturnItem",
-    "PurchaseReturnItem",
     "JobWorkIssueModel",
     "JobWorkReceiptModel",
     "JobWorkerInventoryModel",
-    "InventoryTransformationRecord"
+    "InventoryTransformationRecord",
+    "InventoryOutboundEventModel"
 ]

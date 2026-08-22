@@ -15,7 +15,7 @@ router = APIRouter(prefix="/products", tags=["Product"])
 async def list_products(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_VIEW")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_VIEW")),
     service: ProductService = Depends(Provide[MastersContainer.product_service])
 ):
     products = await service.list_products(skip=skip, limit=limit)
@@ -26,7 +26,7 @@ async def list_products(
 @inject
 async def get_product(
     product_id: UUID,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_VIEW")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_VIEW")),
     service: ProductService = Depends(Provide[MastersContainer.product_service])
 ):
     product = await service.get_product(product_id)
@@ -36,7 +36,7 @@ async def get_product(
 @inject
 async def create_product(
     schema: ProductCreate,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_CREATE")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_CREATE")),
     service: ProductService = Depends(Provide[MastersContainer.product_service])
 ):
     from uuid import UUID
@@ -49,7 +49,7 @@ async def create_product(
 async def update_product(
     product_id: UUID,
     schema: ProductUpdate,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_UPDATE")),
     service: ProductService = Depends(Provide[MastersContainer.product_service])
 ):
     from uuid import UUID
@@ -61,7 +61,7 @@ async def update_product(
 @inject
 async def activate_product(
     product_id: UUID,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_UPDATE")),
     service: ProductService = Depends(Provide[MastersContainer.product_service])
 ):
     from uuid import UUID
@@ -73,7 +73,7 @@ async def activate_product(
 @inject
 async def deactivate_product(
     product_id: UUID,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_UPDATE")),
     service: ProductService = Depends(Provide[MastersContainer.product_service])
 ):
     from uuid import UUID
@@ -85,7 +85,7 @@ async def deactivate_product(
 @inject
 async def archive_product(
     product_id: UUID,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_UPDATE")),
     service: ProductService = Depends(Provide[MastersContainer.product_service])
 ):
     from uuid import UUID
@@ -97,7 +97,7 @@ async def archive_product(
 @inject
 async def delete_product(
     product_id: UUID,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_UPDATE")),
     service: ProductService = Depends(Provide[MastersContainer.product_service])
 ):
     await service.delete_product(product_id)

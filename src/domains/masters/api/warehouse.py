@@ -15,7 +15,7 @@ router = APIRouter(prefix="/warehouses", tags=["Warehouse"])
 async def list_warehouses(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    current_user: CurrentUser = Depends(require_permission("CATALOG_VIEW")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_CATALOG_VIEW")),
     service: WarehouseService = Depends(Provide[MastersContainer.warehouse_service])
 ):
     warehouses = await service.list_warehouses(skip=skip, limit=limit)
@@ -26,7 +26,7 @@ async def list_warehouses(
 @inject
 async def get_warehouse(
     warehouse_id: UUID,
-    current_user: CurrentUser = Depends(require_permission("CATALOG_VIEW")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_CATALOG_VIEW")),
     service: WarehouseService = Depends(Provide[MastersContainer.warehouse_service])
 ):
     warehouse = await service.get_warehouse(warehouse_id)
@@ -36,7 +36,7 @@ async def get_warehouse(
 @inject
 async def create_warehouse(
     schema: WarehouseCreate,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_CREATE")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_CREATE")),
     service: WarehouseService = Depends(Provide[MastersContainer.warehouse_service])
 ):
     from uuid import UUID
@@ -49,7 +49,7 @@ async def create_warehouse(
 async def update_warehouse(
     warehouse_id: UUID,
     schema: WarehouseUpdate,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_UPDATE")),
     service: WarehouseService = Depends(Provide[MastersContainer.warehouse_service])
 ):
     from uuid import UUID
@@ -61,7 +61,7 @@ async def update_warehouse(
 @inject
 async def activate_warehouse(
     warehouse_id: UUID,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_UPDATE")),
     service: WarehouseService = Depends(Provide[MastersContainer.warehouse_service])
 ):
     from uuid import UUID
@@ -73,7 +73,7 @@ async def activate_warehouse(
 @inject
 async def deactivate_warehouse(
     warehouse_id: UUID,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_UPDATE")),
     service: WarehouseService = Depends(Provide[MastersContainer.warehouse_service])
 ):
     from uuid import UUID
@@ -85,7 +85,7 @@ async def deactivate_warehouse(
 @inject
 async def archive_warehouse(
     warehouse_id: UUID,
-    current_user: CurrentUser = Depends(require_permission("PRODUCT_UPDATE")),
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_PRODUCT_UPDATE")),
     service: WarehouseService = Depends(Provide[MastersContainer.warehouse_service])
 ):
     from uuid import UUID

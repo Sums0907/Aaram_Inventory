@@ -5,8 +5,8 @@ import { ImportWizard } from "./ImportWizard";
 export function ImportPanel() {
   const { hasPermission } = useAuth();
 
-  // UX Enforcement: MASTER_DATA_IMPORT
-  if (!hasPermission("MASTER_DATA_IMPORT")) {
+  // UX Enforcement: INVENTORY_MASTER_DATA_IMPORT
+  if (!hasPermission("INVENTORY_MASTER_DATA_IMPORT")) {
     return (
       <div className="p-8 text-center text-slate-500">
         You do not have permission to access the Import Operations.

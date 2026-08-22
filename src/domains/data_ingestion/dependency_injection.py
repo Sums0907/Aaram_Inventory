@@ -32,27 +32,27 @@ class DataIngestionContainer(containers.DeclarativeContainer):
     # Repositories
     integration_repository = providers.Factory(
         IntegrationRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     import_job_repository = providers.Factory(
         ImportJobRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     import_file_repository = providers.Factory(
         ImportFileRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     import_record_repository = providers.Factory(
         ImportRecordRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     import_error_repository = providers.Factory(
         ImportErrorRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     import_summary_repository = providers.Factory(
         ImportSummaryRepository,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
 
     # Services
@@ -93,7 +93,7 @@ class DataIngestionContainer(containers.DeclarativeContainer):
     
     master_data_application_service = providers.Factory(
         MasterDataApplicationService,
-        session=db.provided._session_factory.call(),
+        session=db.provided.scoped_session.call(),
     )
     
     shopdeck_order_adapter = providers.Factory(
