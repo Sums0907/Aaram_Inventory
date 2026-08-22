@@ -10,6 +10,7 @@ services:
       - ENVIRONMENT=production
       - AUTH_MODE=${AUTH_MODE}
       - AARAMIDENTITY_PUBLIC_KEY=${AARAMIDENTITY_PUBLIC_KEY}
+      - IDENTITY_SERVICE_URL=${IDENTITY_SERVICE_URL}
       - ALLOWED_ORIGINS=https://inventory.aarambooks.cloud${ALLOWED_ORIGINS}
       - HOST=0.0.0.0
       - PORT=8000
