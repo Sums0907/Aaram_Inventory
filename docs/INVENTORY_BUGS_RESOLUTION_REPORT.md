@@ -130,3 +130,25 @@ Because `current_task` was used as the identifier, the route handler created a s
 - Migrated the hardcoded test fixtures to utilize random UUID injections for codes and names, ensuring idempotent and collision-free test runs.
 - Re-aligned the cross-service data contract: The Packer event handler now accurately reads the `"snapshot"` payload key.
 - Fixed dependency injections to securely extract the session factory from the initialized `DomainsContainer` via `app.core_container.db()._session_factory`, eliminating the hallucinated global exports.
+
+---
+
+## Bug 7: Production 500 Network Error / CORS Misdirection (Identity Public Key)
+
+**Date Identified**: August 2026
+**Symptoms**:
+- After VPS deployment, attempting to log in to `inventory.aarambooks.cloud` resulted in the frontend failing with a CORS error: `Origin https://inventory.aarambooks.cloud is not allowed by Access-Control-Allow-Origin`.
+- The browser console reported `Status code: 500` for multiple endpoints (e.g., `/dashboard/summary`, `/dashboard/kpis`).
+
+**Root Cause**:
+- The CORS error was a deceptive symptom. The true root cause was a `500 Internal Server Error` hard-crash on the backend (`inventory-api-1`), which aborted the request before the `CORSMiddleware` could append the `Access-Control-Allow-Origin` headers.
+- The backend crashed with `RuntimeError: Failed to fetch Identity public key from http://localhost:9000/auth/public-key: [Errno 111] Connection refused`.
+- In production (Docker), `localhost` refers to the container itself. The codebase was hardcoded to fetch the Identity public key via HTTP, ignoring the explicitly provided `AARAMIDENTITY_PUBLIC_KEY` environment variable injected by the VPS deployment script.
+
+**Failed Attempts**:
+- Initial suspicion was a misconfigured `ALLOWED_ORIGINS` string parsing issue in `settings.py`. 
+- **Why it failed**: Pydantic v2 natively parses JSON arrays properly. The environment variables were correct; the issue was an underlying crash stripping the headers, not the CORS configuration itself.
+
+**Successful Resolution**:
+- Augmented `Aaram_Inventory/src/foundation/configuration/settings.py` to formally accept `AARAMIDENTITY_PUBLIC_KEY` as a `str | None`.
+- Refactored the `_fetch_public_key()` function in `Aaram_Inventory/src/foundation/authentication/jwt.py` to first check for `settings.AARAMIDENTITY_PUBLIC_KEY` (and properly un-escape any `\n` characters from inline Docker environments). If present, it uses this static key, completely bypassing the dangerous HTTP network fetch during the request lifecycle.
