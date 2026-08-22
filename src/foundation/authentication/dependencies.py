@@ -58,9 +58,14 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> CurrentIdenti
     # For now, we trust the JWT claims
     
     applications = payload.get("applications", [])
-    if "AARAM_INVENTORY" not in applications and "AARAM_BOOKS" not in applications:
+    roles = payload.get("roles", [payload.get("role")] if payload.get("role") else [])
+    
+    has_app = "AARAM_INVENTORY" in applications or "AARAM_BOOKS" in applications
+    has_admin_role = "AARAM_BOOKS_ADMIN" in roles or "AARAM_INVENTORY_ADMIN" in roles
+    
+    if not has_app and not has_admin_role:
         with open("/tmp/aaram_auth_debug.log", "a") as f:
-            f.write(f"Applications check failed. Found apps: {applications}\n")
+            f.write(f"Access denied. Found apps: {applications}, roles: {roles}\n")
         raise UnauthorizedException(message="User does not have access to AaramInventory application")
 
     return CurrentIdentityContext(
