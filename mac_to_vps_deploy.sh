@@ -13,7 +13,12 @@ echo "========================================="
 # Step 1: Push to GitHub
 echo ""
 echo "[1/3] Committing and pushing code to GitHub..."
-read -p "Enter commit message: " COMMIT_MSG
+if [ -n "$1" ]; then
+    COMMIT_MSG="$1"
+    echo "Commit message: $COMMIT_MSG"
+else
+    read -p "Enter commit message: " COMMIT_MSG
+fi
 git add . || true
 git commit -m "$COMMIT_MSG" || echo "No new changes to commit."
 git push origin main || echo "No new changes to push."
