@@ -62,7 +62,7 @@ class ProductSKUImporter(BaseMasterDataImporter):
         products_list = (await self.session.execute(products_stmt)).scalars().all()
         products_by_code = {p.product_code: p for p in products_list}
         
-        skus_stmt = select(SKUModel).options(selectinload(SKUModel.pricing), selectinload(SKUModel.packaging))
+        skus_stmt = select(SKUModel).options(selectinload(SKUModel.pricing), selectinload(SKUModel.packaging), selectinload(SKUModel.images))
         skus_list = (await self.session.execute(skus_stmt)).scalars().all()
         skus_by_item_code = {s.item_code: s for s in skus_list}
         skus_by_sku_code = {s.sku_code: s for s in skus_list if s.sku_code}
