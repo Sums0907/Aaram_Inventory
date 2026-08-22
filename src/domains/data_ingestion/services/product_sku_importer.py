@@ -1,11 +1,12 @@
 import uuid
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from src.foundation.enums.status import GenericStatus
 from src.foundation.enums import ItemType
 from src.domains.masters.models.product import ProductModel
 from src.domains.masters.models.sku import SKUModel
+from src.domains.masters.models.image import ProductImageModel
 from src.domains.masters.models.pricing import PricingModel
 from src.domains.masters.models.packaging import PackagingModel
 from src.domains.masters.models.category import CategoryModel
@@ -25,7 +26,7 @@ class ProductSKUImporter(BaseMasterDataImporter):
         except (ValueError, TypeError):
             return 0.0
 
-    def _create_sku_outbound_event(self, event_type: str, sku: SKUModel, prod: ProductModel, cat_code: str):
+    def _create_sku_outbound_event(self, event_type: str, sku: SKUModel, prod: ProductModel, cat_code: str, image_url: Optional[str] = None):
         if prod.item_type != ItemType.FINISHED_GOODS:
             return
             
@@ -38,7 +39,8 @@ class ProductSKUImporter(BaseMasterDataImporter):
             "variant": None,
             "size": sku.size,
             "color": sku.color,
-            "status": sku.status.value if hasattr(sku.status, 'value') else str(sku.status)
+            "status": sku.status.value if hasattr(sku.status, 'value') else str(sku.status),
+            "image_url": image_url,
         }
         
         event = InventoryOutboundEventModel(
@@ -115,6 +117,7 @@ class ProductSKUImporter(BaseMasterDataImporter):
             
             cat_code = str(row.get("Category Code", "")).strip()
             uom_code = str(row.get("Base UoM Code", "")).strip()
+            image_url = str(row.get("Image 1", "")).strip() or None
             
             cat_id = cats_by_code[cat_code].id if cat_code in cats_by_code else None
             uom_id = uoms_by_code[uom_code].id if uom_code in uoms_by_code else None
@@ -191,12 +194,17 @@ class ProductSKUImporter(BaseMasterDataImporter):
                     self.session.add(sku)
                     self.session.add(pricing)
                     self.session.add(packaging)
+
+                    # Store the primary (representative) image URL
+                    if image_url:
+                        img = ProductImageModel(sku_id=sku.id, image_url=image_url, display_order=0)
+                        self.session.add(img)
                     
                     skus_by_item_code[item_code] = sku
                     if barcode: skus_by_barcode[barcode] = sku
                     if sku_code: skus_by_sku_code[sku_code] = sku
                     
-                    self._create_sku_outbound_event("SKU_CREATED", sku, prod, cat_code)
+                    self._create_sku_outbound_event("SKU_CREATED", sku, prod, cat_code, image_url=image_url)
                     
                 result.created_count += 1
                 result.row_results.append(ImportRowResult(row_index=row_num, action=ImportAction.CREATED, identifier=item_code))
@@ -250,9 +258,18 @@ class ProductSKUImporter(BaseMasterDataImporter):
                             pa.breadth = p_bre
                             pa.height = p_hei
                             pa.weight = p_wei
+
+                        # Update the primary image URL if changed
+                        if image_url:
+                            existing_img = next((i for i in sku.images if i.display_order == 0), None)
+                            if existing_img:
+                                existing_img.image_url = image_url
+                            else:
+                                img = ProductImageModel(sku_id=sku.id, image_url=image_url, display_order=0)
+                                self.session.add(img)
                             
                         evt_type = "SKU_DEACTIVATED" if status == GenericStatus.INACTIVE else "SKU_UPDATED"
-                        self._create_sku_outbound_event(evt_type, sku, prod, cat_code)
+                        self._create_sku_outbound_event(evt_type, sku, prod, cat_code, image_url=image_url)
                             
                     result.updated_count += 1
                     result.row_results.append(ImportRowResult(row_index=row_num, action=ImportAction.UPDATED, identifier=item_code))

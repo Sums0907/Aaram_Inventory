@@ -23,7 +23,8 @@ async def run_daily_sku_reconciliation(session):
     stmt = select(SKUModel).join(
         ProductModel, SKUModel.product_id == ProductModel.id
     ).options(
-        selectinload(SKUModel.product).selectinload(ProductModel.category)
+        selectinload(SKUModel.product).selectinload(ProductModel.category),
+        selectinload(SKUModel.images)
     ).where(
         ProductModel.item_type == ItemType.FINISHED_GOODS
     )
@@ -47,7 +48,8 @@ async def run_daily_sku_reconciliation(session):
             "variant": None,
             "size": sku.size,
             "color": sku.color,
-            "status": sku.status.value if hasattr(sku.status, 'value') else str(sku.status)
+            "status": sku.status.value if hasattr(sku.status, 'value') else str(sku.status),
+            "image_url": next((i.image_url for i in sku.images if i.display_order == 0), None),
         })
         
     event = InventoryOutboundEventModel(
