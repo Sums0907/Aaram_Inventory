@@ -25,8 +25,8 @@ def decode_access_token(token: str) -> Optional[Dict[str, Any]]:
 
 _cached_public_key: Optional[str] = None
 
-def _fetch_public_key() -> str:
-    if settings.AARAMIDENTITY_PUBLIC_KEY:
+def _fetch_public_key(force_network: bool = False) -> str:
+    if settings.AARAMIDENTITY_PUBLIC_KEY and not force_network:
         # In case the key is passed via inline env var without proper newlines
         return settings.AARAMIDENTITY_PUBLIC_KEY.replace("\\n", "\n")
         
@@ -58,8 +58,8 @@ def decode_aaramidentity_token(token: str) -> Optional[Dict[str, Any]]:
             f.write("JWT Decode failed: Token expired\n")
         return None
     except JWTError as e:
-        # Error-Triggered Cache Invalidation
-        _cached_public_key = _fetch_public_key()
+        # Error-Triggered Cache Invalidation: The static key might be malformed or rotated. Force network fetch.
+        _cached_public_key = _fetch_public_key(force_network=True)
         try:
             decoded_data = jwt.decode(
                 token, 
