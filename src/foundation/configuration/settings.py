@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     # AaramIdentity Consumer Integration
     AUTH_MODE: str = Field(default="local", description="Set to 'aaramidentity' for production RS256 token verification")
     AARAMIDENTITY_URL: str = Field(default="http://localhost:8001")
-    IDENTITY_SERVICE_URL: str = Field(default="http://localhost:9000")
+    IDENTITY_SERVICE_URL: str | None = Field(default=None)
     AARAMIDENTITY_PUBLIC_KEY: str | None = Field(default=None)
 
     # Logging
@@ -51,4 +51,8 @@ def get_settings() -> Settings:
     settings = Settings()
     if settings.ENVIRONMENT == "production" and settings.AUTH_MODE == "local":
         raise ValueError("AUTH_MODE='local' is forbidden in production. Must use 'aaramidentity'.")
+        
+    if not settings.IDENTITY_SERVICE_URL:
+        settings.IDENTITY_SERVICE_URL = "https://api.identity.aarambooks.cloud" if settings.ENVIRONMENT == "production" else "http://localhost:9000"
+        
     return settings
