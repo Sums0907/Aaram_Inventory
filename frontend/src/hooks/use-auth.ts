@@ -25,16 +25,27 @@ function decodeJWTPayload(token: string) {
   }
 }
 
+function buildUserFromPayload(payload: any): AaramUser {
+  return {
+    user_id: payload.sub || "",
+    name: payload.name || payload.username || "",
+    permissions: payload.permissions || [],
+    applications: payload.applications || [],
+    roles: payload.roles || [],
+    isAuthenticated: true,
+  };
+}
+
 function getInitialAuthState(): AaramUser {
   if (typeof window !== 'undefined') {
     // Intercept SSO tokens from URL
     const params = new URLSearchParams(window.location.search);
     const urlToken = params.get('token');
-    const refreshToken = params.get('refresh_token');
+    const urlRefreshToken = params.get('refresh_token');
     if (urlToken) {
       localStorage.setItem('aaram_identity_token', urlToken);
-      if (refreshToken) {
-        localStorage.setItem('aaram_refresh_token', refreshToken);
+      if (urlRefreshToken) {
+        localStorage.setItem('aaram_refresh_token', urlRefreshToken);
       }
       // Clean up the URL to remove the tokens
       const newUrl = window.location.pathname + window.location.hash;
@@ -45,17 +56,32 @@ function getInitialAuthState(): AaramUser {
     if (token) {
       const payload = decodeJWTPayload(token);
       if (payload && payload.exp * 1000 > Date.now()) {
-        return {
-          user_id: payload.sub || "",
-          name: payload.name || payload.username || "",
-          permissions: payload.permissions || [],
-          applications: payload.applications || [],
-          roles: payload.roles || [],
-          isAuthenticated: true,
-        };
-      } else {
-        localStorage.removeItem('aaram_identity_token');
-        localStorage.removeItem('aaram_refresh_token');
+        // Access token is still valid — use it immediately
+        return buildUserFromPayload(payload);
+      }
+      // BUG FIX #1: Access token expired — do NOT delete the refresh token here.
+      // The axios interceptor in client.ts will silently refresh using the refresh token
+      // on the first 401 response. Only remove the stale access token.
+      localStorage.removeItem('aaram_identity_token');
+
+      // If a refresh token exists, optimistically mark as authenticated so the
+      // UI doesn't flash to the login screen. The first API call will trigger a
+      // silent refresh and update the state. If refresh fails, client.ts redirects.
+      const refreshToken = localStorage.getItem('aaram_refresh_token');
+      if (refreshToken) {
+        const refreshPayload = decodeJWTPayload(refreshToken);
+        if (refreshPayload && refreshPayload.exp * 1000 > Date.now()) {
+          // Refresh token is still valid — return last-known user state if available
+          const cachedUser = localStorage.getItem('aaram_cached_user');
+          if (cachedUser) {
+            try {
+              return { ...JSON.parse(cachedUser), isAuthenticated: true };
+            } catch (e) { /* fall through */ }
+          }
+        } else {
+          // Refresh token also expired — full logout is legitimate
+          localStorage.removeItem('aaram_refresh_token');
+        }
       }
     }
   }
@@ -73,6 +99,35 @@ function getInitialAuthState(): AaramUser {
 export function useAuth() {
   const [user, setUser] = useState<AaramUser>(getInitialAuthState);
 
+  useEffect(() => {
+    // Cache the user profile whenever it is authenticated so we can restore
+    // it optimistically after an access token expiry (while refresh is in flight)
+    if (user.isAuthenticated) {
+      localStorage.setItem('aaram_cached_user', JSON.stringify({
+        user_id: user.user_id,
+        name: user.name,
+        permissions: user.permissions,
+        applications: user.applications,
+        roles: user.roles,
+      }));
+    }
+  }, [user]);
+
+  // BUG FIX #4: Proactive refresh — update user state from new token after silent refresh
+  useEffect(() => {
+    // Listen for storage changes (e.g. when client.ts writes a new access token)
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'aaram_identity_token' && e.newValue) {
+        const payload = decodeJWTPayload(e.newValue);
+        if (payload && payload.exp * 1000 > Date.now()) {
+          setUser(buildUserFromPayload(payload));
+        }
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
   return {
     user,
     hasPermission: (permission: string) => user.permissions.includes(permission),
@@ -80,6 +135,7 @@ export function useAuth() {
     logout: () => {
       localStorage.removeItem('aaram_identity_token');
       localStorage.removeItem('aaram_refresh_token');
+      localStorage.removeItem('aaram_cached_user');
       window.location.href = '/';
     }
   };

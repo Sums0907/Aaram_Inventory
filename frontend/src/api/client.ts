@@ -8,12 +8,24 @@ declare global {
     AARAM_CONFIG?: {
       API_URL?: string;
       IDENTITY_URL?: string;
+      IDENTITY_API_URL?: string;
     };
   }
 }
 
 const API_BASE_URL =
   window.AARAM_CONFIG?.API_URL || "http://localhost:8100/api/v1";
+
+// BUG FIX #2: Use IDENTITY_API_URL (backend) for refresh calls, not IDENTITY_URL (frontend UI).
+// On localhost, IDENTITY_API_URL = http://127.0.0.1:9000
+// On production, IDENTITY_API_URL = https://api.identity.aarambooks.cloud
+function getIdentityApiUrl(): string {
+  return (
+    window.AARAM_CONFIG?.IDENTITY_API_URL ||
+    window.AARAM_CONFIG?.IDENTITY_URL ||
+    "http://127.0.0.1:9000"
+  ).replace(/\/$/, "");
+}
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -54,6 +66,7 @@ apiClient.interceptors.response.use(
       if (!refreshToken) {
         localStorage.removeItem('aaram_identity_token');
         localStorage.removeItem('aaram_refresh_token');
+        localStorage.removeItem('aaram_cached_user');
         window.location.href = '/';
         return Promise.reject(error);
       }
@@ -62,8 +75,8 @@ apiClient.interceptors.response.use(
         isRefreshing = true;
 
         try {
-          const identityUrl = window.AARAM_CONFIG?.IDENTITY_URL || "https://identity.aarambooks.cloud";
-          const refreshUrl = `${identityUrl.replace(/\/$/, "")}/auth/refresh`;
+          // BUG FIX #2: Use the correct backend API URL for token refresh
+          const refreshUrl = `${getIdentityApiUrl()}/auth/refresh`;
           
           const refreshRes = await axios.post(refreshUrl, {
             refresh_token: refreshToken,
@@ -86,6 +99,7 @@ apiClient.interceptors.response.use(
           isRefreshing = false;
           localStorage.removeItem('aaram_identity_token');
           localStorage.removeItem('aaram_refresh_token');
+          localStorage.removeItem('aaram_cached_user');
           window.location.href = '/';
           return Promise.reject(refreshError);
         }
