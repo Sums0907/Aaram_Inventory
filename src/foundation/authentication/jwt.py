@@ -26,6 +26,10 @@ def decode_access_token(token: str) -> Optional[Dict[str, Any]]:
 _cached_public_key: Optional[str] = None
 
 def _fetch_public_key() -> str:
+    if settings.AARAMIDENTITY_PUBLIC_KEY:
+        # In case the key is passed via inline env var without proper newlines
+        return settings.AARAMIDENTITY_PUBLIC_KEY.replace("\\n", "\n")
+        
     import httpx
     url = f"{settings.IDENTITY_SERVICE_URL}/auth/public-key"
     try:

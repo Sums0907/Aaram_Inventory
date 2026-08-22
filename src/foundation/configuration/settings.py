@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     AUTH_MODE: str = Field(default="local", description="Set to 'aaramidentity' for production RS256 token verification")
     AARAMIDENTITY_URL: str = Field(default="http://localhost:8001")
     IDENTITY_SERVICE_URL: str = Field(default="http://localhost:9000")
+    AARAMIDENTITY_PUBLIC_KEY: str | None = Field(default=None)
 
     # Logging
     LOG_LEVEL: str = Field(default="INFO")
