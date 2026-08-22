@@ -14,17 +14,29 @@ echo "========================================="
 echo ""
 echo "[1/3] Committing and pushing code to GitHub..."
 read -p "Enter commit message: " COMMIT_MSG
-git add .
-git commit -m "$COMMIT_MSG"
-git push origin main
+git add . || true
+git commit -m "$COMMIT_MSG" || echo "No new changes to commit."
+git push origin main || echo "No new changes to push."
 
-# Step 2: Wait for GitHub Actions
+echo "GitHub Actions is now building your Docker image in the cloud."
 echo ""
-echo "[2/3] Code pushed successfully!"
-echo "GitHub Actions is now building your Docker image in the cloud.\n"
-echo "⚠️  You usually need to wait 2-3 minutes for the build to finish.\n"
-read -p "Press Enter when you are sure the GitHub Action is complete...\n==============================================\n"
+echo "🕒 Giving GitHub a few seconds to trigger the Action..."
+sleep 5
 
+echo "=============================================="
+echo " Tracking Live Build Progress "
+echo "=============================================="
+# Fetch the ID of the latest workflow run
+RUN_ID=$(gh run list --limit 1 --json databaseId -q ".[0].databaseId")
+
+if [ -z "$RUN_ID" ]; then
+    echo "⚠️ Could not automatically detect the GitHub Action."
+    read -p "Please wait 3 minutes, then press Enter to trigger the VPS pull... "
+else
+    # Watch the run and fail the script if the build fails
+    gh run watch $RUN_ID --exit-status
+    echo "✅ GitHub Action completed successfully!"
+fi
 # Step 3: Trigger VPS Update
 echo ""
 echo "[3/3] Connecting to VPS to pull and restart..."
@@ -33,13 +45,13 @@ ssh $VPS_USER@$VPS_IP << EOF
     cd ~/aarambooks/$APP_FOLDER
     
     echo "Pulling latest images..."
-    docker-compose -f docker-compose.prod.yml pull
+    docker compose -f docker-compose.prod.yml pull
     
     echo "Restarting containers..."
-    docker-compose -f docker-compose.prod.yml up -d
+    docker compose -f docker-compose.prod.yml up -d
     
     # Run migrations if it's the backend
-    BACKEND_CONTAINER=\$(docker-compose -f docker-compose.prod.yml ps -q | xargs docker inspect -f '{{.Name}}' | grep "backend" | sed 's/^\///' || true)
+    BACKEND_CONTAINER=\$(docker compose -f docker-compose.prod.yml ps -q | xargs -r docker inspect -f '{{.Name}}' | grep "backend" | sed 's/^\///' || true)
     if [ -n "\$BACKEND_CONTAINER" ]; then
         echo "Running Alembic migrations..."
         docker exec "\$BACKEND_CONTAINER" alembic upgrade head || true
