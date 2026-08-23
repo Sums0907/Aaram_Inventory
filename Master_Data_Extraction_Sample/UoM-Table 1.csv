@@ -1,4 +1,3 @@
 UoM Code,UoM Name,Short Name,Type,Description
-MTR-T,Meter-T,m-t,DECIMAL,
-PCS,Pieces,pcs,INTEGER,
+PCS,Pieces,Pcs,INTEGER,
 M,Meter,m,DECIMAL,
