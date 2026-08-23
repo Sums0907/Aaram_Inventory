@@ -80,10 +80,11 @@ class CategoryRepository:
             await self.session.flush()
 
         # Delete old associations
-        from sqlalchemy import delete
-        await self.session.execute(
-            delete(CategoryAttributeModel).filter(CategoryAttributeModel.category_id == category_id)
+        old_assocs_result = await self.session.execute(
+            select(CategoryAttributeModel).filter(CategoryAttributeModel.category_id == category_id)
         )
+        for assoc in old_assocs_result.scalars().all():
+            self.session.delete(assoc)
 
         # Create new associations
         for name in attribute_names:
