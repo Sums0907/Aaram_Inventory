@@ -75,15 +75,22 @@ apiClient.interceptors.response.use(
         isRefreshing = true;
 
         try {
-          // BUG FIX #2: Use the correct backend API URL for token refresh
+          const currentRefresh = localStorage.getItem('aaram_refresh_token');
+          if (currentRefresh && currentRefresh !== refreshToken) {
+            // Another tab already refreshed
+            const newAccess = localStorage.getItem('aaram_identity_token');
+            isRefreshing = false;
+            onRefreshed(newAccess);
+            originalRequest.headers.Authorization = `Bearer ${newAccess}`;
+            return axios(originalRequest);
+          }
+
           const refreshUrl = `${getIdentityApiUrl()}/auth/refresh`;
-          
           const refreshRes = await axios.post(refreshUrl, {
             refresh_token: refreshToken,
             platform: 'AARAM_INVENTORY_WEB'
           });
 
-          // Handle potentially nested response.data.data
           const data = refreshRes.data?.data || refreshRes.data;
           
           if (data.access_token) {
@@ -97,10 +104,13 @@ apiClient.interceptors.response.use(
           }
         } catch (refreshError) {
           isRefreshing = false;
-          localStorage.removeItem('aaram_identity_token');
-          localStorage.removeItem('aaram_refresh_token');
-          localStorage.removeItem('aaram_cached_user');
-          window.location.href = '/';
+          const status = refreshError.response?.status;
+          if (status === 401 || status === 403 || refreshError.message === "No tokens in response") {
+            localStorage.removeItem('aaram_identity_token');
+            localStorage.removeItem('aaram_refresh_token');
+            localStorage.removeItem('aaram_cached_user');
+            window.location.href = '/';
+          }
           return Promise.reject(refreshError);
         }
       }

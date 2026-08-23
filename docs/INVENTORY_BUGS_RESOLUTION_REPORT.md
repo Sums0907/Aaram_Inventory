@@ -150,5 +150,26 @@ Because `current_task` was used as the identifier, the route handler created a s
 - **Why it failed**: Pydantic v2 natively parses JSON arrays properly. The environment variables were correct; the issue was an underlying crash stripping the headers, not the CORS configuration itself.
 
 **Successful Resolution**:
-- Augmented `Aaram_Inventory/src/foundation/configuration/settings.py` to formally accept `AARAMIDENTITY_PUBLIC_KEY` as a `str | None`.
 - Refactored the `_fetch_public_key()` function in `Aaram_Inventory/src/foundation/authentication/jwt.py` to first check for `settings.AARAMIDENTITY_PUBLIC_KEY` (and properly un-escape any `\n` characters from inline Docker environments). If present, it uses this static key, completely bypassing the dangerous HTTP network fetch during the request lifecycle.
+
+---
+
+## Bug 8: 500 Network Error / CORS on SKU_QTY_BULK_MAPPING Import
+
+**Date Identified**: August 2026
+**Symptoms**:
+- Attempting a dry-run or import using the newly created `SKU_QTY_BULK_MAPPING` importer triggered a CORS / Network Error (`Origin http://localhost:5173 is not allowed by Access-Control-Allow-Origin. Status code: 500`) on the frontend.
+- The user suspected a permissions mapping issue because the domain was new.
+
+**Root Cause**:
+1. **Repository Mismatch**: The actual crash was a `TypeError` in `sku_qty_importer.py`. The `ConfidenceEngine` was initialized incorrectly (`ConfidenceEngine(self.session)`) instead of with its required repository dependencies (`ConfidenceEngine(exc_repo, movement_repo)`).
+2. **Type Arithmetic Crash**: After the initialization was fixed, a secondary `TypeError` crashed the request: `unsupported operand type(s) for -: 'float' and 'decimal.Decimal'`. Python's native CSV reader loads values as `str` which we safely parsed to `float`, while `InventoryMovementService.get_balance()` correctly returns a `Decimal`. Python strictly prevents `float` - `Decimal` arithmetic.
+3. **AttributeError on Commit**: The dry run succeeded, but the commit failed with `AttributeError: 'SKUModel' object has no attribute 'cost_price'`. The model stores pricing data in a separate `PricingModel` relation, not on the SKU itself.
+
+**Failed Attempts**:
+- Misdiagnosed as a permission boundary issue for the new domain name.
+
+**Successful Resolution**:
+- Corrected the instantiation of `ConfidenceEngine` in `SKUQtyImporter` to pass the `InventoryExceptionRepository` and `InventoryMovementRepository` instances.
+- Replaced the `_safe_float` parser with a `_safe_decimal` helper to explicitly cast incoming CSV quantities to `Decimal` objects, aligning the arithmetic with the PostgreSQL database types.
+- Casted the `Decimal` difference back to `float` to satisfy Pydantic's strict type guardrails for `InventoryMovementCreate`, and hardcoded `unit_cost=0.0` to bypass the invalid `cost_price` attribute lookup.

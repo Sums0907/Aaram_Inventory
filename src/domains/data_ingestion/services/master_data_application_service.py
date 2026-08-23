@@ -12,6 +12,7 @@ from src.domains.data_ingestion.services.supplier_importer import SupplierImport
 from src.domains.data_ingestion.services.product_sku_importer import ProductSKUImporter
 from src.domains.data_ingestion.services.bom_importer import BOMImporter
 from src.domains.data_ingestion.services.master_data_exporter import MasterDataExporter
+from src.domains.data_ingestion.services.sku_qty_importer import SKUQtyImporter
 
 IMPORTERS = {
     "UOM":                  UOMImporter,
@@ -21,6 +22,7 @@ IMPORTERS = {
     "BOM":                  BOMImporter,
     "CATEGORY":             CategoryImporter,
     "PRODUCT_SKU":          ProductSKUImporter,
+    "SKU_QTY_BULK_MAPPING": SKUQtyImporter,
 }
 
 class MasterDataApplicationService:
@@ -96,7 +98,7 @@ class MasterDataApplicationService:
                 # I'll follow the exact CLI pattern:
                 await self.session.rollback()
                 
-            return {
+            response = {
                 "batch_id": batch_id,
                 "entity_type": result.entity_type,
                 "total_records": result.total_records,
@@ -120,6 +122,24 @@ class MasterDataApplicationService:
         except Exception as e:
             await self.session.rollback()
             raise e
+            
+        # Post-commit triggers
+        if not is_dry_run and domain_upper in ("PRODUCT_SKU", "SKU_QTY_BULK_MAPPING"):
+            # Trigger packer sync
+            try:
+                from src.domains.inventory.services.packer_integration import trigger_packer_sku_sync_background
+                # Fire and forget
+                trigger_packer_sku_sync_background()
+                import logging
+                logging.getLogger(__name__).info(f"Triggered background packer sync after {domain_upper} import")
+            except ImportError:
+                import logging
+                logging.getLogger(__name__).warning("Packer sync trigger not implemented yet. Skipping.")
+            except Exception as sync_e:
+                import logging
+                logging.getLogger(__name__).error(f"Failed to trigger packer sync: {sync_e}")
+
+        return response
 
     async def execute_export(self) -> Dict[str, List[Dict[str, Any]]]:
         """

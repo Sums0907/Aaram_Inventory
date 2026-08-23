@@ -61,13 +61,12 @@
     |     return await _async_inject(
     |            ^^^^^^^^^^^^^^^^^^^^
     |   File "src/dependency_injector/_cwiring.pyx", line 66, in _async_inject
-    |   File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/src/domains/inventory/api/dashboard_router.py", line 79, in get_dashboard_recent_activity
-    |     data = [
-    |            ^
-    |   File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/src/domains/inventory/api/dashboard_router.py", line 86, in <listcomp>
-    |     "reference_document": m.reference_document,
-    |                           ^^^^^^^^^^^^^^^^^^^^
-    | AttributeError: 'InventoryMovementModel' object has no attribute 'reference_document'
+    |   File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/src/api/v1/master_data_router.py", line 48, in import_master_data
+    |     result = await app_service.execute_import(
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |   File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/src/domains/data_ingestion/services/master_data_application_service.py", line 129, in execute_import
+    |     from src.domains.inventory.services.packer_integration import trigger_packer_sku_sync_background
+    | ImportError: cannot import name 'trigger_packer_sku_sync_background' from 'src.domains.inventory.services.packer_integration' (/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/src/domains/inventory/services/packer_integration.py)
     +------------------------------------
 
 During handling of the above exception, another exception occurred:
@@ -126,10 +125,9 @@ Traceback (most recent call last):
     return await _async_inject(
            ^^^^^^^^^^^^^^^^^^^^
   File "src/dependency_injector/_cwiring.pyx", line 66, in _async_inject
-  File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/src/domains/inventory/api/dashboard_router.py", line 79, in get_dashboard_recent_activity
-    data = [
-           ^
-  File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/src/domains/inventory/api/dashboard_router.py", line 86, in <listcomp>
-    "reference_document": m.reference_document,
-                          ^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'InventoryMovementModel' object has no attribute 'reference_document'
+  File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/src/api/v1/master_data_router.py", line 48, in import_master_data
+    result = await app_service.execute_import(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/src/domains/data_ingestion/services/master_data_application_service.py", line 129, in execute_import
+    from src.domains.inventory.services.packer_integration import trigger_packer_sku_sync_background
+ImportError: cannot import name 'trigger_packer_sku_sync_background' from 'src.domains.inventory.services.packer_integration' (/Users/sumatidhingra/Documents/AaramBooks/Aaram_Inventory/src/domains/inventory/services/packer_integration.py)

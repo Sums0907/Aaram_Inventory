@@ -12,7 +12,8 @@ const DOMAINS = [
   { id: "SUPPLIER", label: "Suppliers" },
   { id: "RAW_MATERIAL", label: "Raw Materials" },
   { id: "BOM", label: "Bill of Materials (BOM)" },
-  { id: "PRODUCT_SKU", label: "ShopDeck SKU Sync" }
+  { id: "PRODUCT_SKU", label: "ShopDeck SKU Sync" },
+  { id: "SKU_QTY_BULK_MAPPING", label: "SKU Wise Quantity Bulk Upload" }
 ];
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -22,6 +23,7 @@ export function ImportWizard() {
   const [step, setStep] = useState<number>(1);
   const [selectedDomain, setSelectedDomain] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [filterAction, setFilterAction] = useState<string | null>(null);
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [dryRunResult, setDryRunResult] = useState<ImportResult | null>(null);
@@ -95,6 +97,7 @@ export function ImportWizard() {
     setSelectedFile(null);
     setDryRunResult(null);
     setCommitResult(null);
+    setFilterAction(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -201,27 +204,49 @@ export function ImportWizard() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <div className="p-4 border border-slate-100 rounded-lg bg-slate-50 text-center">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+              <button 
+                onClick={() => setFilterAction(null)}
+                className={`p-4 border rounded-lg text-center transition-all ${filterAction === null ? 'ring-2 ring-slate-400 bg-slate-100 border-slate-300' : 'border-slate-100 bg-slate-50 hover:bg-slate-100'}`}
+              >
                 <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Total</p>
                 <p className="text-2xl font-bold text-slate-900 mt-1">{dryRunResult.total_records}</p>
-              </div>
-              <div className="p-4 border border-emerald-100 rounded-lg bg-emerald-50 text-center">
+              </button>
+              <button 
+                onClick={() => setFilterAction('CREATED')}
+                className={`p-4 border rounded-lg text-center transition-all ${filterAction === 'CREATED' ? 'ring-2 ring-emerald-400 bg-emerald-100 border-emerald-300' : 'border-emerald-100 bg-emerald-50 hover:bg-emerald-100'}`}
+              >
                 <p className="text-xs text-emerald-600 font-medium uppercase tracking-wider">Created</p>
                 <p className="text-2xl font-bold text-emerald-700 mt-1">{dryRunResult.created_count}</p>
-              </div>
-              <div className="p-4 border border-blue-100 rounded-lg bg-blue-50 text-center">
+              </button>
+              <button 
+                onClick={() => setFilterAction('UPDATED')}
+                className={`p-4 border rounded-lg text-center transition-all ${filterAction === 'UPDATED' ? 'ring-2 ring-blue-400 bg-blue-100 border-blue-300' : 'border-blue-100 bg-blue-50 hover:bg-blue-100'}`}
+              >
                 <p className="text-xs text-blue-600 font-medium uppercase tracking-wider">Updated</p>
                 <p className="text-2xl font-bold text-blue-700 mt-1">{dryRunResult.updated_count}</p>
-              </div>
-              <div className="p-4 border border-red-100 rounded-lg bg-red-50 text-center">
+              </button>
+              <button 
+                onClick={() => setFilterAction('FAILED')}
+                className={`p-4 border rounded-lg text-center transition-all ${filterAction === 'FAILED' ? 'ring-2 ring-red-400 bg-red-100 border-red-300' : 'border-red-100 bg-red-50 hover:bg-red-100'}`}
+              >
                 <p className="text-xs text-red-600 font-medium uppercase tracking-wider">Failed</p>
                 <p className="text-2xl font-bold text-red-700 mt-1">{dryRunResult.failed_count}</p>
-              </div>
-              <div className="p-4 border border-orange-100 rounded-lg bg-orange-50 text-center">
+              </button>
+              <button 
+                onClick={() => setFilterAction('AMBIGUOUS')}
+                className={`p-4 border rounded-lg text-center transition-all ${filterAction === 'AMBIGUOUS' ? 'ring-2 ring-orange-400 bg-orange-100 border-orange-300' : 'border-orange-100 bg-orange-50 hover:bg-orange-100'}`}
+              >
                 <p className="text-xs text-orange-600 font-medium uppercase tracking-wider">Ambiguous</p>
                 <p className="text-2xl font-bold text-orange-700 mt-1">{dryRunResult.ambiguous_count}</p>
-              </div>
+              </button>
+              <button 
+                onClick={() => setFilterAction('IGNORED')}
+                className={`p-4 border rounded-lg text-center transition-all ${filterAction === 'IGNORED' ? 'ring-2 ring-slate-400 bg-slate-200 border-slate-300' : 'border-slate-200 bg-slate-100 hover:bg-slate-200'}`}
+              >
+                <p className="text-xs text-slate-600 font-medium uppercase tracking-wider">Ignored</p>
+                <p className="text-2xl font-bold text-slate-800 mt-1">{dryRunResult.ignored_count}</p>
+              </button>
             </div>
 
             {/* Full Line-Item Preview Table */}
@@ -247,6 +272,32 @@ export function ImportWizard() {
                     </ul>
                   </div>
                 )}
+                
+                {dryRunResult.row_results.filter(r => r.action === 'IGNORED' && r.errors && r.errors.length > 0).length > 0 && (
+                  <div className="p-4 bg-red-50 border-b border-red-100">
+                    <p className="text-sm font-medium text-red-900 mb-2 flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4" /> Ignored Records with Errors:
+                    </p>
+                    <ul className="list-disc pl-5 space-y-1 text-sm text-red-700">
+                      {dryRunResult.row_results.filter(r => r.action === 'IGNORED' && r.errors && r.errors.length > 0).map((r, i) => (
+                        <li key={i}>Row #{r.row_index} ({r.identifier}): {r.errors.join(', ')}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {dryRunResult.row_results.filter(r => r.action === 'IGNORED' && (!r.errors || r.errors.length === 0)).length > 0 && (
+                  <div className="p-4 bg-slate-50 border-b border-slate-200">
+                    <p className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4" /> Ignored Records (No Update Required):
+                    </p>
+                    <ul className="list-disc pl-5 space-y-1 text-sm text-slate-600">
+                      {dryRunResult.row_results.filter(r => r.action === 'IGNORED' && (!r.errors || r.errors.length === 0)).map((r, i) => (
+                        <li key={i}>Row #{r.row_index} ({r.identifier})</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
                 <div className="max-h-96 overflow-y-auto">
                   <table className="w-full text-sm text-left">
@@ -259,7 +310,9 @@ export function ImportWizard() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {dryRunResult.row_results.map((r, i) => {
+                      {dryRunResult.row_results
+                        .filter(r => !filterAction || r.action === filterAction)
+                        .map((r, i) => {
                         let statusColor = "bg-slate-100 text-slate-700";
                         if (r.action === 'CREATED') statusColor = "bg-emerald-100 text-emerald-700";
                         if (r.action === 'UPDATED') statusColor = "bg-blue-100 text-blue-700";
