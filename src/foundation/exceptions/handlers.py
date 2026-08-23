@@ -76,8 +76,12 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
         import traceback
-        with open("error_trace.log", "w") as f:
-            traceback.print_exc(file=f)
+        try:
+            with open("/tmp/error_trace.log", "w") as f:
+                traceback.print_exc(file=f)
+        except Exception as log_exc:
+            logger.error(f"Failed to write error trace to /tmp: {log_exc}")
+        
         logger.error(f"Unhandled Exception: {str(exc)}", exc_info=exc)
         return JSONResponse(
             status_code=500,
