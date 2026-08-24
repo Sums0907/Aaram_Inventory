@@ -12,6 +12,7 @@ class ProductInfo(PydanticBaseModel):
     brand: Optional[str] = None
     product_type: Optional[str] = None
     item_type: str = "FINISHED_GOODS"
+    category_id: Optional[UUID] = None
 
 class PricingInfo(PydanticBaseModel):
     selling_price: float

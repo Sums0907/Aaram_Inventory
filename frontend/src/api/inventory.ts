@@ -167,8 +167,8 @@ export function useInventoryPosition() {
   return useQuery({
     queryKey: ['inventory-position'],
     queryFn: async () => {
-      const response = await apiClient.get<{ success: boolean; data: InventoryPositionResponse[] }>('/inventory/position');
-      return response.data.data;
+      const response = await apiClient.get<any>('/inventory/position');
+      return response.data || [];
     },
   });
 }

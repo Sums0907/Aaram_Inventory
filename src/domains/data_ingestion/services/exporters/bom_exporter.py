@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from src.foundation.enums.status import GenericStatus
 from src.domains.masters.models.bom import BOMModel
+from src.domains.masters.models.sku import SKUModel
 
 class BOMExporter:
     def __init__(self, session: AsyncSession):
@@ -12,7 +13,7 @@ class BOMExporter:
     async def export_data(self, include_archived: bool = False) -> List[Dict[str, Any]]:
         # Export BOMs
         stmt = select(BOMModel).options(
-            selectinload(BOMModel.target_item),
+            selectinload(BOMModel.target_item).selectinload(SKUModel.product),
             selectinload(BOMModel.items).selectinload(BOMModel.items.prop.mapper.class_.component_item),
             selectinload(BOMModel.items).selectinload(BOMModel.items.prop.mapper.class_.uom)
         )
@@ -28,9 +29,10 @@ class BOMExporter:
         export_rows = []
         for bom in boms:
             for item in bom.items:
+                bom_name_fallback = bom.target_item.product.product_name if bom.target_item and bom.target_item.product else ""
                 export_rows.append({
                     "BOM Number": bom.bom_number,
-                    "BOM Name": bom.bom_name or "",
+                    "BOM Name": bom.bom_name or bom_name_fallback,
                     "Finished SKU": bom.target_item.item_code if bom.target_item else "",
                     "Base Quantity": int(bom.target_quantity),
                     "Version": bom.version,

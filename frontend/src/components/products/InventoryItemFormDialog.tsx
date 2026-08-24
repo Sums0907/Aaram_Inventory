@@ -83,9 +83,10 @@ export function InventoryItemFormDialog({ open, onOpenChange, initialData, defau
   const { data: categories } = useCategories(itemType)
   const { data: products } = useProducts()
   const { data: uoms } = useUnitsOfMeasure()
-  
-  const filteredProducts = products?.filter(p => (p.item_type || "FINISHED_GOODS") === itemType) || []
-
+  const filteredProducts = products?.filter(p => 
+    (p.item_type || "FINISHED_GOODS") === itemType &&
+    (!categoryId || categoryId === "NEW" || p.category_id === categoryId)
+  ) || []
   // Extract dynamic attributes from the selected category
   const dynamicAttributes = useMemo(() => {
     if (!categories || !categoryId || categoryId === "NEW") return [];
@@ -183,7 +184,7 @@ export function InventoryItemFormDialog({ open, onOpenChange, initialData, defau
           color: values.color || undefined,
           size: values.size || undefined,
           barcode: values.barcode || undefined,
-          base_uom_id: values.base_uom_id || undefined,
+          uom_id: values.base_uom_id || undefined,
           attribute_values,
         } as any)
       }

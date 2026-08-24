@@ -34,6 +34,7 @@ async def create_inventory_item(
         .options(
             joinedload(SKUModel.product),
             joinedload(SKUModel.pricing),
+            joinedload(SKUModel.uom),
             selectinload(SKUModel.images)
         )
         .filter(SKUModel.id == sku.id)

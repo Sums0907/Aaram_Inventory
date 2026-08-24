@@ -86,6 +86,7 @@ export interface InventoryItemCreatePayload {
   thread_count?: string;
   barcode?: string;
   attribute_values?: Record<string, string>;
+  uom_id?: string;
 }
 
 export interface SKUCreatePayload {

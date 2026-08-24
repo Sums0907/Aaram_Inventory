@@ -52,7 +52,7 @@ class BOMImporter(BaseMasterDataImporter):
         for bom_num, rows in grouped_boms.items():
             # Basic validation
             first_row_idx, first_row = rows[0]
-            bom_name = str(first_row.get("BOM Name", "")).strip()
+            bom_name = str(first_row.get("BOM Name", first_row.get("BoM Name", ""))).strip()
             
             target_sku_code = str(first_row.get("Finished SKU", "")).strip()
             target_qty = int(self._safe_float(first_row.get("Base Quantity")) or 1)
@@ -145,6 +145,12 @@ class BOMImporter(BaseMasterDataImporter):
                     needs_new_version = False
             
             if not needs_new_version:
+                # In-place update metadata if recipe hasn't changed but name has
+                if not is_dry_run and existing_active_bom and bom_name:
+                    if existing_active_bom.bom_name != bom_name:
+                        existing_active_bom.bom_name = bom_name
+                        self.session.add(existing_active_bom)
+
                 for idx, _ in rows:
                     if not any(r.row_index == idx for r in result.row_results):
                         result.ignored_count += 1

@@ -485,9 +485,13 @@ If GRNI / unbilled purchase accounting is introduced, it must be deliberately de
 11. Configured the FastAPI `lifespan` hook natively in `src/app/lifespan.py` to auto-schedule and manage the `OutboundEventDispatcherService` (every 30s) and `run_daily_sku_reconciliation` (every 24h) seamlessly on a background thread.
 12. Upgraded the `OutboundEventDispatcherService` outbox query with a `.with_for_update(skip_locked=True)` lock. This multi-worker safety feature guarantees that Uvicorn's 4 production workers cooperatively share the polling load without race conditions, eliminating the need for standalone worker containers.
 13. Augmented the E2E certification test suite (`test_e2e_integration_certification.py`) to execute and validate the `skip_locked` dispatcher query, as well as fixing a database safety violation on the Packer-side cleanup logic. The entire integration suite passes successfully.
+14. Investigated and resolved Bug 9 (Category Bulk Delete database guard crash) by switching to row-by-row deletes, and safeguarded the `unhandled_exception_handler` from crashing on read-only containers.
+15. Investigated and diagnosed Bug 10 (Master Data Export 500 CORS Error). Determined the issue to be Nginx proxy disk buffering limits on large Excel files. Updated `AaramInventory_Deployment_Runbook.md` with `proxy_max_temp_file_size 0` to fix the production deployment.
+16. Resolved an issue where BOM Names were incorrectly discarded during import updates. Implemented in-place metadata updates in `BOMImporter` and added a robust fallback in `BOMExporter` to derive names from the target product.
+17. Fixed three UI bugs in the Inventory Item Creation dialog: Corrected the UoM payload key to `uom_id`, added `category_id` to `SKUResponse` for proper Edit Item pre-filling, and filtered Master Items by the selected category to prevent silent backend overrides.
 
 **Current Blocker:**
 - None.
 
 **Next Steps:**
-- E2E field testing by the human owner.
+- Validate the new UI fixes in production.
