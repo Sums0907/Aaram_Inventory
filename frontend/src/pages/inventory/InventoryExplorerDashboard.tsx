@@ -3,20 +3,22 @@ import React, { useState, useEffect } from 'react';
 import { useInventoryHierarchy } from '@/api/hierarchy';
 import { useUpdateCategory, useArchiveCategory, useDeleteCategory, useUpdateProduct, useArchiveProduct, useDeleteProduct, useSKUs } from '@/api/masters';
 import type { CategoryInfo, SKUResponse } from '@/api/masters';
-import { InventoryExplorerTree } from '@/components/dashboard/InventoryExplorerTree';
-import type { TreeNode } from '@/components/dashboard/InventoryExplorerTree';
 import { HierarchyNodeWorkspace } from '@/components/dashboard/HierarchyNodeWorkspace';
+import type { TreeNodeType, TreeNode } from '@/components/dashboard/HierarchyNodeWorkspace';
+import { InventoryExplorerTree } from '@/components/dashboard/InventoryExplorerTree';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Search } from 'lucide-react';
+import { Search, ChevronRight, Home } from 'lucide-react';
 import { InventoryItemFormDialog } from '@/components/products/InventoryItemFormDialog';
 import { CategoryFormDialog } from '@/components/products/CategoryFormDialog';
+import { Button } from '@/components/ui/button';
 
 export function InventoryExplorerDashboard() {
   const [showArchived, setShowArchived] = useState(false);
   const { data: hierarchy, isLoading, error } = useInventoryHierarchy(showArchived);
-  const [selectedNode, setSelectedNode] = useState<TreeNode | null>(null);
+  const [path, setPath] = useState<TreeNode[]>([]);
+  const selectedNode = path.length > 0 ? path[path.length - 1] : null;
   
   // Modals state
   const [isItemFormOpen, setIsItemFormOpen] = useState(false);
@@ -43,16 +45,18 @@ export function InventoryExplorerDashboard() {
       if (selectedNode.type === 'CATEGORY' || selectedNode.type === 'INVENTORY_TYPE') {
         const cat = hierarchy.categories.find(c => c.id === selectedNode.id);
         if (!cat && selectedNode.type === 'CATEGORY') {
-          setSelectedNode(null);
+          // It was deleted or archived (and we hide archived). Pop it off.
+          setPath(prev => prev.slice(0, -1));
         } else if (cat && cat.category_name !== selectedNode.label) {
-          setSelectedNode(prev => prev ? { ...prev, label: cat.category_name, data: cat } : null);
+          // Rename node in path
+          setPath(prev => prev.map((n, i) => i === prev.length - 1 ? { ...n, label: cat.category_name, data: cat } : n));
         }
       } else if (selectedNode.type === 'PRODUCT') {
         const prod = hierarchy.products.find(p => p.id === selectedNode.id);
         if (!prod) {
-          setSelectedNode(null);
+          setPath(prev => prev.slice(0, -1));
         } else if (prod.product_name !== selectedNode.label) {
-          setSelectedNode(prev => prev ? { ...prev, label: prod.product_name, data: prod } : null);
+          setPath(prev => prev.map((n, i) => i === prev.length - 1 ? { ...n, label: prod.product_name, data: prod } : n));
         }
       }
     }
@@ -155,35 +159,71 @@ export function InventoryExplorerDashboard() {
     }
   };
 
+  const handleNavigateToNode = (node: TreeNode) => {
+    setPath(prev => [...prev, node]);
+  };
+
+  const handleNavigateToBreadcrumb = (index: number) => {
+    setPath(prev => prev.slice(0, index + 1));
+  };
+
+  const handleGoHome = () => {
+    setPath([]);
+  };
+
   return (
-    <div className="flex h-[calc(100vh-4rem)] bg-background">
-      {/* Explorer Sidebar */}
-      <div className="w-80 border-r flex flex-col bg-muted/20">
-        <div className="p-4 border-b">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input 
-              type="search" 
-              placeholder="Global Inventory Search..." 
-              className="w-full bg-background pl-8"
-            />
-          </div>
-          <div className="flex items-center space-x-2 mt-4 px-1">
+    <div className="flex flex-col h-[calc(100vh-4rem)] bg-background">
+      {/* Top Bar with Breadcrumbs and Search */}
+      <div className="w-full border-b bg-white flex items-center justify-between px-6 py-3 shadow-sm z-10 relative">
+        <div className="flex items-center space-x-2 text-sm font-medium">
+          <Button variant="ghost" size="sm" onClick={handleGoHome} className="text-slate-500 hover:text-slate-900 px-2">
+            <Home className="h-4 w-4" />
+          </Button>
+          
+          {path.map((p, index) => (
+            <React.Fragment key={p.id}>
+              <ChevronRight className="h-4 w-4 text-slate-300" />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => handleNavigateToBreadcrumb(index)}
+                className={`px-2 ${index === path.length - 1 ? 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
+              >
+                {p.label}
+              </Button>
+            </React.Fragment>
+          ))}
+        </div>
+        
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
             <Switch 
               id="show-archived" 
               checked={showArchived}
               onCheckedChange={setShowArchived}
             />
-            <Label htmlFor="show-archived" className="text-sm text-muted-foreground cursor-pointer">
+            <Label htmlFor="show-archived" className="text-sm text-slate-500 cursor-pointer whitespace-nowrap">
               Show Archived
             </Label>
           </div>
+          <div className="relative w-64">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+            <Input 
+              type="search" 
+              placeholder="Search Catalog..." 
+              className="w-full bg-slate-50 pl-8 focus-visible:ring-indigo-500"
+            />
+          </div>
         </div>
-        <div className="flex-1 overflow-hidden">
+      </div>
+
+      {/* Main Workspace */}
+      <div className="flex-1 flex overflow-hidden bg-slate-50/50">
+        <div className="w-80 border-r bg-slate-50 flex flex-col shadow-sm z-0 relative">
           <InventoryExplorerTree
             hierarchy={hierarchy}
             selectedNodeId={selectedNode?.id || null}
-            onSelectNode={setSelectedNode}
+            onSelectNode={handleNavigateToNode}
             onCreateCategory={handleCreateCategory}
             onCreateProduct={handleCreateProduct}
             onEditCategory={handleRenameCategory}
@@ -194,25 +234,24 @@ export function InventoryExplorerDashboard() {
             onDeleteProduct={handleDeleteProduct}
           />
         </div>
+        <div className="flex-1 overflow-hidden">
+          <HierarchyNodeWorkspace 
+            node={selectedNode}
+            hierarchy={hierarchy} 
+            onNavigate={handleNavigateToNode}
+            onCreateCategory={handleCreateCategory}
+            onCreateProduct={handleCreateProduct}
+            onEditProduct={handleEditProduct}
+            onEditCategory={handleRenameCategory}
+            onArchiveCategory={handleArchiveCategory}
+            onDeleteCategory={handleDeleteCategory}
+            onArchiveProduct={handleArchiveProduct}
+            onDeleteProduct={handleDeleteProduct}
+          />
+        </div>
       </div>
 
-      {/* Main Workspace */}
-      <div className="flex-1 overflow-hidden bg-background">
-        <HierarchyNodeWorkspace 
-          node={selectedNode}
-          hierarchy={hierarchy} 
-          onCreateCategory={handleCreateCategory}
-          onCreateProduct={handleCreateProduct}
-          onEditProduct={handleEditProduct}
-          onEditCategory={handleRenameCategory}
-          onArchiveCategory={handleArchiveCategory}
-          onDeleteCategory={handleDeleteCategory}
-          onArchiveProduct={handleArchiveProduct}
-          onDeleteProduct={handleDeleteProduct}
-        />
-      </div>
-
-      <InventoryItemFormDialog 
+      <InventoryItemFormDialog  
         open={isItemFormOpen} 
         onOpenChange={setIsItemFormOpen} 
         defaultItemType={defaultItemType}

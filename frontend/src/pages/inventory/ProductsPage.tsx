@@ -4,7 +4,7 @@ import { useSKUs, useCreateSKU, useUpdateSKU, useCreateInventoryItem, useUnitsOf
 import { useInventoryBalances } from "@/api/inventory"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Search, X, Package, AlertCircle, Plus, Upload } from "lucide-react"
+import { Search, X, Package, AlertCircle, Plus, Upload, LayoutGrid, List } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ExecutiveSummary } from "@/components/products/ExecutiveSummary"
@@ -24,6 +24,7 @@ export function ProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState("All")
   const [selectedSubcategory, setSelectedSubcategory] = useState("All")
   const [selectedSku, setSelectedSku] = useState<SKUResponse | null>(null)
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   
   type SortOption = "name_asc" | "name_desc" | "price_asc" | "price_desc" | "stock_asc" | "stock_desc" | "updated_desc"
   const [sortBy, setSortBy] = useState<SortOption>("updated_desc")
@@ -202,10 +203,28 @@ export function ProductsPage() {
                     <Button className="h-[46px] gap-2 bg-indigo-600 hover:bg-indigo-700" onClick={() => setIsAddDialogOpen(true)}>
                       <Plus className="h-4 w-4" /> Add Item
                     </Button>
-                    
-
                   </>
                 )}
+                
+                {/* View Mode Toggle */}
+                <div className="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200 h-[46px]">
+                  <button 
+                    onClick={() => setViewMode("grid")}
+                    className={`h-full px-3 rounded-md flex items-center justify-center transition-all duration-200 ${viewMode === "grid" ? "bg-white text-indigo-600 shadow-sm font-medium" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"}`}
+                    title="Grid View"
+                  >
+                    <LayoutGrid className="h-4 w-4 mr-2" />
+                    Grid
+                  </button>
+                  <button 
+                    onClick={() => setViewMode("list")}
+                    className={`h-full px-3 rounded-md flex items-center justify-center transition-all duration-200 ${viewMode === "list" ? "bg-white text-indigo-600 shadow-sm font-medium" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"}`}
+                    title="List View"
+                  >
+                    <List className="h-4 w-4 mr-2" />
+                    List
+                  </button>
+                </div>
               </div>
             </div>
             
@@ -249,88 +268,200 @@ export function ProductsPage() {
               {isLoading ? (
                 <div className="p-12 text-center text-slate-400">Loading Product Catalog...</div>
               ) : filteredSkus.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-left">
-                    <thead className="bg-slate-50/50 text-slate-500 border-b">
-                      <tr>
-                        <th className="px-4 py-3 font-medium">Item Identity</th>
-                        <th className="px-4 py-3 font-medium">Type & Category</th>
-                        <th className="px-4 py-3 font-medium text-right">UoM</th>
-                        <th className="px-4 py-3 font-medium text-right w-48">Inventory Count</th>
-                        <th className="px-4 py-3 font-medium text-center">Confidence</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {filteredSkus.map(sku => {
-                        const count = getInventoryCount(sku.id)
-                        const confidenceScore = getInventoryConfidence(sku.id)
-                        
-                        return (
-                          <tr 
-                            key={sku.id} 
-                            className="hover:bg-slate-50/50 transition-colors cursor-pointer group"
-                            onClick={() => setSelectedSku(sku)}
-                          >
-                            <td className="px-4 py-4">
-                              <div className="flex items-center gap-4">
-                                <div className="h-12 w-12 rounded bg-slate-100 border flex items-center justify-center overflow-hidden flex-shrink-0">
-                                  {sku.images && sku.images.length > 0 ? (
-                                    <img src={sku.images[0].image_url} alt={sku.product?.product_name} className="h-full w-full object-cover" />
-                                  ) : (
-                                    <Package className="h-5 w-5 text-slate-300" />
+                viewMode === "grid" ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-4">
+                    {filteredSkus.map(sku => {
+                      const count = getInventoryCount(sku.id);
+                      const confidenceScore = getInventoryConfidence(sku.id);
+                      const uomShortName = uoms?.find(u => u.id === (sku as any).uom_id)?.short_name || "units";
+                      
+                      // Determine stock status for color coding
+                      let stockStatusColor = "bg-emerald-500";
+                      let stockStatusText = "In Stock";
+                      if (count === 0) {
+                        stockStatusColor = "bg-red-500";
+                        stockStatusText = "Out of Stock";
+                      } else if (count < 20) {
+                        stockStatusColor = "bg-amber-500";
+                        stockStatusText = "Low Stock";
+                      }
+
+                      // A subtle gradient background based on ID to make the grid look varied and premium
+                      const gradients = [
+                        "from-indigo-100 to-purple-100",
+                        "from-blue-100 to-cyan-100",
+                        "from-emerald-100 to-teal-100",
+                        "from-rose-100 to-orange-100",
+                        "from-slate-100 to-gray-200"
+                      ];
+                      const productName = sku.product?.product_name || "Unknown Item";
+                      const gradientClass = gradients[productName.length % gradients.length];
+
+                      return (
+                        <div 
+                          key={sku.id}
+                          className="group relative flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all overflow-hidden cursor-pointer"
+                          onClick={() => setSelectedSku(sku)}
+                        >
+                          {/* Image / Placeholder Header */}
+                          <div className={`h-48 w-full ${sku.images && sku.images.length > 0 ? 'bg-slate-100' : `bg-gradient-to-br ${gradientClass}`} flex items-center justify-center opacity-90 group-hover:opacity-100 transition-opacity overflow-hidden`}>
+                            {sku.images && sku.images.length > 0 ? (
+                              <img src={sku.images[0].image_url} alt={productName} className="h-full w-full object-cover" />
+                            ) : (
+                              <Package className="h-16 w-16 text-slate-800/20" />
+                            )}
+                            
+                            {/* Top-right floating badges */}
+                            <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
+                              <Badge variant="secondary" className="bg-white/90 backdrop-blur shadow-sm text-slate-700 hover:bg-white">
+                                {sku.product?.item_type?.replace('_', ' ') || 'FINISHED GOODS'}
+                              </Badge>
+                              {sku.product?.item_type === 'FINISHED_GOODS' && (
+                                sku.has_bom ? (
+                                  <Badge variant="outline" className="bg-emerald-50/90 backdrop-blur text-emerald-700 border-emerald-200 font-medium shadow-sm">
+                                    ✓ BOM
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="bg-rose-50/90 backdrop-blur text-rose-700 border-rose-200 font-medium shadow-sm">
+                                    <AlertCircle className="h-3 w-3 mr-1 inline" /> No BOM
+                                  </Badge>
+                                )
+                              )}
+                            </div>
+                            
+                            {/* Confidence Badge (Bottom left of image) */}
+                            <div className="absolute bottom-3 left-3">
+                              <Badge variant="secondary" className={`shadow-sm bg-white/90 backdrop-blur ${confidenceScore > 90 ? 'text-emerald-700' : confidenceScore > 70 ? 'text-amber-700' : 'text-rose-700'}`}>
+                                <div className={`h-2 w-2 rounded-full mr-1.5 inline-block ${confidenceScore > 90 ? 'bg-emerald-500' : confidenceScore > 70 ? 'bg-amber-400' : 'bg-rose-500'}`}></div>
+                                {confidenceScore}% Accuracy
+                              </Badge>
+                            </div>
+                          </div>
+
+                          {/* Details */}
+                          <div className="p-5 flex-1 flex flex-col">
+                            <div className="mb-1.5 flex items-center justify-between">
+                              <span className="text-xs font-bold text-indigo-600/70 tracking-wider uppercase">{sku.item_code}</span>
+                              {sku.product?.brand && <span className="text-xs font-medium text-slate-500">{sku.product.brand}</span>}
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900 leading-tight mb-2 line-clamp-2" title={productName}>
+                              {productName}
+                            </h3>
+                            {sku.product?.product_type && (
+                              <p className="text-sm text-slate-500 mb-4">{sku.product.product_type}</p>
+                            )}
+                            
+                            <div className="mt-auto pt-4 border-t border-slate-100">
+                              {/* Stock Indicator */}
+                              <div className="space-y-2">
+                                <div className="flex items-end justify-between">
+                                  <div>
+                                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-0.5">{stockStatusText}</p>
+                                    <div className="flex items-baseline gap-1">
+                                      <span className={`text-xl font-bold ${count > 0 ? 'text-slate-900' : count < 0 ? 'text-rose-600' : 'text-slate-400'}`}>
+                                        {formatQuantityValue(count, uoms?.find(u => u.id === (sku as any).uom_id)?.unit_type)}
+                                      </span>
+                                      <span className="text-sm font-medium text-slate-500">{uomShortName}</span>
+                                    </div>
+                                  </div>
+                                  <div className="h-2.5 w-16 bg-slate-100 rounded-full overflow-hidden mb-1">
+                                    <div 
+                                      className={`h-full rounded-full ${stockStatusColor}`} 
+                                      style={{ width: `${Math.min(100, Math.max(5, (Math.abs(count) / 100) * 100))}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left">
+                      <thead className="bg-slate-50/50 text-slate-500 border-b">
+                        <tr>
+                          <th className="px-4 py-3 font-medium">Item Identity</th>
+                          <th className="px-4 py-3 font-medium">Type & Category</th>
+                          <th className="px-4 py-3 font-medium text-right">UoM</th>
+                          <th className="px-4 py-3 font-medium text-right w-48">Inventory Count</th>
+                          <th className="px-4 py-3 font-medium text-center">Confidence</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {filteredSkus.map(sku => {
+                          const count = getInventoryCount(sku.id)
+                          const confidenceScore = getInventoryConfidence(sku.id)
+                          
+                          return (
+                            <tr 
+                              key={sku.id} 
+                              className="hover:bg-slate-50/50 transition-colors cursor-pointer group"
+                              onClick={() => setSelectedSku(sku)}
+                            >
+                              <td className="px-4 py-4">
+                                <div className="flex items-center gap-4">
+                                  <div className="h-12 w-12 rounded bg-slate-100 border flex items-center justify-center overflow-hidden flex-shrink-0">
+                                    {sku.images && sku.images.length > 0 ? (
+                                      <img src={sku.images[0].image_url} alt={sku.product?.product_name} className="h-full w-full object-cover" />
+                                    ) : (
+                                      <Package className="h-5 w-5 text-slate-300" />
+                                    )}
+                                  </div>
+                                  <div>
+                                    <div className="font-medium text-slate-900 line-clamp-1 max-w-[250px]" title={sku.product?.product_name}>
+                                      {sku.product?.product_name || "Unknown Item"}
+                                    </div>
+                                    <div className="font-mono text-xs text-slate-500 mt-1">{sku.item_code}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-4">
+                                <div className="flex flex-col gap-1.5">
+                                  <Badge variant="secondary" className="w-fit bg-slate-100 text-slate-600 font-normal">
+                                    {sku.product?.item_type?.replace('_', ' ') || 'FINISHED GOODS'}
+                                  </Badge>
+                                  {sku.product?.item_type === 'FINISHED_GOODS' && (
+                                    sku.has_bom ? (
+                                      <Badge variant="outline" className="w-fit bg-emerald-50 text-emerald-700 border-emerald-200 font-normal flex items-center gap-1 text-[10px] px-1.5 py-0">
+                                        ✓ BOM Configured
+                                      </Badge>
+                                    ) : (
+                                      <Badge variant="outline" className="w-fit bg-rose-50 text-rose-700 border-rose-200 font-normal flex items-center gap-1 text-[10px] px-1.5 py-0">
+                                        <AlertCircle className="h-3 w-3" /> Missing BOM
+                                      </Badge>
+                                    )
+                                  )}
+                                  {sku.product?.product_type && (
+                                    <span className="text-xs text-slate-500">{sku.product.product_type}</span>
                                   )}
                                 </div>
-                                <div>
-                                  <div className="font-medium text-slate-900 line-clamp-1 max-w-[250px]" title={sku.product?.product_name}>
-                                    {sku.product?.product_name || "Unknown Item"}
-                                  </div>
-                                  <div className="font-mono text-xs text-slate-500 mt-1">{sku.item_code}</div>
+                              </td>
+                              <td className="px-4 py-4 text-right">
+                                <span className="font-medium text-slate-900">{uoms?.find(u => u.id === (sku as any).uom_id)?.short_name || "-"}</span>
+                              </td>
+                              <td className="px-4 py-4 text-right">
+                                <div className="flex justify-end">
+                                  <Badge variant="outline" className={`font-mono text-base px-3 py-1 border-2 ${count > 0 ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : count < 0 ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+                                    {formatQuantityValue(count, uoms?.find(u => u.id === (sku as any).uom_id)?.unit_type)} {uoms?.find(u => u.id === (sku as any).uom_id)?.short_name || "units"}
+                                  </Badge>
                                 </div>
-                              </div>
-                            </td>
-                            <td className="px-4 py-4">
-                              <div className="flex flex-col gap-1.5">
-                                <Badge variant="secondary" className="w-fit bg-slate-100 text-slate-600 font-normal">
-                                  {sku.product?.item_type?.replace('_', ' ') || 'FINISHED GOODS'}
-                                </Badge>
-                                {sku.product?.item_type === 'FINISHED_GOODS' && (
-                                  sku.has_bom ? (
-                                    <Badge variant="outline" className="w-fit bg-emerald-50 text-emerald-700 border-emerald-200 font-normal flex items-center gap-1 text-[10px] px-1.5 py-0">
-                                      ✓ BOM Configured
-                                    </Badge>
-                                  ) : (
-                                    <Badge variant="outline" className="w-fit bg-rose-50 text-rose-700 border-rose-200 font-normal flex items-center gap-1 text-[10px] px-1.5 py-0">
-                                      <AlertCircle className="h-3 w-3" /> Missing BOM
-                                    </Badge>
-                                  )
-                                )}
-                                {sku.product?.product_type && (
-                                  <span className="text-xs text-slate-500">{sku.product.product_type}</span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-4 py-4 text-right">
-                              <span className="font-medium text-slate-900">{uoms?.find(u => u.id === (sku as any).uom_id)?.short_name || "-"}</span>
-                            </td>
-                            <td className="px-4 py-4 text-right">
-                              <div className="flex justify-end">
-                                <Badge variant="outline" className={`font-mono text-base px-3 py-1 border-2 ${count > 0 ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : count < 0 ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
-                                  {formatQuantityValue(count, uoms?.find(u => u.id === (sku as any).uom_id)?.unit_type)} {uoms?.find(u => u.id === (sku as any).uom_id)?.short_name || "units"}
-                                </Badge>
-                              </div>
-                            </td>
-                            <td className="px-4 py-4 text-center">
-                              <div className="flex items-center justify-center gap-1.5">
-                                <div className={`h-2 w-2 rounded-full ${confidenceScore > 90 ? 'bg-emerald-500' : confidenceScore > 70 ? 'bg-amber-400' : 'bg-rose-500'}`}></div>
-                                <span className={`text-xs font-medium ${confidenceScore > 90 ? 'text-emerald-700' : confidenceScore > 70 ? 'text-amber-700' : 'text-rose-700'}`}>{confidenceScore}%</span>
-                              </div>
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                              </td>
+                              <td className="px-4 py-4 text-center">
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <div className={`h-2 w-2 rounded-full ${confidenceScore > 90 ? 'bg-emerald-500' : confidenceScore > 70 ? 'bg-amber-400' : 'bg-rose-500'}`}></div>
+                                  <span className={`text-xs font-medium ${confidenceScore > 90 ? 'text-emerald-700' : confidenceScore > 70 ? 'text-amber-700' : 'text-rose-700'}`}>{confidenceScore}%</span>
+                                </div>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )
               ) : (
                 <div className="p-16 flex flex-col items-center justify-center text-slate-400 bg-slate-50/30">
                   <div className="h-16 w-16 bg-slate-100 rounded-full flex items-center justify-center mb-4 border">

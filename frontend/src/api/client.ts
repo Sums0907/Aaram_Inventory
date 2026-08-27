@@ -75,13 +75,13 @@ apiClient.interceptors.response.use(
         isRefreshing = true;
 
         try {
-          const currentRefresh = localStorage.getItem('aaram_refresh_token');
-          if (currentRefresh && currentRefresh !== refreshToken) {
+          const currentAccess = localStorage.getItem('aaram_identity_token');
+          const oldAccess = originalRequest.headers.Authorization?.replace('Bearer ', '');
+          if (currentAccess && currentAccess !== oldAccess) {
             // Another tab already refreshed
-            const newAccess = localStorage.getItem('aaram_identity_token');
             isRefreshing = false;
-            onRefreshed(newAccess);
-            originalRequest.headers.Authorization = `Bearer ${newAccess}`;
+            onRefreshed(currentAccess);
+            originalRequest.headers.Authorization = `Bearer ${currentAccess}`;
             return axios(originalRequest);
           }
 
@@ -99,6 +99,8 @@ apiClient.interceptors.response.use(
             
             isRefreshing = false;
             onRefreshed(data.access_token);
+            originalRequest.headers.Authorization = `Bearer ${data.access_token}`;
+            return axios(originalRequest);
           } else {
             throw new Error("No tokens in response");
           }

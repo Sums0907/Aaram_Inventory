@@ -11,17 +11,7 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
 
-export type TreeNodeType = 'ROOT' | 'INVENTORY_TYPE' | 'CATEGORY' | 'PRODUCT';
-
-export interface TreeNode {
-  id: string;
-  type: TreeNodeType;
-  label: string;
-  children: TreeNode[];
-  data?: any; // The original category or product data
-  itemCount?: number; // Total items under this node
-}
-
+import type { TreeNode, TreeNodeType } from './HierarchyNodeWorkspace';
 interface InventoryExplorerTreeProps {
   hierarchy: HierarchyResponse;
   selectedNodeId: string | null;

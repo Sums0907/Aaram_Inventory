@@ -1,10 +1,10 @@
 // @ts-nocheck
-import React from 'react';
+import React, { useState } from 'react';
 import type { TreeNode } from './InventoryExplorerTree';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Package, Layers, Activity, AlertTriangle, ArrowRightLeft, ShieldCheck, MoreHorizontal, Edit, Archive } from 'lucide-react';
+import { Package, Layers, Activity, AlertTriangle, ArrowRightLeft, ShieldCheck, MoreHorizontal, Edit, Archive, LayoutGrid, List } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useDashboardKPIs, useDashboardExceptions, useInventoryBalances, useInventoryPosition } from '@/api/inventory';
 import { useSKUs } from '@/api/masters';
@@ -24,6 +24,7 @@ interface HierarchyNodeWorkspaceProps {
 }
 
 export function HierarchyNodeWorkspace({ node, onCreateCategory, onCreateProduct, onEditProduct, onEditCategory, onArchiveCategory, onDeleteCategory, onArchiveProduct, onDeleteProduct, hierarchy }: HierarchyNodeWorkspaceProps) {
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const { data: kpis } = useDashboardKPIs();
   const { data: exceptions } = useDashboardExceptions();
   const { data: balances } = useInventoryBalances();
@@ -137,66 +138,77 @@ export function HierarchyNodeWorkspace({ node, onCreateCategory, onCreateProduct
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
-          {rootCategories.map((cat: any) => {
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pt-4">
+          {rootCategories.map((cat: any, index: number) => {
             const subCategories = hierarchy?.categories?.filter((c: any) => c.parent_id === cat.id) || [];
             const masterItems = hierarchy?.products?.filter((p: any) => p.category_id === cat.id) || [];
             
+            // A subtle gradient background based on index to make the grid look varied and premium
+            const gradients = [
+              "from-indigo-500 to-purple-600",
+              "from-blue-500 to-cyan-600",
+              "from-emerald-500 to-teal-600",
+              "from-rose-500 to-orange-600",
+              "from-slate-700 to-gray-900"
+            ];
+            const gradientClass = gradients[index % gradients.length];
+            
             return (
-              <Card key={cat.id} className="border-slate-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{cat.category_name}</CardTitle>
-                    <Badge variant="outline" className="text-xs font-normal">
+              <div 
+                key={cat.id} 
+                className="group relative flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer h-[320px]"
+                onClick={() => onNavigate?.({
+                  id: cat.id,
+                  type: 'CATEGORY',
+                  label: cat.category_name,
+                  children: [],
+                  data: cat
+                })}
+              >
+                {/* Visual Header */}
+                <div className={`h-36 w-full bg-gradient-to-br ${gradientClass} p-5 relative overflow-hidden`}>
+                  {/* Abstract background pattern */}
+                  <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '16px 16px' }}></div>
+                  
+                  <div className="relative z-10 flex justify-between items-start">
+                    <Badge variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-none backdrop-blur-md font-medium tracking-wide">
                       {cat.item_type.replace('_', ' ')}
                     </Badge>
+                    <div className="h-10 w-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-md">
+                      <Layers className="h-5 w-5 text-white" />
+                    </div>
                   </div>
-                  <CardDescription className="line-clamp-2">
-                    {cat.description || `Root category containing ${subCategories.length} subcategories and ${masterItems.length} items.`}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {subCategories.length > 0 ? (
-                    <div className="space-y-2">
-                      <p className="text-xs font-medium text-slate-500 mb-2 uppercase tracking-wider">Subcategories</p>
-                      <div className="flex flex-wrap gap-2">
-                        {subCategories.slice(0, 6).map((sub: any) => (
-                          <Badge key={sub.id} variant="secondary" className="font-normal bg-slate-100 text-slate-700 hover:bg-slate-200">
-                            {sub.category_name}
-                          </Badge>
-                        ))}
-                        {subCategories.length > 6 && (
-                          <Badge variant="secondary" className="font-normal text-slate-500">
-                            +{subCategories.length - 6} more
-                          </Badge>
-                        )}
-                      </div>
+                </div>
+
+                {/* Content */}
+                <div className="p-6 flex-1 flex flex-col relative bg-white">
+                  {/* Overlapping title block to create depth */}
+                  <div className="-mt-12 mb-3 z-20">
+                    <h3 className="text-xl font-bold text-slate-900 drop-shadow-sm bg-white inline-block px-3 py-1.5 rounded-lg border border-slate-100 shadow-sm leading-tight line-clamp-1">
+                      {cat.category_name}
+                    </h3>
+                  </div>
+                  
+                  <p className="text-sm text-slate-500 line-clamp-2 mb-4 leading-relaxed">
+                    {cat.description || "Manage products and inventory configurations for this master category."}
+                  </p>
+                  
+                  {/* Stats Grid */}
+                  <div className="mt-auto grid grid-cols-2 gap-3">
+                    <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 flex flex-col">
+                      <span className="text-2xl font-black text-indigo-600 tracking-tight">{masterItems.length}</span>
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-1">Master Items</span>
                     </div>
-                  ) : masterItems.length > 0 ? (
-                    <div className="space-y-2">
-                      <p className="text-xs font-medium text-slate-500 mb-2 uppercase tracking-wider">Master Items</p>
-                      <div className="space-y-1">
-                        {masterItems.slice(0, 4).map((item: any) => (
-                          <div key={item.id} className="text-sm text-slate-700 flex items-center truncate">
-                            <span className="w-1.5 h-1.5 rounded-full bg-slate-300 mr-2 flex-shrink-0" />
-                            <span className="truncate">{item.product_name}</span>
-                          </div>
-                        ))}
-                        {masterItems.length > 4 && (
-                          <div className="text-xs text-slate-400 pl-3 pt-1">
-                            +{masterItems.length - 4} more items
-                          </div>
-                        )}
-                      </div>
+                    <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 flex flex-col">
+                      <span className="text-2xl font-black text-slate-700 tracking-tight">{subCategories.length}</span>
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-1">Subcategories</span>
                     </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-6 text-center text-slate-400">
-                      <Layers className="h-8 w-8 mb-2 opacity-20" />
-                      <p className="text-sm">Empty Category</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                  </div>
+                  
+                  {/* Hover reveal action */}
+                  <div className="absolute inset-x-0 bottom-0 h-1 bg-indigo-500 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                </div>
+              </div>
             );
           })}
         </div>
@@ -392,60 +404,173 @@ export function HierarchyNodeWorkspace({ node, onCreateCategory, onCreateProduct
 
         return (
           <Card className="col-span-full">
-            <CardHeader>
-              <CardTitle>Inventory Items</CardTitle>
-              <CardDescription>Items belonging to this {node.type.toLowerCase().replace('_', ' ')}.</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div>
+                <CardTitle>Inventory Items</CardTitle>
+                <CardDescription>Items belonging to this {node.type.toLowerCase().replace('_', ' ')}.</CardDescription>
+              </div>
+              <div className="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200 h-10">
+                <button 
+                  onClick={() => setViewMode("grid")}
+                  className={`h-full px-3 rounded-md flex items-center justify-center transition-all duration-200 ${viewMode === "grid" ? "bg-white text-indigo-600 shadow-sm font-medium" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"}`}
+                  title="Grid View"
+                >
+                  <LayoutGrid className="h-4 w-4 mr-2" />
+                  Grid
+                </button>
+                <button 
+                  onClick={() => setViewMode("list")}
+                  className={`h-full px-3 rounded-md flex items-center justify-center transition-all duration-200 ${viewMode === "list" ? "bg-white text-indigo-600 shadow-sm font-medium" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"}`}
+                  title="List View"
+                >
+                  <List className="h-4 w-4 mr-2" />
+                  List
+                </button>
+              </div>
             </CardHeader>
             <CardContent>
               {itemsToDisplay.length > 0 ? (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Code</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Brand</TableHead>
-                        <TableHead className="text-right">Variants</TableHead>
-                        <TableHead className="text-right">Total Stock</TableHead>
-                        <TableHead className="w-[80px]"></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {itemsToDisplay.map((item: any) => (
-                        <TableRow key={item.id}>
-                          <TableCell className="font-medium">{item.product_code}</TableCell>
-                          <TableCell>{item.product_name}</TableCell>
-                          <TableCell>{item.brand || '-'}</TableCell>
-                          <TableCell className="text-right">{getProductVariantCount(item)}</TableCell>
-                          <TableCell className="text-right font-semibold">
-                            {getProductStock(item)}
-                          </TableCell>
-                          <TableCell>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => onEditProduct && onEditProduct(item.id, item.product_name)}>
-                                  <Edit className="h-4 w-4 mr-2" /> Edit
+                viewMode === "grid" ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pt-2">
+                  {itemsToDisplay.map((item: any) => {
+                    const stock = getProductStock(item);
+                    const variants = getProductVariantCount(item);
+                    // Determine stock status for color coding
+                    let stockStatusColor = "bg-emerald-500";
+                    let stockStatusText = "In Stock";
+                    if (stock === 0) {
+                      stockStatusColor = "bg-red-500";
+                      stockStatusText = "Out of Stock";
+                    } else if (stock < 20) {
+                      stockStatusColor = "bg-amber-500";
+                      stockStatusText = "Low Stock";
+                    }
+
+                    // A subtle gradient background based on ID to make the grid look varied and premium
+                    const gradients = [
+                      "from-indigo-100 to-purple-100",
+                      "from-blue-100 to-cyan-100",
+                      "from-emerald-100 to-teal-100",
+                      "from-rose-100 to-orange-100",
+                      "from-slate-100 to-gray-200"
+                    ];
+                    const gradientClass = gradients[item.product_name.length % gradients.length];
+
+                    return (
+                      <div 
+                        key={item.id}
+                        className="group relative flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all overflow-hidden cursor-pointer"
+                        onClick={() => onNavigate?.({
+                          id: item.id,
+                          type: 'PRODUCT',
+                          label: item.product_name,
+                          children: [],
+                          data: item
+                        })}
+                      >
+                        {/* Action Menu (Floating) */}
+                        <div className="absolute top-2 right-2 z-10" onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="secondary" size="icon" className="h-8 w-8 bg-white/80 backdrop-blur-sm hover:bg-white border shadow-sm">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => onEditProduct && onEditProduct(item.id, item.product_name)}>
+                                <Edit className="h-4 w-4 mr-2" /> Edit
+                              </DropdownMenuItem>
+                              {item.status === 'archived' ? (
+                                <DropdownMenuItem className="text-destructive font-medium" onClick={() => onDeleteProduct?.(item.id)}>
+                                  Delete Item
                                 </DropdownMenuItem>
-                                {item.status === 'archived' ? (
-                                  <DropdownMenuItem className="text-destructive font-medium" onClick={() => onDeleteProduct?.(item.id)}>
-                                    Delete Item
-                                  </DropdownMenuItem>
-                                ) : (
-                                  <DropdownMenuItem className="text-destructive" onClick={() => onArchiveProduct && onArchiveProduct(item.id)}>
-                                    <Archive className="h-4 w-4 mr-2" /> Archive
-                                  </DropdownMenuItem>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
+                              ) : (
+                                <DropdownMenuItem className="text-destructive" onClick={() => onArchiveProduct && onArchiveProduct(item.id)}>
+                                  <Archive className="h-4 w-4 mr-2" /> Archive
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+
+                        {/* Image Placeholder */}
+                        <div className={`h-40 w-full bg-gradient-to-br ${gradientClass} flex items-center justify-center opacity-80 group-hover:opacity-100 transition-opacity`}>
+                          <Package className="h-12 w-12 text-slate-800/20" />
+                        </div>
+
+                        {/* Details */}
+                        <div className="p-4 flex-1 flex flex-col">
+                          <div className="mb-1">
+                            <span className="text-xs font-medium text-slate-500 tracking-wider uppercase">{item.product_code}</span>
+                          </div>
+                          <h3 className="text-base font-semibold text-slate-900 leading-tight mb-2 line-clamp-2">
+                            {item.product_name}
+                          </h3>
+                          
+                          <div className="mt-auto pt-4 space-y-3">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-slate-500">{variants} {variants === 1 ? 'Variant' : 'Variants'}</span>
+                              <span className="font-medium text-slate-700">{item.brand || 'No Brand'}</span>
+                            </div>
+                            
+                            {/* Stock Indicator */}
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between text-xs font-medium">
+                                <span className="text-slate-600">{stockStatusText}</span>
+                                <span className="text-slate-900">{stock} units</span>
+                              </div>
+                              <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                                <div 
+                                  className={`h-full rounded-full ${stockStatusColor}`} 
+                                  style={{ width: `${Math.min(100, Math.max(5, (stock / 100) * 100))}%` }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto pt-2">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Item Name</TableHead>
+                          <TableHead>Code</TableHead>
+                          <TableHead>Brand</TableHead>
+                          <TableHead>Variants</TableHead>
+                          <TableHead className="text-right">Total Stock</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                      </TableHeader>
+                      <TableBody>
+                        {itemsToDisplay.map((item: any) => {
+                          const stock = getProductStock(item);
+                          const variants = getProductVariantCount(item);
+                          return (
+                            <TableRow key={item.id} className="cursor-pointer hover:bg-slate-50" onClick={() => onNavigate?.({ id: item.id, type: 'PRODUCT', label: item.product_name, children: [], data: item })}>
+                              <TableCell className="font-medium">
+                                <div className="flex items-center">
+                                  <div className="h-8 w-8 rounded bg-slate-100 flex items-center justify-center mr-3">
+                                    <Package className="h-4 w-4 text-slate-400" />
+                                  </div>
+                                  {item.product_name}
+                                </div>
+                              </TableCell>
+                              <TableCell>{item.product_code}</TableCell>
+                              <TableCell>{item.brand || '-'}</TableCell>
+                              <TableCell>{variants}</TableCell>
+                              <TableCell className="text-right">
+                                <Badge variant={stock > 0 ? "secondary" : "outline"}>{stock} units</Badge>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )
               ) : (
                 <div className="text-sm text-muted-foreground p-8 bg-muted/30 rounded-md text-center border border-dashed">
                   No items found. Click "New Inventory Item" from the context menu to create one.
