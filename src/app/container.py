@@ -7,6 +7,7 @@ from src.domains.matching.dependency_injection import MatchingContainer
 from src.domains.inventory.dependency_injection import InventoryContainer
 from src.domains.accounting.dependency_injection import AccountingContainer
 from src.domains.connectors.container import ConnectorsContainer
+from src.domains.context.dependency_injection import ContextContainer
 from src.app.services.pipeline_orchestrator import PipelineOrchestratorService
 from src.app.services.verification import VerificationService
 
@@ -42,6 +43,13 @@ class DomainsContainer(containers.DeclarativeContainer):
     accounting = providers.Container(
         AccountingContainer,
         db=core.db
+    )
+    context = providers.Container(
+        ContextContainer,
+        balance_calculator=inventory.balance_calculator,
+        ledger_service=inventory.ledger_service,
+        jobwork_service=inventory.job_work_service,
+        exception_service=inventory.exception_service
     )
 
     # Wire expense_service into goods_receipt_service at the cross-domain level

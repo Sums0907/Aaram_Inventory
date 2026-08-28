@@ -60,8 +60,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> CurrentIdenti
     applications = payload.get("applications", [])
     roles = payload.get("roles", [payload.get("role")] if payload.get("role") else [])
     
-    has_app = "AARAM_INVENTORY" in applications or "AARAM_BOOKS" in applications
-    has_admin_role = "AARAM_BOOKS_ADMIN" in roles or "AARAM_INVENTORY_ADMIN" in roles
+    has_app = "AARAM_INVENTORY" in applications or "AARAM_BOOKS" in applications or "AARAM_BRAIN_APP" in applications
+    has_admin_role = "AARAM_BOOKS_ADMIN" in roles or "AARAM_INVENTORY_ADMIN" in roles or "AARAM_BRAIN_CORE" in roles
     
     if not has_app and not has_admin_role:
         with open("/tmp/aaram_auth_debug.log", "a") as f:

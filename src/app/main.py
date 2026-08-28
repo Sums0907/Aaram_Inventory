@@ -42,6 +42,14 @@ def create_app() -> FastAPI:
     domains_container.core.config.from_dict(settings.model_dump())
     app.core_container = domains_container.core
     app.domains_container = domains_container
+    app.context_container = domains_container.context
+    
+    # Initialize the ContextEngine handlers
+    from src.domains.context.dependency_injection import ContextContainer
+    ContextContainer.init_engine(
+        engine=domains_container.context.context_engine(),
+        container=domains_container.context()
+    )
     
     domains_container.core().wire(packages=["src.app", "src.foundation"])
     domains_container.masters().wire(packages=["src.domains.masters"])
@@ -51,6 +59,7 @@ def create_app() -> FastAPI:
     domains_container.inventory().wire(packages=["src.domains.inventory", "src.api.v1"])
     domains_container.accounting().wire(packages=["src.domains.accounting", "src.api.v1"])
     domains_container.connectors().wire(packages=["src.domains.connectors"])
+    domains_container.context().wire(packages=["src.api.v1", "src.domains.context"])
     domains_container.wire(modules=[
         "src.api.v1.read_api_router", 
         "src.api.v1.master_data_router",
@@ -138,6 +147,8 @@ def create_app() -> FastAPI:
     api_v1_router.include_router(jw_payments_router)
     api_v1_router.include_router(jw_payables_router)
     api_v1_router.include_router(dashboard_router, prefix="/dashboard")
+    from src.api.v1.context_router import router as context_router
+    api_v1_router.include_router(context_router)
     api_v1_router.include_router(read_api_router)
     api_v1_router.include_router(master_data_router)
     

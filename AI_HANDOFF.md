@@ -469,29 +469,22 @@ If GRNI / unbilled purchase accounting is introduced, it must be deliberately de
 
 # 15. CURRENT PROJECT STATE
 
-**Status:** IN PROGRESS (Inventory ↔ Packer Bi-directional Sync Completed)
+**Status:** IN PROGRESS (Brain Core Integration - Stage F Protocol)
 
 **What was just completed:**
-1. Completed Phases 1-10 of the AaramBooks Inventory -> AaramPacking Outbound Synchronization.
-2. Implemented `InventoryOutboundEventModel` representing the Outbox table for queueing outgoing webhooks.
-3. Hooked `SKU_CREATED`, `SKU_UPDATED`, and `SKU_DEACTIVATED` event generation into `product_sku_importer.py` (restricted to FINISHED_GOODS).
-4. Hooked `STOCK_BALANCE_CHANGED` outbox events into `BalanceCalculatorService.recalculate_balance` to guarantee exact quantity projection.
-5. Implemented `OutboundEventDispatcherService` (`outbound_event_publisher.py`) with exponential retry, DEAD_LETTER handling, and AaramIdentity `PACKER_API_TOKEN` injection.
-6. Implemented `run_daily_sku_reconciliation` in `daily_reconciliation.py` to bulk push `SKU_MASTER_SNAPSHOT_SYNC` events.
-7. Generated the E2E implementation and certification reports in `docs/integrations/` and `docs/certification/`.
-8. The Packer agent successfully eradicated `sku_master` locally and transitioned entirely to read-only projections listening to these webhooks.
-9. Executed the `test_e2e_integration_certification.py` test suite. Fixed data payload mismatch (`skus` vs `snapshot`), fixed ORM delete interception issues in development, and verified idempotency. The integration is 100% successful and flawless.
-10. Proactively documented Bug #6 in `INVENTORY_BUGS_RESOLUTION_REPORT.md` outlining the payload and safety hook resolutions.
-11. Configured the FastAPI `lifespan` hook natively in `src/app/lifespan.py` to auto-schedule and manage the `OutboundEventDispatcherService` (every 30s) and `run_daily_sku_reconciliation` (every 24h) seamlessly on a background thread.
-12. Upgraded the `OutboundEventDispatcherService` outbox query with a `.with_for_update(skip_locked=True)` lock. This multi-worker safety feature guarantees that Uvicorn's 4 production workers cooperatively share the polling load without race conditions, eliminating the need for standalone worker containers.
-13. Augmented the E2E certification test suite (`test_e2e_integration_certification.py`) to execute and validate the `skip_locked` dispatcher query, as well as fixing a database safety violation on the Packer-side cleanup logic. The entire integration suite passes successfully.
-14. Investigated and resolved Bug 9 (Category Bulk Delete database guard crash) by switching to row-by-row deletes, and safeguarded the `unhandled_exception_handler` from crashing on read-only containers.
-15. Investigated and diagnosed Bug 10 (Master Data Export 500 CORS Error). Determined the issue to be Nginx proxy disk buffering limits on large Excel files. Updated `AaramInventory_Deployment_Runbook.md` with `proxy_max_temp_file_size 0` to fix the production deployment.
-16. Resolved an issue where BOM Names were incorrectly discarded during import updates. Implemented in-place metadata updates in `BOMImporter` and added a robust fallback in `BOMExporter` to derive names from the target product.
-17. Fixed three UI bugs in the Inventory Item Creation dialog: Corrected the UoM payload key to `uom_id`, added `category_id` to `SKUResponse` for proper Edit Item pre-filling, and filtered Master Items by the selected category to prevent silent backend overrides.
+1. Architected and implemented the Context Exposure Module (CEM) for AaramBooks Brain Core integration.
+2. Created Inventory-owned Stage F DTOs (`contracts.py`) completely isolated from Brain Core logic.
+3. Implemented `ContextEngine` for secure, blind capability dispatch.
+4. Mapped 4 key inventory capabilities to their physical handlers.
+5. Updated `get_current_user` in `src/foundation/authentication/dependencies.py` to natively authorize the `"AARAM_BRAIN_APP"` identity token.
+6. Exposed the `/api/v1/context/resolve` endpoint mapping physical URNs to RBAC permissions.
+7. Fixed the canonical Stage F contract response to correctly emit `provenance_metadata` (previously misunderstood as `provenance`).
+8. Fixed `DependencyInjector` wiring for lazy providers in the Context Engine to correctly resolve in both production and test environments.
+9. Validated that all Context API and Context Engine tests pass.
 
 **Current Blocker:**
 - None.
 
 **Next Steps:**
-- Validate the new UI fixes in production.
+- Deploy the updated AaramInventory CEM to Staging/Production (`api.inventory.aarambooks.cloud`) to resolve the routing 405 error.
+- Proceed to Staging E2E testing with Brain Core.
