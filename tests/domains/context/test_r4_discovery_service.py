@@ -11,6 +11,7 @@ from src.domains.context.dtos.integration_dtos import (
 from src.domains.context.semantic_resolvers import SemanticResolverRegistry
 from src.domains.context.contracts import EntityResolutionResult, ResolutionStatus
 from src.domains.inventory.repositories.balance import InventoryBalanceRepository
+from src.domains.inventory.repositories.movement import InventoryMovementRepository
 from src.domains.inventory.services.confidence_engine import ConfidenceEngine
 from src.domains.inventory.services.ledger_service import InventoryLedgerService
 from src.domains.inventory.models.balance import InventoryBalanceModel
@@ -33,12 +34,19 @@ def mock_ledger_service():
     return AsyncMock(spec=InventoryLedgerService)
 
 @pytest.fixture
-def service(mock_registry, mock_balance_repo, mock_confidence_engine, mock_ledger_service):
+def mock_movement_repo():
+    repo = AsyncMock(spec=InventoryMovementRepository)
+    repo.get_warehouse_balances.return_value = {}
+    return repo
+
+@pytest.fixture
+def service(mock_registry, mock_balance_repo, mock_confidence_engine, mock_ledger_service, mock_movement_repo):
     capability_registry = R4CapabilityRegistry()
     capability_registry.register(R4BalanceCapability(
         balance_calculator=AsyncMock(),
         balance_repository=mock_balance_repo,
-        confidence_engine=mock_confidence_engine
+        confidence_engine=mock_confidence_engine,
+        movement_repository=mock_movement_repo
     ))
     capability_registry.register(R4LedgerCapability(
         ledger_service=mock_ledger_service
@@ -204,3 +212,40 @@ async def test_r4_ledger_applicability_and_evidence(service, mock_registry, mock
     assert response.status == BusinessRealityStatus.EVIDENCE_AVAILABLE
     assert "ledger" in response.evidence_data
     mock_ledger_service.generate_ledger.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_r4_balance_global_evidence(service, mock_registry, mock_movement_repo, mock_confidence_engine):
+    mock_resolver = AsyncMock()
+    mock_resolver.resolve.return_value = EntityResolutionResult(
+        status=ResolutionStatus.RESOLVED,
+        semantic_identity="inventory.entity.sku",
+        original_value="Global",
+        target_type="UUID",
+        resolved_value=uuid.uuid4(),
+        resolved_type="UUID"
+    )
+    mock_registry.get_resolver.return_value = mock_resolver
+    
+    mock_movement_repo.get_global_balance.return_value = 500.0
+    mock_movement_repo.get_warehouse_balances.return_value = {"uuid-1": 500.0}
+    
+    confidence_response = MagicMock()
+    confidence_response.confidence_score = 100.0
+    confidence_response.factors = []
+    mock_confidence_engine.calculate_confidence.return_value = confidence_response
+    
+    request = create_request("RETRIEVE", [
+        ConversationalComponent(identity="inventory.entity.sku", operator="EQUALS", original_expression="Global", value="Global")
+    ])
+    
+    response = await service.discover(request)
+    assert response.status == BusinessRealityStatus.EVIDENCE_AVAILABLE
+    assert "balance" in response.evidence_data
+    assert response.evidence_data["balance"]["total_quantity"] == 500.0
+    assert response.evidence_data["balance"]["warehouse_id"] is None
+    
+    mock_movement_repo.get_global_balance.assert_called_once()
+    mock_confidence_engine.calculate_confidence.assert_called_once()
+    # verify calculate_confidence was called with warehouse_id=None
+    call_args = mock_confidence_engine.calculate_confidence.call_args
+    assert call_args[0][1] is None

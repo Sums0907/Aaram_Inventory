@@ -1,5 +1,5 @@
 from uuid import UUID
-from typing import List, Optional
+from typing import List, Optional, Dict
 from datetime import date
 from decimal import Decimal
 from sqlalchemy import select, func
@@ -52,6 +52,19 @@ class InventoryMovementRepository:
         result = await db_session.execute(stmt)
         balance = result.scalar()
         return Decimal(str(balance)) if balance is not None else Decimal("0")
+
+    async def get_warehouse_balances(self, sku_id: UUID, session: AsyncSession = None) -> Dict[str, Decimal]:
+        db_session = session or self.session
+        stmt = select(
+            InventoryMovementModel.warehouse_id,
+            func.sum(InventoryMovementModel.quantity)
+        ).where(
+            InventoryMovementModel.sku_id == sku_id,
+            InventoryMovementModel.status == "POSTED"
+        ).group_by(InventoryMovementModel.warehouse_id)
+        
+        result = await db_session.execute(stmt)
+        return {str(row[0]): Decimal(str(row[1] or 0)) for row in result.all() if row[0] is not None}
 
 
     async def get_movements_for_sku(self, sku_id: UUID) -> List[InventoryMovementModel]:

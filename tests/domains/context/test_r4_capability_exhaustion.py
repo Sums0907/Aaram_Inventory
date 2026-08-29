@@ -9,6 +9,7 @@ def test_r4_capability_exhaustion():
     container.balance_calculator.override(AsyncMock())
     container.balance_repository.override(AsyncMock())
     container.confidence_engine.override(AsyncMock())
+    container.movement_repository.override(AsyncMock())
     container.ledger_service.override(AsyncMock())
     container.jobwork_service.override(AsyncMock())
     container.exception_service.override(AsyncMock())

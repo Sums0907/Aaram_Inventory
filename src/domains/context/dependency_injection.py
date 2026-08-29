@@ -73,14 +73,17 @@ class ContextContainer(containers.DeclarativeContainer):
     
     balance_handler = providers.Factory(
         BalanceCapabilityHandler,
-        balance_calculator=balance_calculator
+        balance_calculator=balance_calculator,
+        movement_repository=movement_repository,
+        confidence_engine=confidence_engine
     )
 
     r4_balance_capability = providers.Factory(
         R4BalanceCapability,
         balance_calculator=balance_calculator,
         balance_repository=balance_repository,
-        confidence_engine=confidence_engine
+        confidence_engine=confidence_engine,
+        movement_repository=movement_repository
     )
 
     r4_ledger_capability = providers.Factory(
