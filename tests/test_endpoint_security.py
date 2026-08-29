@@ -17,7 +17,7 @@ def override_auth(applications, permissions):
 @pytest.mark.asyncio
 async def test_endpoint_security_valid_permission():
     """Test that a user WITH the right permission gets 200 (or validation error, not 401/403)."""
-    override_auth(["AARAM_BOOKS"], ["PRODUCT_CREATE"])
+    override_auth(["AARAM_BOOKS"], ["INVENTORY_PRODUCT_CREATE"])
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
             "/api/v1/masters/products", 
@@ -30,7 +30,7 @@ async def test_endpoint_security_valid_permission():
 @pytest.mark.asyncio
 async def test_endpoint_security_missing_permission():
     """Test that a user WITHOUT the right permission gets 403."""
-    override_auth(["AARAM_BOOKS"], ["CATALOG_VIEW"])
+    override_auth(["AARAM_BOOKS"], ["INVENTORY_CATALOG_VIEW"])
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
             "/api/v1/masters/products", 
@@ -42,7 +42,7 @@ async def test_endpoint_security_missing_permission():
 @pytest.mark.asyncio
 async def test_endpoint_security_wrong_application():
     """Test that a user in the wrong application gets 403."""
-    override_auth(["AARAM_PACKING"], ["PRODUCT_CREATE"])
+    override_auth(["AARAM_PACKING"], ["INVENTORY_CATALOG_VIEW"])
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
             "/api/v1/masters/products", 

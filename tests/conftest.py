@@ -1,4 +1,5 @@
 import os
+import sqlalchemy
 os.environ["DATABASE_ENV"] = "test"
 import pytest_asyncio
 import pytest
@@ -9,11 +10,21 @@ from src.foundation.configuration import get_settings
 from src.foundation.database.models import BaseModel
 from src.app.main import app
 
+from sqlalchemy.pool import NullPool
+
+@pytest.fixture(scope="session")
+def event_loop():
+    import asyncio
+    policy = asyncio.get_event_loop_policy()
+    loop = policy.new_event_loop()
+    yield loop
+    loop.close()
+
 settings = get_settings()
 # Use local Postgres for tests
-TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL", "postgresql+asyncpg://postgres:password@localhost:5433/inventory_dev")
+TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL", "postgresql+asyncpg://postgres:password@localhost:5433/inventory_test")
 
-test_engine = create_async_engine(TEST_DATABASE_URL, echo=False)
+test_engine = create_async_engine(TEST_DATABASE_URL, echo=False, poolclass=NullPool, connect_args={"prepared_statement_cache_size": 0})
 TestingSessionLocal = async_sessionmaker(bind=test_engine, class_=AsyncSession, expire_on_commit=False)
 
 from src.foundation.database.session import Database
@@ -45,7 +56,8 @@ async def setup_test_db():
     import src.domains.data_ingestion.models.import_summary
 
     async with test_engine.begin() as conn:
-        await conn.run_sync(BaseModel.metadata.drop_all)
+        await conn.execute(sqlalchemy.text("DROP SCHEMA public CASCADE"))
+        await conn.execute(sqlalchemy.text("CREATE SCHEMA public"))
         await conn.run_sync(BaseModel.metadata.create_all)
     yield
     async with test_engine.begin() as conn:
@@ -68,7 +80,7 @@ async def async_client() -> AsyncClient:
         name="test_admin",
         applications=["AARAM_BOOKS"],
         roles=["OWNER"],
-        permissions=["PRODUCT_VIEW", "PRODUCT_CREATE", "PRODUCT_UPDATE", "INVENTORY_RECEIPT_VIEW", "INVENTORY_RECEIPT_CREATE", "INVENTORY_RETURN_VIEW", "INVENTORY_RETURN_CREATE", "INVENTORY_ADJUSTMENT_CREATE", "INVENTORY_VERIFICATION_EXECUTE", "INVENTORY_EXCEPTION_VIEW", "INVENTORY_EXCEPTION_RESOLVE", "INVENTORY_TRANSFORMATION_CREATE", "INVENTORY_JOBWORK_VIEW", "INVENTORY_JOBWORK_MANAGE", "INVENTORY_ACTIVITY_VIEW", "CATALOG_VIEW", "MASTER_DATA_IMPORT"]
+        permissions=["INVENTORY_PRODUCT_VIEW", "INVENTORY_PRODUCT_CREATE", "INVENTORY_PRODUCT_UPDATE", "INVENTORY_RECEIPT_VIEW", "INVENTORY_RECEIPT_CREATE", "INVENTORY_RETURN_VIEW", "INVENTORY_RETURN_CREATE", "INVENTORY_ADJUSTMENT_CREATE", "INVENTORY_VERIFICATION_EXECUTE", "INVENTORY_EXCEPTION_VIEW", "INVENTORY_EXCEPTION_RESOLVE", "INVENTORY_TRANSFORMATION_CREATE", "INVENTORY_JOBWORK_VIEW", "INVENTORY_JOBWORK_MANAGE", "INVENTORY_ACTIVITY_VIEW", "INVENTORY_CATALOG_VIEW", "MASTER_DATA_IMPORT"]
     )
     app.dependency_overrides[get_current_user] = lambda: mock_user
     

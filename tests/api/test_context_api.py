@@ -32,14 +32,24 @@ async def test_resolve_capability_unauthorized(async_client: AsyncClient):
         }
     }
     
+    # We override the dependency for just this test to ensure it fails authorization
+    from src.app.main import app
+    from src.foundation.authentication.dependencies import get_current_user, CurrentUser
+    mock_unauth = CurrentUser(
+        user_id="unauth-123",
+        name="unauth",
+        applications=["AARAM_BOOKS"],
+        roles=[],
+        permissions=[]
+    )
+    app.dependency_overrides[get_current_user] = lambda: mock_unauth
+    
     response = await async_client.post("/api/v1/context/resolve", json=payload)
+    app.dependency_overrides.pop(get_current_user, None)
+    
     assert response.status_code == 200
     data = response.json()
     
-    # The mock user has 'PRODUCT_VIEW' but NOT 'INVENTORY_PRODUCT_VIEW' which we required,
-    # OR we can change the URN to ledger which requires 'INVENTORY_ACTIVITY_VIEW' which the mock user has.
-    # Let's test the balance capability again but since mock user does NOT have 'INVENTORY_PRODUCT_VIEW',
-    # it WILL return UNAUTHORIZED.
     assert data["status"] == "UNAUTHORIZED"
     assert "Missing required physical permission" in data["error_message"]
 
