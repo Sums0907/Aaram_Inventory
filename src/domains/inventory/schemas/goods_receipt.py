@@ -26,7 +26,7 @@ class GoodsReceiptBase(BaseSchema):
     receipt_type: GoodsReceiptType = GoodsReceiptType.RAW_MATERIAL_RECEIPT
 
 class GoodsReceiptCreate(GoodsReceiptBase):
-    grn_number: str = Field(..., max_length=255)
+    grn_number: Optional[str] = Field(None, max_length=255)
     items: List[GoodsReceiptItemCreate] = Field(..., min_length=1)
 
 class GoodsReceiptResponse(GoodsReceiptBase):

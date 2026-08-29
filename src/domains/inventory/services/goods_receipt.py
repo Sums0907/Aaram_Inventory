@@ -41,6 +41,26 @@ class GoodsReceiptService:
         session = self.repository.session
         
         try:
+            if not schema.grn_number:
+                from sqlalchemy import select
+                from src.foundation.database.models import SequenceModel
+                today = schema.receipt_date
+                seq_name = f"GRN-{today.strftime('%d%m%y')}"
+                
+                stmt = select(SequenceModel).where(SequenceModel.sequence_name == seq_name).with_for_update()
+                res = await session.execute(stmt)
+                seq = res.scalars().first()
+                
+                if not seq:
+                    seq = SequenceModel(sequence_name=seq_name, last_value=1)
+                    session.add(seq)
+                    seq_val = 1
+                else:
+                    seq.last_value += 1
+                    seq_val = seq.last_value
+                    
+                schema.grn_number = f"{seq_name}-{seq_val:03d}"
+
             existing = await self.repository.get_by_grn_number(schema.grn_number)
             if existing:
                 raise ValidationException(message=f"GRN number {schema.grn_number} already exists")

@@ -23,6 +23,26 @@ class PurchaseReturnService:
         return await self.repository.get_all(skip=skip, limit=limit)
 
     async def create(self, schema: PurchaseReturnCreate, created_by: uuid.UUID) -> PurchaseReturn:
+        if not schema.return_number:
+            from sqlalchemy import select
+            from src.foundation.database.models import SequenceModel
+            today = schema.return_date
+            seq_name = f"PRT-{today.strftime('%d%m%y')}"
+            
+            stmt = select(SequenceModel).where(SequenceModel.sequence_name == seq_name).with_for_update()
+            res = await self.repository.session.execute(stmt)
+            seq = res.scalars().first()
+            
+            if not seq:
+                seq = SequenceModel(sequence_name=seq_name, last_value=1)
+                self.repository.session.add(seq)
+                seq_val = 1
+            else:
+                seq.last_value += 1
+                seq_val = seq.last_value
+                
+            schema.return_number = f"{seq_name}-{seq_val:03d}"
+
         existing = await self.repository.get_by_return_number(schema.return_number)
         if existing:
             raise ValidationException(message=f"Return number {schema.return_number} already exists")

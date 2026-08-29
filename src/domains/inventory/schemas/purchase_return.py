@@ -23,7 +23,7 @@ class PurchaseReturnBase(BaseSchema):
     remarks: Optional[str] = None
 
 class PurchaseReturnCreate(PurchaseReturnBase):
-    return_number: str = Field(..., max_length=255)
+    return_number: Optional[str] = Field(None, max_length=255)
     items: List[PurchaseReturnItemCreate] = Field(..., min_length=1)
 
 class PurchaseReturnResponse(PurchaseReturnBase):
