@@ -14,3 +14,10 @@ class BaseCapabilityHandler(ABC):
         Processes the requirement and returns the result according to Stage F semantics.
         """
         pass
+
+    def get_target_parameters(self) -> dict[str, str]:
+        """
+        Returns a mapping of semantic constraints (e.g. 'inventory.entity.sku') 
+        to their expected physical representation types (e.g. 'UUID').
+        """
+        return {}

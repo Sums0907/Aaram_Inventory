@@ -7,11 +7,32 @@ from pydantic import BaseModel, Field
 # completely independent of Brain's Python package structure.
 # -------------------------------------------------------------------------
 
+from enum import Enum
+
+class ResolutionStatus(str, Enum):
+    RESOLVED = "RESOLVED"
+    NOT_FOUND = "NOT_FOUND"
+    AMBIGUOUS = "AMBIGUOUS"
+    RESOLUTION_UNAVAILABLE = "RESOLUTION_UNAVAILABLE"
+    INVALID = "INVALID"
+
+class EntityResolutionResult(BaseModel):
+    status: ResolutionStatus
+    semantic_identity: str
+    original_value: Any
+    resolved_value: Optional[Any] = None
+    resolved_type: Optional[str] = None
+    target_type: str
+    resolver_provenance: Optional[str] = None
+    candidates: Optional[List[Any]] = None
+    error_reason: Optional[str] = None
+
 class SemanticConstraint(BaseModel):
     identity: str
     operator: str
     bound_value: Any
     constraint_type: Optional[str] = None # e.g. ENTITY, TEMPORAL
+    resolution: Optional[EntityResolutionResult] = None
 
 class OriginalRequirement(BaseModel):
     semantic_intent: str

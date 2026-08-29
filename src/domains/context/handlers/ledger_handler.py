@@ -9,21 +9,46 @@ class LedgerCapabilityHandler(BaseCapabilityHandler):
     def __init__(self, ledger_service: InventoryLedgerService):
         self.ledger_service = ledger_service
 
+    def get_target_parameters(self) -> dict[str, str]:
+        return {
+            "inventory.entity.sku": "UUID",
+            "inventory.entity.warehouse": "UUID",
+            "inventory.temporal.month": "STRING"
+        }
+
     async def handle(self, request: ContextCapabilityRequest) -> ContextCapabilityResult:
         sku_id = None
+        warehouse_id = None
+        month_str = None
         min_date = None
         max_date = None
         
         # Parse constraints
         for constraint in request.requirement.semantic_constraints:
             if constraint.identity == "inventory.entity.sku" and constraint.operator == "EQUALS":
-                try:
-                    sku_id = uuid.UUID(str(constraint.bound_value))
-                except ValueError:
-                    return ContextCapabilityResult(
-                        status="ERROR",
-                        error_message="Invalid UUID format for inventory.entity.sku"
-                    )
+                if hasattr(constraint, "resolution") and constraint.resolution and constraint.resolution.status == "RESOLVED":
+                    sku_id = constraint.resolution.resolved_value
+                else:
+                    try:
+                        sku_id = uuid.UUID(str(constraint.bound_value))
+                    except ValueError:
+                        return ContextCapabilityResult(
+                            status="ERROR",
+                            error_message="Invalid UUID format for inventory.entity.sku"
+                        )
+            elif constraint.identity == "inventory.entity.warehouse" and constraint.operator == "EQUALS":
+                if hasattr(constraint, "resolution") and constraint.resolution and constraint.resolution.status == "RESOLVED":
+                    warehouse_id = constraint.resolution.resolved_value
+                else:
+                    try:
+                        warehouse_id = uuid.UUID(str(constraint.bound_value))
+                    except ValueError:
+                        return ContextCapabilityResult(
+                            status="ERROR",
+                            error_message="Invalid UUID format for inventory.entity.warehouse"
+                        )
+            elif constraint.identity == "inventory.temporal.month" and constraint.operator == "EQUALS":
+                month_str = str(constraint.bound_value)
             elif constraint.identity == "inventory.temporal.posting_date":
                 try:
                     parsed_date = datetime.fromisoformat(str(constraint.bound_value).replace("Z", "+00:00")).date()

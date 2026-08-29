@@ -9,33 +9,48 @@ class JobworkStatusCapabilityHandler(BaseCapabilityHandler):
     def __init__(self, jobwork_service: JobWorkService):
         self.jobwork_service = jobwork_service
 
+    def get_target_parameters(self) -> dict[str, str]:
+        return {
+            "inventory.entity.job_worker": "UUID",
+            "inventory.entity.sku": "UUID",
+            "inventory.status.job_work": "STRING"
+        }
+
     async def handle(self, request: ContextCapabilityRequest) -> ContextCapabilityResult:
         job_worker_id = None
         sku_id = None
         
         # Parse constraints
         for constraint in request.requirement.semantic_constraints:
-            if constraint.identity == "inventory.entity.jobwork_vendor" and constraint.operator == "EQUALS":
-                try:
-                    job_worker_id = uuid.UUID(str(constraint.bound_value))
-                except ValueError:
-                    return ContextCapabilityResult(
-                        status="ERROR",
-                        error_message="Invalid UUID format for inventory.entity.jobwork_vendor"
-                    )
+            if constraint.identity == "inventory.entity.job_worker" and constraint.operator == "EQUALS":
+                if hasattr(constraint, "resolution") and constraint.resolution and constraint.resolution.status == "RESOLVED":
+                    job_worker_id = constraint.resolution.resolved_value
+                else:
+                    try:
+                        job_worker_id = uuid.UUID(str(constraint.bound_value))
+                    except ValueError:
+                        return ContextCapabilityResult(
+                            status="ERROR",
+                            error_message="Invalid UUID format for inventory.entity.job_worker"
+                        )
             elif constraint.identity == "inventory.entity.sku" and constraint.operator == "EQUALS":
-                try:
-                    sku_id = uuid.UUID(str(constraint.bound_value))
-                except ValueError:
-                    return ContextCapabilityResult(
-                        status="ERROR",
-                        error_message="Invalid UUID format for inventory.entity.sku"
-                    )
+                if hasattr(constraint, "resolution") and constraint.resolution and constraint.resolution.status == "RESOLVED":
+                    sku_id = constraint.resolution.resolved_value
+                else:
+                    try:
+                        sku_id = uuid.UUID(str(constraint.bound_value))
+                    except ValueError:
+                        return ContextCapabilityResult(
+                            status="ERROR",
+                            error_message="Invalid UUID format for inventory.entity.sku"
+                        )
+            elif constraint.identity == "inventory.status.job_work" and constraint.operator == "EQUALS":
+                status_filter = str(constraint.bound_value).upper()
 
         if not job_worker_id:
             return ContextCapabilityResult(
                 status="ERROR",
-                error_message="Missing required exact constraint for jobwork_vendor."
+                error_message="Missing required exact constraint for inventory.entity.job_worker."
             )
 
         try:

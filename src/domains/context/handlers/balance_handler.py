@@ -9,28 +9,40 @@ class BalanceCapabilityHandler(BaseCapabilityHandler):
     def __init__(self, balance_calculator: BalanceCalculatorService):
         self.balance_calculator = balance_calculator
 
+    def get_target_parameters(self) -> dict[str, str]:
+        return {
+            "inventory.entity.sku": "UUID",
+            "inventory.entity.warehouse": "UUID"
+        }
+
     async def handle(self, request: ContextCapabilityRequest) -> ContextCapabilityResult:
         sku_id = None
         warehouse_id = None
 
-        # Parse constraints
+        # Parse constraints (Engine has already resolved them to UUIDs)
         for constraint in request.requirement.semantic_constraints:
             if constraint.identity == "inventory.entity.sku" and constraint.operator == "EQUALS":
-                try:
-                    sku_id = uuid.UUID(str(constraint.bound_value))
-                except ValueError:
-                    return ContextCapabilityResult(
-                        status="ERROR",
-                        error_message="Invalid UUID format for inventory.entity.sku"
-                    )
+                if hasattr(constraint, "resolution") and constraint.resolution and constraint.resolution.status == "RESOLVED":
+                    sku_id = constraint.resolution.resolved_value
+                else:
+                    try:
+                        sku_id = uuid.UUID(str(constraint.bound_value))
+                    except ValueError:
+                        return ContextCapabilityResult(
+                            status="ERROR",
+                            error_message="Invalid UUID format for inventory.entity.sku"
+                        )
             elif constraint.identity == "inventory.entity.warehouse" and constraint.operator == "EQUALS":
-                try:
-                    warehouse_id = uuid.UUID(str(constraint.bound_value))
-                except ValueError:
-                    return ContextCapabilityResult(
-                        status="ERROR",
-                        error_message="Invalid UUID format for inventory.entity.warehouse"
-                    )
+                if hasattr(constraint, "resolution") and constraint.resolution and constraint.resolution.status == "RESOLVED":
+                    warehouse_id = constraint.resolution.resolved_value
+                else:
+                    try:
+                        warehouse_id = uuid.UUID(str(constraint.bound_value))
+                    except ValueError:
+                        return ContextCapabilityResult(
+                            status="ERROR",
+                            error_message="Invalid UUID format for inventory.entity.warehouse"
+                        )
 
         if not sku_id or not warehouse_id:
             return ContextCapabilityResult(

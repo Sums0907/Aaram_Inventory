@@ -49,7 +49,15 @@ class DomainsContainer(containers.DeclarativeContainer):
         balance_calculator=inventory.balance_calculator,
         ledger_service=inventory.ledger_service,
         jobwork_service=inventory.job_work_service,
-        exception_service=inventory.exception_service
+        exception_service=inventory.exception_service,
+        db_session=core.db.provided.scoped_session.call(),
+        balance_repository=inventory.balance_repository,
+        movement_repository=inventory.movement_repository,
+        confidence_engine=inventory.confidence_engine,
+        goods_receipt_service=inventory.goods_receipt_service,
+        purchase_return_service=inventory.purchase_return_service,
+        transformation_engine=inventory.transformation_engine,
+        movement_service=inventory.movement_service
     )
 
     # Wire expense_service into goods_receipt_service at the cross-domain level

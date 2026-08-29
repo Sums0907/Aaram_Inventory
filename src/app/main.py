@@ -148,7 +148,9 @@ def create_app() -> FastAPI:
     api_v1_router.include_router(jw_payables_router)
     api_v1_router.include_router(dashboard_router, prefix="/dashboard")
     from src.api.v1.context_router import router as context_router
+    from src.api.v1.cem_router import router as cem_router
     api_v1_router.include_router(context_router)
+    api_v1_router.include_router(cem_router)
     api_v1_router.include_router(read_api_router)
     api_v1_router.include_router(master_data_router)
     

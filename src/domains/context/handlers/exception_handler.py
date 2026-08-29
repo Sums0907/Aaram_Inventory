@@ -9,20 +9,31 @@ class ExceptionStatusCapabilityHandler(BaseCapabilityHandler):
     def __init__(self, exception_service: InventoryExceptionService):
         self.exception_service = exception_service
 
+    def get_target_parameters(self) -> dict[str, str]:
+        return {
+            "inventory.entity.sku": "UUID"
+        }
+
     async def handle(self, request: ContextCapabilityRequest) -> ContextCapabilityResult:
         sku_id = None
         min_date = None
+        status_filter = None
         
         # Parse constraints
         for constraint in request.requirement.semantic_constraints:
             if constraint.identity == "inventory.entity.sku" and constraint.operator == "EQUALS":
-                try:
-                    sku_id = uuid.UUID(str(constraint.bound_value))
-                except ValueError:
-                    return ContextCapabilityResult(
-                        status="ERROR",
-                        error_message="Invalid UUID format for inventory.entity.sku"
-                    )
+                if hasattr(constraint, "resolution") and constraint.resolution and constraint.resolution.status == "RESOLVED":
+                    sku_id = constraint.resolution.resolved_value
+                else:
+                    try:
+                        sku_id = uuid.UUID(str(constraint.bound_value))
+                    except ValueError:
+                        return ContextCapabilityResult(
+                            status="ERROR",
+                            error_message="Invalid UUID format for inventory.entity.sku"
+                        )
+            elif constraint.identity == "inventory.status.exception" and constraint.operator == "EQUALS":
+                status_filter = str(constraint.bound_value).upper()
             elif constraint.identity == "inventory.temporal.exception_date":
                 try:
                     parsed_date = datetime.fromisoformat(str(constraint.bound_value).replace("Z", "+00:00")).date()
