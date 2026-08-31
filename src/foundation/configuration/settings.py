@@ -53,6 +53,6 @@ def get_settings() -> Settings:
         raise ValueError("AUTH_MODE='local' is forbidden in production. Must use 'aaramidentity'.")
         
     if not settings.IDENTITY_SERVICE_URL:
-        settings.IDENTITY_SERVICE_URL = "https://api.identity.aarambooks.cloud" if settings.ENVIRONMENT == "production" else "http://localhost:9000"
+        settings.IDENTITY_SERVICE_URL = "https://api-identity.aarambooks.cloud" if settings.ENVIRONMENT == "production" else "http://localhost:9000"
         
     return settings

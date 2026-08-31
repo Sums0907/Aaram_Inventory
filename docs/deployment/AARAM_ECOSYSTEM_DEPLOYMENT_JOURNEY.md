@@ -33,7 +33,7 @@ This document serves as a comprehensive "Brain Dump" of the AaramIdentity deploy
 
 ## 4. Frontend API Routing (The Hardcoded Localhost Bug)
 **The Problem**: The React/Next.js frontend was trying to make API calls to `http://localhost:8000` from the user's browser, which failed in production.
-**The Solution**: We had to inject the production API URL dynamically. We used a `sed` command during deployment to replace the local API URL in `config.js` with `https://api.identity.aarambooks.cloud`.
+**The Solution**: We had to inject the production API URL dynamically. We used a `sed` command during deployment to replace the local API URL in `config.js` with `https://api-identity.aarambooks.cloud`.
 
 **CRITICAL GOTCHA FOR FUTURE DEPLOYMENTS**:
 - Ensure the frontend for Inventory/Packing is configured to hit the public `https://api...` endpoint, not a local Docker network name or localhost.

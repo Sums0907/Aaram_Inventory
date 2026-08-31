@@ -61,14 +61,16 @@ function GlobalErrorFallback({ error, resetErrorBoundary }: any) {
 }
 
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
+import { WarehouseProvider } from "@/contexts/WarehouseContext"
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <ErrorBoundary FallbackComponent={GlobalErrorFallback} onReset={() => window.location.href = '/'}>
-          <Routes>
-            <Route element={<ProtectedRoute />}>
+        <WarehouseProvider>
+          <ErrorBoundary FallbackComponent={GlobalErrorFallback} onReset={() => window.location.href = '/'}>
+            <Routes>
+              <Route element={<ProtectedRoute />}>
               <Route element={<AppLayout />}>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<DashboardPage />} />
@@ -110,8 +112,8 @@ function App() {
               </Route>
             </Route>
           </Routes>
-
         </ErrorBoundary>
+        </WarehouseProvider>
         <Toaster />
       </BrowserRouter>
     </QueryClientProvider>

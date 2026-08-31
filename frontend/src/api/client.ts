@@ -18,7 +18,7 @@ const API_BASE_URL =
 
 // BUG FIX #2: Use IDENTITY_API_URL (backend) for refresh calls, not IDENTITY_URL (frontend UI).
 // On localhost, IDENTITY_API_URL = http://127.0.0.1:9000
-// On production, IDENTITY_API_URL = https://api.identity.aarambooks.cloud
+// On production, IDENTITY_API_URL = https://api-identity.aarambooks.cloud
 function getIdentityApiUrl(): string {
   return (
     window.AARAM_CONFIG?.IDENTITY_API_URL ||
@@ -82,7 +82,7 @@ apiClient.interceptors.response.use(
             isRefreshing = false;
             onRefreshed(currentAccess);
             originalRequest.headers.Authorization = `Bearer ${currentAccess}`;
-            return axios(originalRequest);
+            return apiClient(originalRequest);
           }
 
           const refreshUrl = `${getIdentityApiUrl()}/auth/refresh`;
@@ -100,7 +100,7 @@ apiClient.interceptors.response.use(
             isRefreshing = false;
             onRefreshed(data.access_token);
             originalRequest.headers.Authorization = `Bearer ${data.access_token}`;
-            return axios(originalRequest);
+            return apiClient(originalRequest);
           } else {
             throw new Error("No tokens in response");
           }
@@ -120,7 +120,7 @@ apiClient.interceptors.response.use(
       return new Promise((resolve) => {
         subscribeTokenRefresh((newToken) => {
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
-          resolve(axios(originalRequest));
+          resolve(apiClient(originalRequest));
         });
       });
     }

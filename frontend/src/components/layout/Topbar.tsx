@@ -10,6 +10,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { AccountMenu } from "./AccountMenu"
+import { WarehouseSelector } from "./WarehouseSelector"
 
 const GLOBAL_NAV_ITEMS = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -65,6 +66,8 @@ export function Topbar() {
       
       {/* Global Actions */}
       <div className="flex items-center gap-4 shrink-0">
+        <WarehouseSelector />
+        
         {hasPermission("INVENTORY_PRODUCT_CREATE") && (
           <Button variant="outline" size="sm" className="gap-2 border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white">
             <RefreshCw className="h-4 w-4" />

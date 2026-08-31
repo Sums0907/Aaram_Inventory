@@ -1,8 +1,6 @@
 // @ts-nocheck
 import { useState, useEffect } from 'react';
 
-// AaramIdentity Authentication Adapter
-// This acts purely as a UX interface. Backend is the source of truth for all security.
 export interface AaramUser {
   user_id: string;
   name: string;
@@ -53,35 +51,32 @@ function getInitialAuthState(): AaramUser {
     }
 
     const token = localStorage.getItem('aaram_identity_token');
+    const refreshToken = localStorage.getItem('aaram_refresh_token');
+
     if (token) {
       const payload = decodeJWTPayload(token);
       if (payload && payload.exp * 1000 > Date.now()) {
         // Access token is still valid — use it immediately
         return buildUserFromPayload(payload);
       }
-      // BUG FIX #1: Access token expired — do NOT delete the refresh token here.
-      // The axios interceptor in client.ts will silently refresh using the refresh token
-      // on the first 401 response. Only remove the stale access token.
+      // Access token expired
       localStorage.removeItem('aaram_identity_token');
+    }
 
-      // If a refresh token exists, optimistically mark as authenticated so the
-      // UI doesn't flash to the login screen. The first API call will trigger a
-      // silent refresh and update the state. If refresh fails, client.ts redirects.
-      const refreshToken = localStorage.getItem('aaram_refresh_token');
-      if (refreshToken) {
-        const refreshPayload = decodeJWTPayload(refreshToken);
-        if (refreshPayload && refreshPayload.exp * 1000 > Date.now()) {
-          // Refresh token is still valid — return last-known user state if available
-          const cachedUser = localStorage.getItem('aaram_cached_user');
-          if (cachedUser) {
-            try {
-              return { ...JSON.parse(cachedUser), isAuthenticated: true };
-            } catch (e) { /* fall through */ }
-          }
-        } else {
-          // Refresh token also expired — full logout is legitimate
-          localStorage.removeItem('aaram_refresh_token');
+    // If access token was missing or expired, check if we have a valid refresh token
+    if (refreshToken) {
+      const refreshPayload = decodeJWTPayload(refreshToken);
+      if (refreshPayload && refreshPayload.exp * 1000 > Date.now()) {
+        // Refresh token is still valid — return last-known user state if available
+        const cachedUser = localStorage.getItem('aaram_cached_user');
+        if (cachedUser) {
+          try {
+            return { ...JSON.parse(cachedUser), isAuthenticated: true };
+          } catch (e) { /* fall through */ }
         }
+      } else {
+        // Refresh token also expired — full logout is legitimate
+        localStorage.removeItem('aaram_refresh_token');
       }
     }
   }
@@ -100,8 +95,6 @@ export function useAuth() {
   const [user, setUser] = useState<AaramUser>(getInitialAuthState);
 
   useEffect(() => {
-    // Cache the user profile whenever it is authenticated so we can restore
-    // it optimistically after an access token expiry (while refresh is in flight)
     if (user.isAuthenticated) {
       localStorage.setItem('aaram_cached_user', JSON.stringify({
         user_id: user.user_id,
@@ -113,9 +106,7 @@ export function useAuth() {
     }
   }, [user]);
 
-  // BUG FIX #4: Proactive refresh — update user state from new token after silent refresh
   useEffect(() => {
-    // Listen for storage changes (e.g. when client.ts writes a new access token)
     const onStorage = (e: StorageEvent) => {
       if (e.key === 'aaram_identity_token' && e.newValue) {
         const payload = decodeJWTPayload(e.newValue);

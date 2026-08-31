@@ -27,6 +27,7 @@ import { Plus, Trash2, Info, ArrowRight, Settings2 } from "lucide-react"
 import { useCreateGoodsReceipt } from "@/api/goods-receipts"
 import { useSuppliers } from "@/api/suppliers"
 import { useSKUs, useUnitsOfMeasure } from "@/api/masters"
+import { useWarehouse } from "@/contexts/WarehouseContext"
 import { useBOMs } from "@/api/boms"
 import { usePendingStock } from "@/api/job-works"
 import { useToast } from "@/hooks/use-toast"
@@ -71,7 +72,8 @@ export function GRNFormDialog({ open, onOpenChange, defaultSkuId }: GRNFormDialo
   const suppliers = suppliersData?.data || []
 
   // Hardcoded Test Warehouse ID (Matches test_inventory.db)
-  const warehouseId = "dbcfca97-fc1d-4466-815f-a843072a14be" 
+  const { selectedWarehouseId } = useWarehouse()
+  const warehouseId = selectedWarehouseId || "" 
 
   const generateGrnNumber = () => {
     const year = new Date().getFullYear();

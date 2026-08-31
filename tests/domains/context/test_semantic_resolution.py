@@ -57,7 +57,7 @@ async def test_already_target_compatible_value(base_request):
     registry = SemanticResolverRegistry(
         sku_resolver_provider=lambda: mock_resolver,
         warehouse_resolver_provider=lambda: None,
-        job_worker_resolver_provider=lambda: None
+        job_worker_resolver_provider=lambda: None, exception_resolver_provider=lambda: None, supplier_resolver_provider=lambda: None
     )
     engine = ContextEngine(registry)
     engine.register_handler("urn:test", lambda: MockTargetHandler({"inventory.entity.sku": "UUID"}))
@@ -85,7 +85,7 @@ async def test_semantic_sku_resolution(base_request):
     registry = SemanticResolverRegistry(
         sku_resolver_provider=lambda: mock_resolver,
         warehouse_resolver_provider=lambda: None,
-        job_worker_resolver_provider=lambda: None
+        job_worker_resolver_provider=lambda: None, exception_resolver_provider=lambda: None, supplier_resolver_provider=lambda: None
     )
     engine = ContextEngine(registry)
     engine.register_handler("urn:test", lambda: MockTargetHandler({"inventory.entity.sku": "UUID"}))
@@ -115,7 +115,7 @@ async def test_not_found(base_request):
     registry = SemanticResolverRegistry(
         sku_resolver_provider=lambda: mock_resolver,
         warehouse_resolver_provider=lambda: None,
-        job_worker_resolver_provider=lambda: None
+        job_worker_resolver_provider=lambda: None, exception_resolver_provider=lambda: None, supplier_resolver_provider=lambda: None
     )
     engine = ContextEngine(registry)
     engine.register_handler("urn:test", lambda: MockTargetHandler({"inventory.entity.sku": "UUID"}))
@@ -139,7 +139,7 @@ async def test_ambiguous(base_request):
     registry = SemanticResolverRegistry(
         sku_resolver_provider=lambda: mock_resolver,
         warehouse_resolver_provider=lambda: None,
-        job_worker_resolver_provider=lambda: None
+        job_worker_resolver_provider=lambda: None, exception_resolver_provider=lambda: None, supplier_resolver_provider=lambda: None
     )
     engine = ContextEngine(registry)
     engine.register_handler("urn:test", lambda: MockTargetHandler({"inventory.entity.sku": "UUID"}))
@@ -163,7 +163,7 @@ async def test_resolution_unavailable(base_request):
     registry = SemanticResolverRegistry(
         sku_resolver_provider=lambda: mock_resolver,
         warehouse_resolver_provider=lambda: None,
-        job_worker_resolver_provider=lambda: None
+        job_worker_resolver_provider=lambda: None, exception_resolver_provider=lambda: None, supplier_resolver_provider=lambda: None
     )
     engine = ContextEngine(registry)
     engine.register_handler("urn:test", lambda: MockTargetHandler({"inventory.entity.sku": "UUID"}))
@@ -186,7 +186,7 @@ async def test_invalid_target_representation(base_request):
     registry = SemanticResolverRegistry(
         sku_resolver_provider=lambda: mock_resolver,
         warehouse_resolver_provider=lambda: None,
-        job_worker_resolver_provider=lambda: None
+        job_worker_resolver_provider=lambda: None, exception_resolver_provider=lambda: None, supplier_resolver_provider=lambda: None
     )
     engine = ContextEngine(registry)
     engine.register_handler("urn:test", lambda: MockTargetHandler({"inventory.entity.sku": "INTEGER"}))
@@ -221,7 +221,7 @@ async def test_multiple_semantic_identifiers(base_request):
     registry = SemanticResolverRegistry(
         sku_resolver_provider=lambda: mock_sku_resolver,
         warehouse_resolver_provider=lambda: mock_wh_resolver,
-        job_worker_resolver_provider=lambda: None
+        job_worker_resolver_provider=lambda: None, exception_resolver_provider=lambda: None, supplier_resolver_provider=lambda: None
     )
     
     engine = ContextEngine(registry)
@@ -253,7 +253,7 @@ async def test_target_capability_other_than_uuid(base_request):
     registry = SemanticResolverRegistry(
         sku_resolver_provider=lambda: None,
         warehouse_resolver_provider=lambda: None,
-        job_worker_resolver_provider=lambda: None
+        job_worker_resolver_provider=lambda: None, exception_resolver_provider=lambda: None, supplier_resolver_provider=lambda: None
     )
     registry._resolver_providers["inventory.temporal.month"] = lambda: mock_resolver
     
@@ -275,7 +275,7 @@ async def test_unregistered_semantic_entity(base_request):
     registry = SemanticResolverRegistry(
         sku_resolver_provider=lambda: None,
         warehouse_resolver_provider=lambda: None,
-        job_worker_resolver_provider=lambda: None
+        job_worker_resolver_provider=lambda: None, exception_resolver_provider=lambda: None, supplier_resolver_provider=lambda: None
     )
     engine = ContextEngine(registry)
     engine.register_handler("urn:test", lambda: MockTargetHandler({"inventory.entity.unknown": "UUID"}))

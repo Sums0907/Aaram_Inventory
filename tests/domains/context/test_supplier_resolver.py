@@ -100,6 +100,8 @@ from src.domains.context.dependency_injection import ContextContainer
 @pytest.mark.asyncio
 async def test_supplier_registry_wiring():
     container = ContextContainer()
+    from unittest.mock import AsyncMock
+    container.db_session.override(AsyncMock())
     registry: SemanticResolverRegistry = container.semantic_resolver_registry()
     resolver = registry.get_resolver("inventory.entity.supplier")
     

@@ -18,7 +18,7 @@ This document serves as the absolute source of truth for the AaramBooks producti
 
 ### Production Domains
 - **Frontend**: `https://identity.aarambooks.cloud`
-- **Backend API**: `https://api.identity.aarambooks.cloud`
+- **Backend API**: `https://api-identity.aarambooks.cloud`
 
 ### Database Ecosystem
 - **Engine**: PostgreSQL 16 (Bare-metal installation)

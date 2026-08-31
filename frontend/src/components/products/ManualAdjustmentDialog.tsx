@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Button } from "@/components/ui/button"
 import { useCreateManualAdjustment } from "@/api/inventory"
 import { Loader2 } from "lucide-react"
+import { useWarehouse } from "@/contexts/WarehouseContext"
 
 export type AdjustmentType = "increase" | "decrease"
 
@@ -44,11 +45,11 @@ const DECREASE_REASONS = [
   "Other"
 ]
 
-// Hardcoded for now until warehouse API is built (Matches test_inventory.db)
-const WAREHOUSE_ID = "dbcfca97-fc1d-4466-815f-a843072a14be"
+// Removed hardcoded WAREHOUSE_ID
 
 export function ManualAdjustmentDialog({ skuId, open, onOpenChange, type, onSuccess }: ManualAdjustmentDialogProps) {
   const createMutation = useCreateManualAdjustment()
+  const { selectedWarehouseId } = useWarehouse()
 
   const form = useForm<AdjustmentFormValues>({
     resolver: zodResolver(adjustmentSchema),
@@ -70,8 +71,12 @@ export function ManualAdjustmentDialog({ skuId, open, onOpenChange, type, onSucc
       // If decreasing, the backend expects a negative number
       const finalQuantity = type === "increase" ? data.quantity : -data.quantity
       
+      if (!selectedWarehouseId) {
+        throw new Error("No warehouse selected");
+      }
+      
       await createMutation.mutateAsync({
-        warehouse_id: WAREHOUSE_ID,
+        warehouse_id: selectedWarehouseId,
         sku_id: skuId,
         quantity: finalQuantity,
         reason: data.reason,
