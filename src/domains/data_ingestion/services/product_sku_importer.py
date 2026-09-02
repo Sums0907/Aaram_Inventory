@@ -241,30 +241,57 @@ class ProductSKUImporter(BaseMasterDataImporter):
                     result.ignored_count += 1
                     result.row_results.append(ImportRowResult(row_index=row_num, action=ImportAction.IGNORED, identifier=item_code))
                 else:
-                    if not is_dry_run:
-                        sku.size = size
-                        sku.color = color
-                        sku.status = status
+                        changes = []
+                        if not _eq_str(sku.size, size):
+                            changes.append(f"Size: '{sku.size or ''}' -> '{size}'")
+                            sku.size = size
+                        if not _eq_str(sku.color, color):
+                            changes.append(f"Color: '{sku.color or ''}' -> '{color}'")
+                            sku.color = color
+                        if sku.status != status:
+                            changes.append(f"Status: '{sku.status.name if hasattr(sku.status, 'name') else sku.status}' -> '{status.name}'")
+                            sku.status = status
                         # Protected fields: category_id (on product), uom_id (on sku) are NOT updated.
                         
                         if pr:
-                            pr.selling_price = selling_price
-                            pr.mrp = mrp
-                            pr.cost_price = cost_price
-                            pr.gst_percentage = gst
-                            pr.hsn_code = hsn
+                            if not _eq_num(pr.selling_price, selling_price):
+                                changes.append(f"Selling Price: {pr.selling_price or 0} -> {selling_price}")
+                                pr.selling_price = selling_price
+                            if not _eq_num(pr.mrp, mrp):
+                                changes.append(f"MRP: {pr.mrp or 0} -> {mrp}")
+                                pr.mrp = mrp
+                            if not _eq_num(pr.cost_price, cost_price):
+                                changes.append(f"Cost Price: {pr.cost_price or 0} -> {cost_price}")
+                                pr.cost_price = cost_price
+                            if not _eq_num(pr.gst_percentage, gst):
+                                changes.append(f"GST: {pr.gst_percentage or 0}% -> {gst}%")
+                                pr.gst_percentage = gst
+                            if pr.hsn_code != hsn:
+                                changes.append(f"HSN: '{pr.hsn_code or ''}' -> '{hsn}'")
+                                pr.hsn_code = hsn
                         if pa:
-                            pa.length = p_len
-                            pa.breadth = p_bre
-                            pa.height = p_hei
-                            pa.weight = p_wei
+                            if not _eq_num(pa.length, p_len):
+                                changes.append(f"Length: {pa.length or 0} -> {p_len}")
+                                pa.length = p_len
+                            if not _eq_num(pa.breadth, p_bre):
+                                changes.append(f"Breadth: {pa.breadth or 0} -> {p_bre}")
+                                pa.breadth = p_bre
+                            if not _eq_num(pa.height, p_hei):
+                                changes.append(f"Height: {pa.height or 0} -> {p_hei}")
+                                pa.height = p_hei
+                            if not _eq_num(pa.weight, p_wei):
+                                changes.append(f"Weight: {pa.weight or 0} -> {p_wei}")
+                                pa.weight = p_wei
 
                         # Update the primary image URL if changed
                         if image_url:
                             existing_img = next((i for i in sku.images if i.display_order == 0), None)
                             if existing_img:
-                                existing_img.image_url = image_url
+                                if existing_img.image_url != image_url:
+                                    changes.append(f"Image 1 updated")
+                                    existing_img.image_url = image_url
                             else:
+                                changes.append(f"Image 1 added")
                                 img = ProductImageModel(sku_id=sku.id, image_url=image_url, display_order=0)
                                 self.session.add(img)
                             
@@ -272,7 +299,31 @@ class ProductSKUImporter(BaseMasterDataImporter):
                         self._create_sku_outbound_event(evt_type, sku, prod, cat_code, image_url=image_url)
                             
                     result.updated_count += 1
-                    result.row_results.append(ImportRowResult(row_index=row_num, action=ImportAction.UPDATED, identifier=item_code))
+                    # Append changes dynamically for both dry run and actual commit
+                    if is_dry_run:
+                        changes = []
+                        if not _eq_str(sku.size, size): changes.append(f"Size: '{sku.size or ''}' -> '{size}'")
+                        if not _eq_str(sku.color, color): changes.append(f"Color: '{sku.color or ''}' -> '{color}'")
+                        if sku.status != status: changes.append(f"Status: '{sku.status.name if hasattr(sku.status, 'name') else sku.status}' -> '{status.name}'")
+                        if pr:
+                            if not _eq_num(pr.selling_price, selling_price): changes.append(f"Selling Price: {pr.selling_price or 0} -> {selling_price}")
+                            if not _eq_num(pr.mrp, mrp): changes.append(f"MRP: {pr.mrp or 0} -> {mrp}")
+                            if not _eq_num(pr.cost_price, cost_price): changes.append(f"Cost Price: {pr.cost_price or 0} -> {cost_price}")
+                            if not _eq_num(pr.gst_percentage, gst): changes.append(f"GST: {pr.gst_percentage or 0}% -> {gst}%")
+                            if pr.hsn_code != hsn: changes.append(f"HSN: '{pr.hsn_code or ''}' -> '{hsn}'")
+                        if pa:
+                            if not _eq_num(pa.length, p_len): changes.append(f"Length: {pa.length or 0} -> {p_len}")
+                            if not _eq_num(pa.breadth, p_bre): changes.append(f"Breadth: {pa.breadth or 0} -> {p_bre}")
+                            if not _eq_num(pa.height, p_hei): changes.append(f"Height: {pa.height or 0} -> {p_hei}")
+                            if not _eq_num(pa.weight, p_wei): changes.append(f"Weight: {pa.weight or 0} -> {p_wei}")
+                        if image_url:
+                            existing_img = next((i for i in sku.images if i.display_order == 0), None)
+                            if existing_img:
+                                if existing_img.image_url != image_url: changes.append(f"Image 1 updated")
+                            else:
+                                changes.append(f"Image 1 added")
+                    
+                    result.row_results.append(ImportRowResult(row_index=row_num, action=ImportAction.UPDATED, identifier=item_code, details=changes))
                     
         if not is_dry_run:
             await self.session.flush()

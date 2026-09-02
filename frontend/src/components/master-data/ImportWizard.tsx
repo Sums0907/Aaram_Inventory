@@ -333,6 +333,10 @@ export function ImportWizard() {
                                 <ul className="list-disc pl-4 text-red-600 text-xs space-y-0.5">
                                   {r.errors.map((e, ei) => <li key={ei}>{e}</li>)}
                                 </ul>
+                              ) : r.details && r.details.length > 0 ? (
+                                <ul className="list-disc pl-4 text-blue-600 text-xs space-y-0.5">
+                                  {r.details.map((d, di) => <li key={di}>{d}</li>)}
+                                </ul>
                               ) : (
                                 <span className="text-slate-400 text-xs italic">No issues detected</span>
                               )}

@@ -7,6 +7,7 @@ export interface ImportRowResult {
   entity_id: string | null;
   identifier: string | null;
   errors: string[];
+  details?: string[];
 }
 
 export interface ImportResult {

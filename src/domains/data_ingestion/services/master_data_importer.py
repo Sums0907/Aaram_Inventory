@@ -22,6 +22,7 @@ class ImportRowResult:
     entity_id: Optional[str] = None
     identifier: Optional[str] = None
     errors: List[str] = field(default_factory=list)
+    details: List[str] = field(default_factory=list)
 
 @dataclass
 class ImportResult:
