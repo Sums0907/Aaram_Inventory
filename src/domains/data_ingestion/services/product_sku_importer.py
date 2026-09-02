@@ -67,6 +67,7 @@ class ProductSKUImporter(BaseMasterDataImporter):
         skus_by_item_code = {s.item_code: s for s in skus_list}
         skus_by_sku_code = {s.sku_code: s for s in skus_list if s.sku_code}
         skus_by_barcode = {s.barcode: s for s in skus_list if s.barcode}
+        skus_by_shopdeck_sku_id = {s.shopdeck_sku_id: s for s in skus_list if s.shopdeck_sku_id}
         
         cats = (await self.session.execute(select(CategoryModel))).scalars().all()
         cats_by_code = {c.category_code: c for c in cats}
@@ -164,12 +165,22 @@ class ProductSKUImporter(BaseMasterDataImporter):
                 
                 # Check SKU Code conflict
                 if sku_code and sku_code in skus_by_sku_code:
-                     result.failed_count += 1
-                     result.row_results.append(ImportRowResult(
-                         row_index=row_num, action=ImportAction.FAILED, identifier=item_code,
-                         errors=[f"SKU Code '{sku_code}' already exists for another SKU."]
-                     ))
-                     continue
+                    result.failed_count += 1
+                    result.row_results.append(ImportRowResult(
+                        row_index=row_num, action=ImportAction.FAILED, identifier=item_code,
+                        errors=[f"SKU Code '{sku_code}' already exists for another SKU."]
+                    ))
+                    continue
+
+                # Check ShopDeck SKU ID (Product Code) conflict
+                shopdeck_id_to_set = product_code if product_code else None
+                if shopdeck_id_to_set and shopdeck_id_to_set in skus_by_shopdeck_sku_id:
+                    result.failed_count += 1
+                    result.row_results.append(ImportRowResult(
+                        row_index=row_num, action=ImportAction.FAILED, identifier=item_code,
+                        errors=[f"Product Code '{shopdeck_id_to_set}' (ShopDeck SKU ID) is already assigned to item '{skus_by_shopdeck_sku_id[shopdeck_id_to_set].item_code}'. Each Product Code must be unique."]
+                    ))
+                    continue
 
                 if not is_dry_run:
                     sku = SKUModel(
@@ -203,6 +214,7 @@ class ProductSKUImporter(BaseMasterDataImporter):
                     skus_by_item_code[item_code] = sku
                     if barcode: skus_by_barcode[barcode] = sku
                     if sku_code: skus_by_sku_code[sku_code] = sku
+                    if shopdeck_id_to_set: skus_by_shopdeck_sku_id[shopdeck_id_to_set] = sku
                     
                     self._create_sku_outbound_event("SKU_CREATED", sku, prod, cat_code, image_url=image_url)
                     
