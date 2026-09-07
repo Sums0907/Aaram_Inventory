@@ -23,7 +23,31 @@ class SKUService:
         boms = await self.bom_repo.get_by_target_item_id(sku_id)
         sku.has_bom = len(boms) > 0
         return sku
-        
+
+    async def get_sku_by_item_code(self, item_code: str) -> SKUModel:
+        sku = await self.repository.get_by_item_code(item_code)
+        if not sku:
+            raise NotFoundException(message=f"SKU with item_code '{item_code}' not found")
+        boms = await self.bom_repo.get_by_target_item_id(sku.id)
+        sku.has_bom = len(boms) > 0
+        return sku
+
+    async def get_sku_by_shopdeck_sku_id(self, shopdeck_sku_id: str) -> SKUModel:
+        sku = await self.repository.get_by_shopdeck_sku_id(shopdeck_sku_id)
+        if not sku:
+            raise NotFoundException(message=f"SKU with shopdeck_sku_id '{shopdeck_sku_id}' not found")
+        boms = await self.bom_repo.get_by_target_item_id(sku.id)
+        sku.has_bom = len(boms) > 0
+        return sku
+
+    async def get_sku_by_product_name(self, product_name: str) -> SKUModel:
+        sku = await self.repository.get_by_product_name(product_name)
+        if not sku:
+            raise NotFoundException(message=f"SKU with product_name '{product_name}' not found")
+        boms = await self.bom_repo.get_by_target_item_id(sku.id)
+        sku.has_bom = len(boms) > 0
+        return sku
+
     async def list_skus(self, skip: int = 0, limit: int = 100) -> List[SKUModel]:
         skus = await self.repository.get_all(skip=skip, limit=limit)
         

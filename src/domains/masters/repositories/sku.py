@@ -25,11 +25,26 @@ class SKURepository:
     async def get_by_code(self, sku_code: str) -> Optional[SKUModel]:
         result = await self.session.execute(self._base_query().filter(SKUModel.sku_code == sku_code))
         return result.scalars().first()
-        
+
+    async def get_by_item_code(self, item_code: str) -> Optional[SKUModel]:
+        result = await self.session.execute(self._base_query().filter(SKUModel.item_code == item_code))
+        return result.scalars().first()
+
+    async def get_by_shopdeck_sku_id(self, shopdeck_sku_id: str) -> Optional[SKUModel]:
+        result = await self.session.execute(self._base_query().filter(SKUModel.shopdeck_sku_id == shopdeck_sku_id))
+        return result.scalars().first()
+
     async def get_by_barcode(self, barcode: str) -> Optional[SKUModel]:
         result = await self.session.execute(self._base_query().filter(SKUModel.barcode == barcode))
         return result.scalars().first()
         
+    async def get_by_product_name(self, product_name: str) -> Optional[SKUModel]:
+        from src.domains.masters.models.product import ProductModel
+        result = await self.session.execute(
+            self._base_query().join(ProductModel).filter(ProductModel.product_name.ilike(f"%{product_name}%"))
+        )
+        return result.scalars().first()
+
     async def get_by_product_and_attributes(self, product_id: UUID, attributes: Dict[str, Any]) -> Optional[SKUModel]:
         # Exact JSONB match
         result = await self.session.execute(
@@ -80,3 +95,4 @@ class SKURepository:
     async def delete(self, sku: SKUModel) -> None:
         await self.session.delete(sku)
         await self.session.commit()
+

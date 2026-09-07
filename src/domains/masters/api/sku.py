@@ -93,6 +93,40 @@ async def archive_sku(
     sku = await service.archive_sku(sku_id, updated_by=user_uuid)
     return SuccessResponse(data=SKUResponse.model_validate(sku, from_attributes=True))
 
+
+@router.get("/by-item-code/{item_code}", response_model=SuccessResponse[SKUResponse])
+@inject
+async def get_sku_by_item_code(
+    item_code: str,
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_CATALOG_VIEW")),
+    service: SKUService = Depends(Provide[MastersContainer.sku_service])
+):
+    """Look up a SKU by its item_code (e.g. '125BS'). Used by Brain Core CEM Adapter for ShopDeck→Inventory resolution."""
+    sku = await service.get_sku_by_item_code(item_code)
+    return SuccessResponse(data=SKUResponse.model_validate(sku, from_attributes=True))
+
+@router.get("/by-shopdeck-sku-id/{shopdeck_sku_id}", response_model=SuccessResponse[SKUResponse])
+@inject
+async def get_sku_by_shopdeck_sku_id(
+    shopdeck_sku_id: str,
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_CATALOG_VIEW")),
+    service: SKUService = Depends(Provide[MastersContainer.sku_service])
+):
+    """Look up a SKU by its ShopDeck SKU ID / Product Code (e.g. '101OTTO'). Used by Brain Core CEM for NDR context enrichment."""
+    sku = await service.get_sku_by_shopdeck_sku_id(shopdeck_sku_id)
+    return SuccessResponse(data=SKUResponse.model_validate(sku, from_attributes=True))
+
+@router.get("/by-product-name/{product_name}", response_model=SuccessResponse[SKUResponse])
+@inject
+async def get_sku_by_product_name(
+    product_name: str,
+    current_user: CurrentUser = Depends(require_permission("INVENTORY_CATALOG_VIEW")),
+    service: SKUService = Depends(Provide[MastersContainer.sku_service])
+):
+    """Look up a SKU by its normalized product name. Used as a fallback for ShopDeck sync."""
+    sku = await service.get_sku_by_product_name(product_name)
+    return SuccessResponse(data=SKUResponse.model_validate(sku, from_attributes=True))
+
 @router.delete("/{sku_id}", response_model=SuccessResponse[dict])
 @inject
 async def delete_sku(
