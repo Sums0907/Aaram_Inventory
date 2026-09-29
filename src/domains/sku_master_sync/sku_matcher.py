@@ -24,13 +24,10 @@ class SkuMatcher:
         
         # 1. Check for duplicates in CSV (SKU-008)
         seen_sku_ids = set()
-        seen_product_codes = {} # product_code -> shopdeck_sku_id
-        
         valid_rows = []
         
         for row in parsed_rows:
             sku_id = row["shopdeck_sku_id"]
-            product_code = row["product_code"]
             
             # SKU-008: Duplicate Sku Id Detection
             if sku_id in seen_sku_ids:
@@ -38,12 +35,7 @@ class SkuMatcher:
                 continue
             seen_sku_ids.add(sku_id)
             
-            # SKU-010: Product Code Collision Detection in CSV
-            if product_code in seen_product_codes and seen_product_codes[product_code] != sku_id:
-                errors.append(f"Validation Error: Product Code '{product_code}' is mapped to multiple Sku Ids in CSV ({seen_product_codes[product_code]} and {sku_id}).")
-                continue
-            seen_product_codes[product_code] = sku_id
-            
+            # Note: Under multi-variant architecture, multiple SKUs can share the same product_code
             valid_rows.append(row)
             
         if errors:
@@ -74,29 +66,6 @@ class SkuMatcher:
                 })
             else:
                 new_rows.append(row)
-                
-        # 3. Product Code Collision Detection against DB (SKU-010)
-        # Check if any NEW or EXISTING row uses a Product Code that belongs to a different ShopDeck Sku Id in DB
-        db_product_code_stmt = select(ProductModel).where(ProductModel.item_type == ItemType.FINISHED_GOODS)
-        all_fg_products = (await self.db.execute(db_product_code_stmt)).scalars().all()
-        db_product_code_map = {prod.product_code: prod for prod in all_fg_products}
-        
-        for row in valid_rows:
-            pc = row["product_code"]
-            sku_id = row["shopdeck_sku_id"]
-            
-            if pc in db_product_code_map:
-                existing_prod = db_product_code_map[pc]
-                # Is there a SKU mapped to this product?
-                # We need to ensure we don't steal product codes across DIFFERENT shopdeck_sku_ids
-                # If existing product is linked to a SKU that has a DIFFERENT shopdeck_sku_id, collision.
-                linked_skus = [sku for sku in all_fg_skus if sku.product_id == existing_prod.id]
-                for l_sku in linked_skus:
-                    if l_sku.shopdeck_sku_id and l_sku.shopdeck_sku_id != sku_id:
-                        errors.append(f"Validation Error: Product Code '{pc}' is already used by DB Sku Id '{l_sku.shopdeck_sku_id}'. Cannot reassign to '{sku_id}'.")
-        
-        if errors:
-            return [], [], [], errors
             
         # 4. Find MISSING SKUs (in DB, not in CSV, and currently ACTIVE)
         missing_skus = []

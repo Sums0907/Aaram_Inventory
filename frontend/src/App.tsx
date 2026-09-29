@@ -11,7 +11,6 @@ import { ImportsPage } from "@/pages/ImportsPage"
 import { MatchingPage } from "@/pages/MatchingPage"
 import { InventoryExplorerDashboard } from "@/pages/inventory/InventoryExplorerDashboard"
 import { InventoryPage } from "@/pages/inventory/InventoryDashboard"
-import { ProductsPage } from "@/pages/inventory/ProductsPage"
 import { SuppliersPage } from "@/pages/inventory/SuppliersPage"
 import { JobWorkerStockPage } from "@/pages/inventory/JobWorkerStockPage"
 import { GoodsReceiptsPage } from "@/pages/inventory/GoodsReceiptsPage"
@@ -21,9 +20,7 @@ import { PhysicalVerificationPage } from "@/pages/inventory/PhysicalVerification
 import { AdjustmentsPage } from "@/pages/inventory/AdjustmentsPage"
 import { ExceptionsPage } from "@/pages/inventory/ExceptionsPage"
 import { ConfidencePage } from "@/pages/inventory/ConfidencePage"
-import { DailyUpdatePage } from "@/pages/inventory/DailyUpdatePage"
 import { AccountingLayout } from "@/components/layout/AccountingLayout"
-import { AccountingDashboardPage } from "@/pages/AccountingDashboardPage"
 import { JobWorkerAccountingDashboard } from "@/pages/accounting/job-worker-accounting/JobWorkerAccountingDashboard"
 import { JobWorkerPayablesWorkspace } from "@/pages/accounting/job-worker-accounting/JobWorkerPayablesWorkspace"
 import { JobWorkRatesPage } from "@/pages/accounting/job-worker-accounting/JobWorkRatesPage"
@@ -81,8 +78,6 @@ function App() {
               <Route path="inventory" element={<InventoryLayout />}>
                 <Route index element={<InventoryPage />} />
                 <Route path="catalog" element={<InventoryExplorerDashboard />} />
-                <Route path="daily-update" element={<DailyUpdatePage />} />
-                <Route path="products" element={<ProductsPage />} />
                 <Route path="suppliers" element={<SuppliersPage />} />
                 <Route path="job-worker-stock" element={<JobWorkerStockPage />} />
                 <Route path="goods-receipts" element={<GoodsReceiptsPage />} />
@@ -98,7 +93,7 @@ function App() {
               </Route>
 
               <Route path="accounting" element={<AccountingLayout />}>
-                <Route index element={<AccountingDashboardPage />} />
+                <Route index element={<Navigate to="/dashboard" replace />} />
                 <Route path="job-worker">
                   <Route path="dashboard" element={<JobWorkerAccountingDashboard />} />
                   <Route path="payables" element={<JobWorkerPayablesWorkspace />} />

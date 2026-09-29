@@ -27,7 +27,7 @@ export function useJournals() {
     queryKey: ['journals'],
     queryFn: async () => {
       const response = await apiClient.get<ListJournalsResponse>('/accounting/journals');
-      return response.data.data;
+      return response.data?.data ?? [];
     },
   });
 }

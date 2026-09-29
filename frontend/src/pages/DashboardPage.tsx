@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useDashboardSummary } from "@/api/dashboard"
+import { useJournals } from "@/api/accounting"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { 
   IndianRupee, 
@@ -8,12 +9,25 @@ import {
   CheckCircle2,
   Package,
   TrendingUp,
-  RefreshCcw
+  RefreshCcw,
+  BookOpen
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export function DashboardPage() {
   const { data: summary, isLoading, isError, refetch, isFetching } = useDashboardSummary()
+  const { data: journals } = useJournals()
+
+  // Aggregate balances from journal lines for a business-level view
+  const ledgerBalances: Record<string, number> = {}
+  journals?.forEach(journal => {
+    journal.lines.forEach(line => {
+      if (!ledgerBalances[line.ledger_name]) {
+        ledgerBalances[line.ledger_name] = 0
+      }
+      ledgerBalances[line.ledger_name] += (line.debit - line.credit)
+    })
+  })
 
   const formatCurrency = (value: number | undefined) => {
     return new Intl.NumberFormat('en-IN', {
@@ -162,6 +176,41 @@ export function DashboardPage() {
                       2 Platforms
                     </div>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-slate-200 shadow-sm">
+              <CardHeader className="bg-slate-50/50 border-b">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <BookOpen className="h-5 w-5 text-indigo-500" />
+                  Ledger Breakdown
+                </CardTitle>
+                <CardDescription>
+                  High-level view of account balances.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="divide-y divide-slate-100 max-h-[250px] overflow-y-auto">
+                  {Object.entries(ledgerBalances)
+                    .filter(([_, bal]) => bal !== 0)
+                    .map(([name, bal], idx) => (
+                    <div key={idx} className="p-4 flex items-center justify-between hover:bg-slate-50/50">
+                      <p className="font-medium text-slate-900 text-sm">{name}</p>
+                      <div className="flex items-center gap-4">
+                        {bal > 0 ? (
+                          <span className="text-emerald-600 font-mono text-sm">{formatCurrency(bal)} (Dr)</span>
+                        ) : (
+                          <span className="text-indigo-600 font-mono text-sm">{formatCurrency(Math.abs(bal))} (Cr)</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {Object.entries(ledgerBalances).filter(([_, bal]) => bal !== 0).length === 0 && (
+                    <div className="p-8 text-center text-slate-500 text-sm">
+                      No ledger balances calculated yet.
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

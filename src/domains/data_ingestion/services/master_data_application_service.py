@@ -85,17 +85,14 @@ class MasterDataApplicationService:
             self.session.add(audit_log)
             
             # 3. Transaction control
+            commit_blocked = (not is_dry_run) and (result.failed_count > 0 or result.ambiguous_count > 0)
             if not is_dry_run:
-                if result.failed_count > 0 or result.ambiguous_count > 0:
+                if commit_blocked:
                     await self.session.rollback()
-                    raise ValueError("Commit blocked: FAILED or AMBIGUOUS records > 0")
-                await self.session.commit()
+                else:
+                    await self.session.commit()
             else:
-                await self.session.flush() # ensure audit log is pushed to allow potential read inside the transaction?
-                # For dry_run, we still want to rollback but maybe we don't rollback until after? 
-                # Wait, if we rollback, we lose the audit log. The CLI commits the audit log? No, CLI calls rollback.
-                # If we want the audit log for dry-runs, we might need a separate transaction for the audit log.
-                # I'll follow the exact CLI pattern:
+                await self.session.flush() # ensure audit log is pushed to allow potential read inside the transaction
                 await self.session.rollback()
                 
             response = {
@@ -107,6 +104,7 @@ class MasterDataApplicationService:
                 "ignored_count": result.ignored_count,
                 "failed_count": result.failed_count,
                 "ambiguous_count": result.ambiguous_count,
+                "commit_blocked": commit_blocked,
                 "row_results": [
                     {
                         "row_index": r.row_index,

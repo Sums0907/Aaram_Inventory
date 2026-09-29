@@ -469,19 +469,20 @@ If GRNI / unbilled purchase accounting is introduced, it must be deliberately de
 
 # 15. CURRENT PROJECT STATE
 
-**Status:** R-7 BUSINESS EXECUTION IMPLEMENTATION COMPLETE
+**Status:** MULTI-VARIANT SKU ARCHITECTURAL SHIFT RESOLVED & CERTIFIED
 
 **What was just completed:**
-1. Implemented the R-7 Architecture Audit by establishing `R7ExecutionService` and the R-7 Capability Registry pattern (`IR7Capability`).
-2. Implemented the 7 authoritative R-7 action capabilities (Goods Receipt, Purchase Return, Transformation, Job Work Issue, Job Work Return, Exception Resolution, Stock Adjustment) mapped directly to their respective domain service endpoints.
-3. Implemented full dependency injection integration in `ContextContainer` and `DomainsContainer` crossing boundaries for Services like `GoodsReceiptService` requiring Accounting integration.
-4. Created `test_r7_execution.py` enforcing programmatic capability exhaustion verification matching the exact R-7 Census requirements.
-5. Successfully tested R-7 Orchestrator intent filtering (`ACTION` only), capability ambiguity detection, and R-5 fallback delegation to UUID identifiers.
-6. Generated the `docs/06-api-contracts/R-7-IMPLEMENTATION-REPORT.md` artifact.
+1. Architectural Shift - Multi-Variant SKU Support: Decoupled `Product Code` from `shopdeck_sku_id` in `ProductSKUImporter` (`src/domains/data_ingestion/services/product_sku_importer.py`). `Product Code` is unique per parent Product, but multiple SKU variants (e.g. `101SB` and `101SB-DB` under `KIDS-CANDY-SB-DB`) now correctly link to the same parent `ProductModel`.
+2. Decoupled ShopDeck SKU ID: `SKUModel.shopdeck_sku_id` now stores the actual SKU identifier (`row.get("ShopDeck Sku Id") or row.get("Sku Id")`), not the parent product code.
+3. Database Clean-up: Migrated 95 existing finished goods SKUs in PostgreSQL so their `shopdeck_sku_id` matches their `sku_code`, completely eliminating collision risk for multi-variant imports.
+4. Refactored SKU Master Sync: Updated `SKUMatcher` and `SkuCreator` (`src/domains/sku_master_sync/`) to support multi-variant products, eliminating obsolete SKU-010 1-to-1 collision checks and enabling transactional product reuse.
+5. Unit & Regression Tests: Added `test_product_sku_importer_multi_variant_same_product_code` to `test_product_sku_importer.py` and updated `test_sku_010_multi_variant_product_allowed` in `test_sku_sync_service.py`. All tests pass cleanly (`3/3 passed` in ingestion, `7/7 passed` in sync).
+6. Documented Bug 12 in `docs/INVENTORY_BUGS_RESOLUTION_REPORT.md`.
 
 **Current Blocker:**
 - None.
 
 **Next Steps:**
-- R-7 Business Execution is complete and certified. 
-- Awaiting instructions for the next phase (likely concrete data transformation adapters in AaramBrain to populate the detailed schemas for full capability execution).
+- User can re-run the Master Data SKU Master import in the UI. Both dry-run and commit will smoothly accept multiple SKU variants sharing the same Product Code.
+
+

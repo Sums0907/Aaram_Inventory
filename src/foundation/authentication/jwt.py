@@ -31,7 +31,7 @@ def _fetch_public_key(force_network: bool = False) -> str:
         return settings.AARAMIDENTITY_PUBLIC_KEY.replace("\\n", "\n")
         
     import httpx
-    url = f"{settings.IDENTITY_SERVICE_URL}/auth/public-key"
+    url = f"{settings.IDENTITY_API_URL}/auth/public-key"
     try:
         r = httpx.get(url, timeout=10.0)
         r.raise_for_status()

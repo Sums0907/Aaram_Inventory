@@ -160,7 +160,16 @@ export function InventoryExplorerDashboard() {
   };
 
   const handleNavigateToNode = (node: TreeNode) => {
-    setPath(prev => [...prev, node]);
+    setPath(prev => {
+      if (prev.length > 0 && prev[prev.length - 1].id === node.id) {
+        return prev;
+      }
+      const existingIdx = prev.findIndex(p => p.id === node.id);
+      if (existingIdx !== -1) {
+        return prev.slice(0, existingIdx + 1);
+      }
+      return [...prev, node];
+    });
   };
 
   const handleNavigateToBreadcrumb = (index: number) => {
@@ -181,7 +190,7 @@ export function InventoryExplorerDashboard() {
           </Button>
           
           {path.map((p, index) => (
-            <React.Fragment key={p.id}>
+            <React.Fragment key={`${p.id}-${index}`}>
               <ChevronRight className="h-4 w-4 text-slate-300" />
               <Button 
                 variant="ghost" 

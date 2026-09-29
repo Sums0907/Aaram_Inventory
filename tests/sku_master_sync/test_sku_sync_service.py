@@ -104,14 +104,19 @@ DUP-001,BED-D2,Dup Bed,100.00,10
     assert "Failed:\n1" in report
     assert "Duplicate Sku Id" in report
 
-async def test_sku_010_product_code_collision(sync_service):
+async def test_sku_010_multi_variant_product_allowed(sync_service, db_session):
     csv = """Sku Id,Product Code,Name,Selling Price,Quantity
 COL-001,BED-COL,Col Bed,100.00,10
 COL-002,BED-COL,Col Bed 2,100.00,10
 """
-    report = await sync_service.sync_catalogue(csv, "test.csv", run_mode="DRY_RUN")
-    assert "Failed:\n1" in report
-    assert "mapped to multiple Sku Ids" in report
+    report = await sync_service.sync_catalogue(csv, "test.csv", run_mode="COMMITTED")
+    assert "Created:\n2" in report
+    assert "Failed:\n0" in report
+    
+    sku1 = (await db_session.execute(select(SKUModel).options(selectinload(SKUModel.product)).where(SKUModel.shopdeck_sku_id == "COL-001"))).scalar_one()
+    sku2 = (await db_session.execute(select(SKUModel).options(selectinload(SKUModel.product)).where(SKUModel.shopdeck_sku_id == "COL-002"))).scalar_one()
+    assert sku1.product_id == sku2.product_id
+    assert sku1.product.product_code == "BED-COL"
 
 async def test_sku_012_idempotency(sync_service, db_session):
     csv = """Sku Id,Product Code,Name,Selling Price,Quantity

@@ -1,3 +1,4 @@
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from src.domains.masters.models.sku import SKUModel
 from src.domains.masters.models.product import ProductModel
@@ -20,17 +21,21 @@ class SkuCreator:
     async def create(self, row: dict, category: CategoryModel) -> SKUModel:
         """
         Creates a new SKU with all associated models transactionally.
+        Reuses existing Product if product_code already exists (multi-variant).
         """
-        # Product
-        product = ProductModel(
-            product_code=row["product_code"],
-            product_name=row["name"],
-            item_type=ItemType.FINISHED_GOODS,
-            status=GenericStatus.ACTIVE,
-            category_id=category.id if category else None
-        )
-        self.db.add(product)
-        await self.db.flush() # get product.id
+        # Product: get or create
+        stmt = select(ProductModel).where(ProductModel.product_code == row["product_code"])
+        product = (await self.db.execute(stmt)).scalars().first()
+        if not product:
+            product = ProductModel(
+                product_code=row["product_code"],
+                product_name=row["name"],
+                item_type=ItemType.FINISHED_GOODS,
+                status=GenericStatus.ACTIVE,
+                category_id=category.id if category else None
+            )
+            self.db.add(product)
+            await self.db.flush() # get product.id
         
         # Parse attributes
         try:

@@ -10,7 +10,7 @@ export interface HierarchyResponse {
 
 export const fetchInventoryHierarchy = async (onlyArchived: boolean = false): Promise<HierarchyResponse> => {
   const response = await apiClient.get<{ data: HierarchyResponse }>(`/masters/hierarchy?only_archived=${onlyArchived}`);
-  return (response as any).data;
+  return (response as any)?.data ?? { categories: [], products: [] };
 };
 
 export const useInventoryHierarchy = (onlyArchived: boolean = false) => {

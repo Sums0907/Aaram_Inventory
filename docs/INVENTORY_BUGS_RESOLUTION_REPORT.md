@@ -214,3 +214,55 @@ The issue was not within the FastAPI application code. When `MasterDataExporter`
 **Successful Resolution**:
 - Identified that Nginx proxy buffering was the true culprit.
 - Updated the VPS deployment runbook (`AaramInventory_Deployment_Runbook.md`) to include `proxy_max_temp_file_size 0;` and `proxy_buffering off;` in the Nginx backend server block. This forces Nginx to deliver large files synchronously without attempting to write to the proxy temporary directory, completely resolving the 500 errors on export.
+
+---
+
+## Bug 11: 500 Network Error / CORS on Master Data Import (Intra-file Collision Blindspot & Uncaught ValueError)
+
+**Date Identified**: September 2026
+**Symptoms**:
+- In the Master Data Import Wizard, executing Dry Run for SKU Master appeared successful (`0 Failed`).
+- Clicking "Commit Data" immediately resulted in a browser crash: `Origin http://localhost:5173 is not allowed by Access-Control-Allow-Origin. Status code: 500`, masking the true error as `AxiosError: Network Error`.
+- Accompanying React errors included `Query data cannot be undefined (journals)` and duplicate fiber keys on `RAW_MATERIAL` and category UUIDs in the breadcrumb trail.
+
+**Root Cause**:
+1. **Dry-Run Tracking Blindspot in `ProductSKUImporter`**: In-memory conflict tracking dictionaries (`skus_by_shopdeck_sku_id`, `skus_by_barcode`, `skus_by_sku_code`, `skus_by_item_code`) were only populated during actual commit (`if not is_dry_run:`). In dry-run mode, if a spreadsheet contained duplicate `Product Code`, `Barcode`, or `Sku Id` records, dry-run failed to detect intra-file collisions and falsely showed `0 Failed`.
+2. **Unhandled Exception on Commit**: During actual commit, row 1 was registered in memory, causing row 2 to trigger a conflict and increment `failed_count`. At the end of the commit loop, `master_data_application_service.py` raised a raw `ValueError("Commit blocked: FAILED or AMBIGUOUS records > 0")`. Because `master_data_router.py` lacked exception handling for this, FastAPI crashed with an unhandled 500 error before Starlette's `CORSMiddleware` could attach `Access-Control-Allow-Origin`, causing the browser to block the response as a CORS violation.
+3. **TanStack React Query v5 Invariant**: `useJournals()` returned `response.data.data`, which evaluated to `undefined` when empty, violating React Query v5's requirement.
+4. **Breadcrumb Fiber Collisions**: `path.map` keyed on `p.id`, producing duplicate sibling keys when re-selecting or traversing categories and item types.
+
+**Failed Attempts**:
+- Assuming CORS settings or origins in `settings.py` were misconfigured.
+- Investigating database constraints (`uq_skus_shopdeck_sku_id`) as the direct source of HTTP errors.
+
+**Successful Resolution**:
+1. **Synchronous Cache Tracking in Dry Run**: Updated `ProductSKUImporter` to populate tracking maps during **both** dry-run and commit, ensuring intra-file duplicate codes and barcodes are detected and reported with row numbers immediately during dry-run preview.
+2. **Structured Response on Blocked Commit**: Updated `master_data_application_service.py` to flag `commit_blocked = True` and rollback without raising an uncaught `ValueError`. Updated `master_data_router.py` to catch `ValueError` and return `JSONResponse(status_code=400, content=result)`.
+3. **Resilient Frontend Handlers**: Updated `ImportWizard.tsx` to handle `commit_blocked` and display the line-item preview table with validation errors instead of crashing.
+4. **Query & Key Fixes**: Updated `useJournals()` to return `response.data?.data ?? []`, keyed breadcrumbs with composite keys (`key={`${p.id}-${index}`}`), and configured Vite HMR clientPort.
+
+---
+
+## Bug 12: Architectural Shift: Multi-Variant SKU Support (Multiple SKUs Sharing Same Product Code)
+
+**Date Identified**: September 2026
+**Symptoms**:
+- Importing finished goods spreadsheets with multiple SKU variants for the same Product failed during Master Data SKU Import:
+  - `#16 101SB-DB FAILED: Product Code 'KIDS-CANDY-SB-DB' (ShopDeck SKU ID) is already assigned to item '101SB'. Each Product Code must be unique.`
+  - `#43 102SB-DB FAILED: Product Code 'KIDS-DINO-MINT-SB-DB' (ShopDeck SKU ID) is already assigned to item '102SB'. Each Product Code must be unique.`
+- The import blocked because the system treated `Product Code` as the unique `ShopDeck SKU ID`.
+
+**Root Cause**:
+1. **Flawed 1:1 Product-to-SKU Equivalence**: Historical code in `ProductSKUImporter` (`src/domains/data_ingestion/services/product_sku_importer.py`) assumed that each SKU had a unique `Product Code`. It set `shopdeck_id_to_set = product_code` and assigned `sku.shopdeck_sku_id = product_code`.
+2. **Uniqueness Constraint Violation**: Because `skus.shopdeck_sku_id` has a unique constraint in PostgreSQL (`unique=True`), assigning `product_code` to `shopdeck_sku_id` and asserting uniqueness across SKUs caused every secondary variant under the same parent product (e.g. `101SB-DB` sharing `KIDS-CANDY-SB-DB` with `101SB`) to trigger a collision and fail.
+3. **Outdated SKU-010 Rule in `SKUMatcher` & `SkuCreator`**: In SKU Master Sync, `SKUMatcher` also enforced an obsolete rule rejecting CSVs where multiple `Sku Id`s mapped to the same `product_code`, and `SkuCreator` attempted to insert duplicate `ProductModel` records instead of reusing the existing product record.
+
+**Failed Attempts**:
+- None. Root cause was immediately identified by reviewing `product_sku_importer.py` lines 175-225 and DB constraints.
+
+**Successful Resolution**:
+1. **Decoupled Product Code from `shopdeck_sku_id`**: Updated `ProductSKUImporter` to extract `shopdeck_id_to_set = str(row.get("ShopDeck Sku Id") or row.get("Sku Id", "")).strip() or None`. The uniqueness check now verifies uniqueness of the actual SKU identifier (`shopdeck_sku_id`), allowing any number of SKU variants to share the parent `Product Code`.
+2. **Multi-Variant Product Model Reuse**: Ensured both `ProductSKUImporter` and `SkuCreator` get-or-create the `ProductModel` by `product_code`, correctly assigning subsequent SKU variants to the same parent `product_id`.
+3. **Cleaned Existing Database Records**: Migrated existing finished goods SKUs in PostgreSQL so their `shopdeck_sku_id` is set to their unique `sku_code`, removing stale `product_code` values from SKU records.
+4. **Updated SKU-010 Specifications & Test Suite**: Refactored `SKUMatcher` and `SkuCreator` to allow multi-variant products, added `test_product_sku_importer_multi_variant_same_product_code` to `test_product_sku_importer.py`, and updated `test_sku_010_multi_variant_product_allowed` in `test_sku_sync_service.py`. All regression tests pass cleanly.
+

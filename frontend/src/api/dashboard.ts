@@ -31,9 +31,9 @@ export function useDashboardSummary() {
     queryKey: ['dashboard-summary'],
     queryFn: async () => {
       // The apiClient interceptor already returns the response payload (response.data).
-      // Since it returns SummaryResponse directly, we just return response.data to get DashboardSummary.
+      // Since it returns SummaryResponse directly, we return response.data or null to get DashboardSummary.
       const response = await apiClient.get<SummaryResponse>('/dashboard/summary');
-      return (response as any).data;
+      return (response as any)?.data ?? null;
     },
     refetchInterval: 10000, // Refetch every 10 seconds to auto-update pipeline status
   });

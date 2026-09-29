@@ -45,15 +45,22 @@ async def import_master_data(
     if not data:
         raise HTTPException(status_code=400, detail="File is empty or missing expected columns.")
 
-    result = await app_service.execute_import(
-        domain=domain,
-        data=data,
-        is_dry_run=is_dry_run,
-        user_id=current_user.id,
-        file_name=file.filename,
-        env="prod" # In a real system, this comes from settings
-    )
+    try:
+        result = await app_service.execute_import(
+            domain=domain,
+            data=data,
+            is_dry_run=is_dry_run,
+            user_id=current_user.id,
+            file_name=file.filename,
+            env="prod" # In a real system, this comes from settings
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     
+    if result.get("commit_blocked"):
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=400, content=result)
+
     return result
 
 @master_data_router.get("/export")

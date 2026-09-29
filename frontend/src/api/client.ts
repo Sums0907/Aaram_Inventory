@@ -13,8 +13,8 @@ declare global {
   }
 }
 
-const API_BASE_URL =
-  window.AARAM_CONFIG?.API_URL || "http://localhost:8100/api/v1";
+const rawApiUrl = (window.AARAM_CONFIG?.API_URL || "http://localhost:8100").replace(/\/$/, "");
+const API_BASE_URL = rawApiUrl.endsWith("/api/v1") ? rawApiUrl : `${rawApiUrl}/api/v1`;
 
 // BUG FIX #2: Use IDENTITY_API_URL (backend) for refresh calls, not IDENTITY_URL (frontend UI).
 // On localhost, IDENTITY_API_URL = http://127.0.0.1:9000

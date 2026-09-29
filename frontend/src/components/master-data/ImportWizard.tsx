@@ -82,10 +82,36 @@ export function ImportWizard() {
     setIsProcessing(true);
     try {
       const result = await masterDataApi.import(selectedFile, selectedDomain, false);
-      setCommitResult(result);
-      setStep(4); // Move to Success screen
+      if (result.commit_blocked || result.failed_count > 0 || result.ambiguous_count > 0) {
+        toast({
+          variant: "destructive",
+          title: "Commit Blocked",
+          description: "Cannot commit data because one or more records failed validation."
+        });
+        setDryRunResult(result);
+        setStep(3); // Stay on preview step to inspect failing records
+      } else {
+        setCommitResult(result);
+        setStep(4); // Move to Success screen
+      }
     } catch (error: any) {
       console.error(error);
+      const res = error?.response?.data;
+      if (res && (res.failed_count !== undefined || res.commit_blocked)) {
+        setDryRunResult(res);
+        setStep(3);
+        toast({
+          variant: "destructive",
+          title: "Commit Blocked",
+          description: "Cannot commit data because one or more records failed validation."
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Commit Failed",
+          description: error?.response?.data?.detail || error.message || "Failed to commit data"
+        });
+      }
     } finally {
       setIsProcessing(false);
     }
