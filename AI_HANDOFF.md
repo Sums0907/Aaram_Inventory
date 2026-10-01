@@ -469,21 +469,22 @@ If GRNI / unbilled purchase accounting is introduced, it must be deliberately de
 
 # 15. CURRENT PROJECT STATE
 
-**Status:** PACKER OUTBOX SYNC FULLY DEPRECATED & DEPLOYMENT READY
+**Status:** PACKER OUTBOX SYNC DEPRECATED & LIVE ON VPS PRODUCTION
 
 **What was just completed:**
 1. Packer Outbox Sync Complete Deprecation: Fully decommissioned the outbound event publisher and daily reconciliation background loops from `src/app/lifespan.py`.
 2. Outbox Event Generation Removed: Removed outbox event generation from `ProductSKUImporter` (`product_sku_importer.py`), `BalanceCalculatorService` (`balance_calculator.py`), and deprecated `daily_reconciliation.py`.
 3. Outbound Dispatcher Made Safe No-op: Converted `OutboundEventDispatcherService` in `outbound_event_publisher.py` to a safe no-op.
-4. Production Docker Alignment: Updated `docker-compose.prod.yml` to inject the correct `SHOPDECK_SALES_WAREHOUSE_CODE=${SHOPDECK_SALES_WAREHOUSE_CODE:-348_SECTOR_11_PANIPAT}` and `PACKER_SERVICE_URL`, aligning with the VPS environment.
+4. Production Docker Alignment: Updated `docker-compose.prod.yml` to inject the correct `SHOPDECK_SALES_WAREHOUSE_CODE=${SHOPDECK_SALES_WAREHOUSE_CODE:-348_SECTOR_11_PANIPAT}`, removed deprecated mounts and config overrides, and auto-synced compose via `mac_to_vps_deploy.sh`.
 5. VPS Outbox Queue Cleaned: Cancelled stuck/pending outbox events on the VPS database to immediately stop 404 dead-letter logs.
 6. Regression Test Suite: Passed 12/12 test suites covering data ingestion, product SKU importing, and SKU sync services.
 7. Documented Bug 13 in `docs/INVENTORY_BUGS_RESOLUTION_REPORT.md`.
+8. VPS Deployment Verified: Successfully built and deployed via GitHub Actions and restarted on VPS. Health check `GET /health` responding `200 OK`, frontend responding `200 OK`, zero dead-letter errors in logs.
 
 **Current Blocker:**
-- None. Ready for VPS deployment.
+- None.
 
 **Next Steps:**
-- Deploy to VPS via `mac_to_vps_deploy.sh` upon user command.
+- Monitor VPS logs during next SKU master import or physical movements to verify silent operation.
 
 
