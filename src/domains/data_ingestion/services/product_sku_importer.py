@@ -11,8 +11,6 @@ from src.domains.masters.models.pricing import PricingModel
 from src.domains.masters.models.packaging import PackagingModel
 from src.domains.masters.models.category import CategoryModel
 from src.domains.masters.models.unit_of_measure import UnitOfMeasureModel
-from src.domains.inventory.models.outbox import InventoryOutboundEventModel
-from uuid_extensions import uuid7
 from src.domains.data_ingestion.services.master_data_importer import (
     BaseMasterDataImporter, ImportResult, ImportRowResult, ImportAction
 )
@@ -25,33 +23,6 @@ class ProductSKUImporter(BaseMasterDataImporter):
             return float(val) if val else 0.0
         except (ValueError, TypeError):
             return 0.0
-
-    def _create_sku_outbound_event(self, event_type: str, sku: SKUModel, prod: ProductModel, cat_code: str, image_url: Optional[str] = None):
-        if prod.item_type != ItemType.FINISHED_GOODS:
-            return
-            
-        payload = {
-            "inventory_sku_id": str(sku.id),
-            "sku_code": sku.sku_code,
-            "barcode": sku.barcode,
-            "name": prod.product_name,
-            "category": cat_code,
-            "variant": None,
-            "size": sku.size,
-            "color": sku.color,
-            "status": sku.status.value if hasattr(sku.status, 'value') else str(sku.status),
-            "image_url": image_url,
-        }
-        
-        event = InventoryOutboundEventModel(
-            event_id=f"evt_{uuid7()}",
-            event_type=event_type,
-            aggregate_type="SKU",
-            aggregate_id=str(sku.id),
-            payload_json=payload,
-            status="PENDING"
-        )
-        self.session.add(event)
 
 
     async def import_data(self, data: List[Dict[str, Any]], is_dry_run: bool = True) -> ImportResult:
@@ -210,8 +181,6 @@ class ProductSKUImporter(BaseMasterDataImporter):
                     if image_url:
                         img = ProductImageModel(sku_id=sku.id, image_url=image_url, display_order=0)
                         self.session.add(img)
-                    
-                    self._create_sku_outbound_event("SKU_CREATED", sku, prod, cat_code, image_url=image_url)
                 else:
                     sku = SKUModel(
                         id=uuid.uuid4(),
@@ -324,8 +293,6 @@ class ProductSKUImporter(BaseMasterDataImporter):
                             else:
                                 img = ProductImageModel(sku_id=sku.id, image_url=image_url, display_order=0)
                                 self.session.add(img)
-                        evt_type = "SKU_DEACTIVATED" if status == GenericStatus.INACTIVE else "SKU_UPDATED"
-                        self._create_sku_outbound_event(evt_type, sku, prod, cat_code, image_url=image_url)
 
                     result.updated_count += 1
                     result.row_results.append(ImportRowResult(row_index=row_num, action=ImportAction.UPDATED, identifier=item_code, details=changes))

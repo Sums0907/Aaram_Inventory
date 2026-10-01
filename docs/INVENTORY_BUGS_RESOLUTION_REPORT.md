@@ -266,3 +266,27 @@ The issue was not within the FastAPI application code. When `MasterDataExporter`
 3. **Cleaned Existing Database Records**: Migrated existing finished goods SKUs in PostgreSQL so their `shopdeck_sku_id` is set to their unique `sku_code`, removing stale `product_code` values from SKU records.
 4. **Updated SKU-010 Specifications & Test Suite**: Refactored `SKUMatcher` and `SkuCreator` to allow multi-variant products, added `test_product_sku_importer_multi_variant_same_product_code` to `test_product_sku_importer.py`, and updated `test_sku_010_multi_variant_product_allowed` in `test_sku_sync_service.py`. All regression tests pass cleanly.
 
+---
+
+## Bug 13: Packer Detachment: Deprecation of Outbound Event Publisher & Dead-Letter 404 Flood
+
+**Date Identified**: October 2026
+**Symptoms**:
+- Continuous error logs on the VPS:
+  `{"level": "ERROR", "logger": "src.domains.inventory.services.outbound_event_publisher", "message": "Outbound Event evt_... moved to DEAD_LETTER: HTTP 404: {\"detail\":\"Not Found\"}"}`
+- Over 800 events accumulated in `DEAD_LETTER` status in `inventory_outbound_events`.
+
+**Root Cause**:
+- Packer detached its SKU sync mechanism and removed its webhook endpoint `POST /api/v1/internal/webhooks/inventory/events`.
+- Inventory was still generating outbox events in `ProductSKUImporter` (`SKU_CREATED`/`UPDATED`), `balance_calculator.py` (`STOCK_BALANCE_CHANGED`), and `daily_reconciliation.py` (`SKU_MASTER_SNAPSHOT_SYNC`).
+- The background task `run_outbox_dispatcher_loop` was running every 30 seconds in `lifespan.py`, polling for pending events and POSTing them to Packer, failing with 404 Not Found after 5 retries.
+
+**Successful Resolution**:
+1. **Decommissioned Background Tasks in `lifespan.py`**: Removed `run_outbox_dispatcher_loop` and `run_daily_reconciliation_loop` from the FastAPI lifecycle manager, preventing any background outbox polling or daily reconciliation loops.
+2. **Decommissioned Outbox Event Generation**:
+   - Removed `_create_sku_outbound_event` from `product_sku_importer.py`.
+   - Removed Step 4 (Stock Sync outbox event generation) from `balance_calculator.py`.
+   - Deprecated `daily_reconciliation.py` to a safe no-op.
+3. **Safe Deprecation of Outbound Dispatcher**: Converted `OutboundEventDispatcherService` in `outbound_event_publisher.py` to a safe no-op to eliminate any external network calls to Packer.
+4. **Database State Cleanup**: Cancelled active events in `inventory_outbound_events` on the VPS database.
+

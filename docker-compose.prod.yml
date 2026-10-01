@@ -11,7 +11,9 @@ services:
       - AUTH_MODE=${AUTH_MODE}
       - AARAMIDENTITY_PUBLIC_KEY=${AARAMIDENTITY_PUBLIC_KEY}
       - IDENTITY_API_URL=${IDENTITY_API_URL:-${IDENTITY_SERVICE_URL:-https://api-identity.aarambooks.cloud}}
-      - ALLOWED_ORIGINS=https://inventory.aarambooks.cloud${ALLOWED_ORIGINS}
+      - IDENTITY_SERVICE_URL=${IDENTITY_SERVICE_URL:-https://api-identity.aarambooks.cloud}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://inventory.aarambooks.cloud}
+      - SHOPDECK_SALES_WAREHOUSE_CODE=${SHOPDECK_SALES_WAREHOUSE_CODE:-348_SECTOR_11_PANIPAT}
       - HOST=0.0.0.0
       - PORT=8000
     ports:
@@ -29,9 +31,6 @@ services:
     ports:
       # Map to 3100 locally to avoid conflict with Identity on 3000
       - "127.0.0.1:3100:80"
-    volumes:
-      # Inject the production config at runtime
-      - ./config.prod.js:/usr/share/nginx/html/config.js:ro
     networks:
       - aarambooks_network
 

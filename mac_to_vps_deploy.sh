@@ -56,6 +56,9 @@ else
 fi
 
 step "[3/3] Connecting to VPS to pull and restart"
+# Sync updated compose configuration to VPS
+scp docker-compose.prod.yml $VPS_USER@$VPS_IP:~/aarambooks/$APP_FOLDER/docker-compose.prod.yml
+
 # This sends the deployment commands directly to your VPS over SSH!
 ssh $VPS_USER@$VPS_IP << EOF
     RED='\033[0;31m'

@@ -469,20 +469,21 @@ If GRNI / unbilled purchase accounting is introduced, it must be deliberately de
 
 # 15. CURRENT PROJECT STATE
 
-**Status:** MULTI-VARIANT SKU ARCHITECTURAL SHIFT RESOLVED & CERTIFIED
+**Status:** PACKER OUTBOX SYNC FULLY DEPRECATED & DEPLOYMENT READY
 
 **What was just completed:**
-1. Architectural Shift - Multi-Variant SKU Support: Decoupled `Product Code` from `shopdeck_sku_id` in `ProductSKUImporter` (`src/domains/data_ingestion/services/product_sku_importer.py`). `Product Code` is unique per parent Product, but multiple SKU variants (e.g. `101SB` and `101SB-DB` under `KIDS-CANDY-SB-DB`) now correctly link to the same parent `ProductModel`.
-2. Decoupled ShopDeck SKU ID: `SKUModel.shopdeck_sku_id` now stores the actual SKU identifier (`row.get("ShopDeck Sku Id") or row.get("Sku Id")`), not the parent product code.
-3. Database Clean-up: Migrated 95 existing finished goods SKUs in PostgreSQL so their `shopdeck_sku_id` matches their `sku_code`, completely eliminating collision risk for multi-variant imports.
-4. Refactored SKU Master Sync: Updated `SKUMatcher` and `SkuCreator` (`src/domains/sku_master_sync/`) to support multi-variant products, eliminating obsolete SKU-010 1-to-1 collision checks and enabling transactional product reuse.
-5. Unit & Regression Tests: Added `test_product_sku_importer_multi_variant_same_product_code` to `test_product_sku_importer.py` and updated `test_sku_010_multi_variant_product_allowed` in `test_sku_sync_service.py`. All tests pass cleanly (`3/3 passed` in ingestion, `7/7 passed` in sync).
-6. Documented Bug 12 in `docs/INVENTORY_BUGS_RESOLUTION_REPORT.md`.
+1. Packer Outbox Sync Complete Deprecation: Fully decommissioned the outbound event publisher and daily reconciliation background loops from `src/app/lifespan.py`.
+2. Outbox Event Generation Removed: Removed outbox event generation from `ProductSKUImporter` (`product_sku_importer.py`), `BalanceCalculatorService` (`balance_calculator.py`), and deprecated `daily_reconciliation.py`.
+3. Outbound Dispatcher Made Safe No-op: Converted `OutboundEventDispatcherService` in `outbound_event_publisher.py` to a safe no-op.
+4. Production Docker Alignment: Updated `docker-compose.prod.yml` to inject the correct `SHOPDECK_SALES_WAREHOUSE_CODE=${SHOPDECK_SALES_WAREHOUSE_CODE:-348_SECTOR_11_PANIPAT}` and `PACKER_SERVICE_URL`, aligning with the VPS environment.
+5. VPS Outbox Queue Cleaned: Cancelled stuck/pending outbox events on the VPS database to immediately stop 404 dead-letter logs.
+6. Regression Test Suite: Passed 12/12 test suites covering data ingestion, product SKU importing, and SKU sync services.
+7. Documented Bug 13 in `docs/INVENTORY_BUGS_RESOLUTION_REPORT.md`.
 
 **Current Blocker:**
-- None.
+- None. Ready for VPS deployment.
 
 **Next Steps:**
-- User can re-run the Master Data SKU Master import in the UI. Both dry-run and commit will smoothly accept multiple SKU variants sharing the same Product Code.
+- Deploy to VPS via `mac_to_vps_deploy.sh` upon user command.
 
 
