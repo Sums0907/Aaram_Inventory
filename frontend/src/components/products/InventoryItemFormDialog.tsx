@@ -106,7 +106,7 @@ export function InventoryItemFormDialog({ open, onOpenChange, initialData, defau
       if (initialData) {
         form.reset({
           item_type: initialData.product?.item_type || "FINISHED_GOODS",
-          category_id: initialData.product?.category_id || "existing_but_unknown",
+          category_id: initialData.product?.category_id || "",
           product_id: initialData.product?.id || "",
           new_product_name: initialData.product?.product_name || "",
           item_code: initialData.item_code || "",
@@ -134,7 +134,7 @@ export function InventoryItemFormDialog({ open, onOpenChange, initialData, defau
         })
       }
     }
-  }, [open, initialData, form, defaultCategoryId, defaultItemType, products])
+  }, [open, initialData, form, defaultCategoryId, defaultItemType, products, categories, uoms])
 
   const onSubmit = async (values: FormValues) => {
     try {
