@@ -30,6 +30,7 @@ class ProductRepository:
         result = await self.session.execute(
             select(ProductModel)
             .options(selectinload(ProductModel.attributes))
+            .order_by(ProductModel.product_name)
             .offset(skip)
             .limit(limit)
         )

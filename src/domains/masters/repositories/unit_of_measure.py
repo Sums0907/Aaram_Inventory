@@ -25,7 +25,9 @@ class UnitOfMeasureRepository:
         return result.scalars().first()
         
     async def get_all(self, skip: int = 0, limit: int = 100) -> List[UnitOfMeasureModel]:
-        result = await self.session.execute(select(UnitOfMeasureModel).offset(skip).limit(limit))
+        result = await self.session.execute(
+            select(UnitOfMeasureModel).order_by(UnitOfMeasureModel.unit_name).offset(skip).limit(limit)
+        )
         return list(result.scalars().all())
 
     async def create(self, unit: UnitOfMeasureModel) -> UnitOfMeasureModel:

@@ -116,7 +116,7 @@ export function useSKUs() {
   return useQuery({
     queryKey: ['masters-skus'],
     queryFn: async () => {
-      const payload = await apiClient.get<any>('/masters/skus') as any;
+      const payload = await apiClient.get<any>('/masters/skus?limit=1000') as any;
       return (payload?.data || []) as SKUResponse[];
     },
   });
@@ -126,9 +126,10 @@ export function useProducts() {
   return useQuery({
     queryKey: ['masters-products'],
     queryFn: async () => {
-      // Mocking for now since there might not be a direct products endpoint matching SKUResponse structure.
-      // But let's call it and hope it returns the list of products for dropdown selection.
-      const payload = await apiClient.get<any>('/masters/products').catch(() => ({ data: [] })) as any;
+      // Backend defaults to limit=100 with no stable ordering, so request the max page
+      // size explicitly — otherwise products outside that window silently vanish from
+      // dropdowns (e.g. the Edit Inventory Item Master Item select).
+      const payload = await apiClient.get<any>('/masters/products?limit=1000').catch(() => ({ data: [] })) as any;
       return (payload?.data || []) as ProductInfo[];
     },
   });
@@ -138,7 +139,7 @@ export function useCategories(itemType?: string) {
   return useQuery({
     queryKey: ['masters-categories', itemType],
     queryFn: async () => {
-      const url = itemType ? `/masters/categories?item_type=${itemType}` : '/masters/categories';
+      const url = itemType ? `/masters/categories?item_type=${itemType}&limit=1000` : '/masters/categories?limit=1000';
       const payload = await apiClient.get<any>(url).catch(() => ({ data: [] })) as any;
       return (payload?.data || []) as CategoryInfo[];
     },
@@ -159,7 +160,7 @@ export function useUnitsOfMeasure() {
   return useQuery({
     queryKey: ['masters-uoms'],
     queryFn: async () => {
-      const payload = await apiClient.get<any>('/masters/units-of-measure').catch(() => ({ data: [] })) as any;
+      const payload = await apiClient.get<any>('/masters/units-of-measure?limit=1000').catch(() => ({ data: [] })) as any;
       return (payload?.data || []) as UnitOfMeasureInfo[];
     },
   });

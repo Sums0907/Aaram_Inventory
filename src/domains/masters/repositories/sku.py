@@ -56,7 +56,9 @@ class SKURepository:
         return result.scalars().first()
         
     async def get_all(self, skip: int = 0, limit: int = 100) -> List[SKUModel]:
-        result = await self.session.execute(self._base_query().offset(skip).limit(limit))
+        result = await self.session.execute(
+            self._base_query().order_by(SKUModel.item_code).offset(skip).limit(limit)
+        )
         return list(result.scalars().all())
         
     async def get_bom_health_kpi(self) -> dict:
