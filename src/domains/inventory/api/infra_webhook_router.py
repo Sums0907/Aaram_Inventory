@@ -12,33 +12,17 @@ from src.domains.inventory.schemas.packer_webhook import PackerEventPayload, Pac
 from src.domains.inventory.services.packer_integration import PackerIntegrationService
 from src.domains.inventory.services.movement import InventoryMovementService
 from src.foundation.authentication.dependencies import require_permission
-from src.domains.inventory.tasks.daily_reconciliation import run_daily_sku_reconciliation
 
-router = APIRouter(prefix="/internal/webhooks/packer", tags=["Packer Integration"])
-
-@router.post("/force-sync", status_code=status.HTTP_200_OK)
-@inject
-async def force_packer_sync(
-    _=Depends(require_permission("INVENTORY_CATALOG_VIEW")),
-    session_factory: Callable[..., AsyncContextManager[AsyncSession]] = Depends(Provide[DomainsContainer.core.db.provided._session_factory])
-):
-    """
-    Forces an immediate generation of the Master Data and Stock Balance outbox events for AaramPacking.
-    """
-    try:
-        async with session_factory() as db:
-            async with db.begin():
-                await run_daily_sku_reconciliation(db)
-        return {"status": "SUCCESS", "message": "Sync successfully dispatched to outbox."}
-    except Exception as e:
-        logger.exception("Failed to run forced packer sync")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error during sync")
+# Inventory has no direct integration with AaramPackerApp. Physical fulfillment/return
+# events are relayed here by the Infra Gateway (which is the only authenticated caller).
+router = APIRouter(prefix="/internal/webhooks/packer", tags=["Infra Integration"])
 
 
 @router.post("/events", response_model=PackerEventResponse, status_code=status.HTTP_200_OK)
 @inject
 async def handle_packer_event(
     payload: PackerEventPayload,
+    _=Depends(require_permission("INVENTORY_ADJUSTMENT_CREATE")),
     session_factory: Callable[..., AsyncContextManager[AsyncSession]] = Depends(Provide[DomainsContainer.core.db.provided._session_factory]),
     mov_service: InventoryMovementService = Depends(Provide[DomainsContainer.inventory.movement_service])
 ):
@@ -48,7 +32,7 @@ async def handle_packer_event(
             async with db.begin():
                 result = await packer_service.process_packer_event(payload, db)
 
-            
+
         return PackerEventResponse(
             event_id=payload.event_id,
             status=result["status"]
