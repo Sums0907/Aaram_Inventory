@@ -63,6 +63,7 @@ scp docker-compose.prod.yml $VPS_USER@$VPS_IP:~/aarambooks/$APP_FOLDER/docker-co
 ssh $VPS_USER@$VPS_IP << EOF
     RED='\033[0;31m'
     GREEN='\033[0;32m'
+    CYAN='\033[0;36m'
     BOLD='\033[1m'
     NC='\033[0m'
     # Without set -e + this trap, a failed cd/pull/up on the remote side just
@@ -83,7 +84,23 @@ ssh $VPS_USER@$VPS_IP << EOF
     BACKEND_CONTAINER=\$(docker compose -f docker-compose.prod.yml ps -q | xargs -r docker inspect -f '{{.Name}}' | grep "backend" | sed 's/^\///' || true)
     if [ -n "\$BACKEND_CONTAINER" ]; then
         printf "\${BOLD}Running Alembic migrations...\${NC}\n"
-        docker exec "\$BACKEND_CONTAINER" alembic upgrade head || true
+        MIGRATION_OUTPUT=\$(docker exec "\$BACKEND_CONTAINER" alembic upgrade head 2>&1) && MIGRATION_STATUS=0 || MIGRATION_STATUS=\$?
+        printf "%s\n" "\$MIGRATION_OUTPUT"
+
+        APPLIED=\$(printf "%s\n" "\$MIGRATION_OUTPUT" | grep "Running upgrade" || true)
+
+        printf "\n\${BOLD}\${CYAN}────────────────────────────────────────────────────────\${NC}\n"
+        if [ "\$MIGRATION_STATUS" -ne 0 ]; then
+            printf "\${RED}❌ Alembic migration failed (deploy continuing regardless) — investigate manually.\${NC}\n"
+        elif [ -n "\$APPLIED" ]; then
+            printf "\${GREEN}✅ Database migrations applied:\${NC}\n"
+            printf "%s\n" "\$APPLIED" | while IFS= read -r line; do
+                printf "\${GREEN}   • %s\${NC}\n" "\$line"
+            done
+        else
+            printf "\${CYAN}ℹ️  Database already up to date — no migrations applied.\${NC}\n"
+        fi
+        printf "\${BOLD}\${CYAN}────────────────────────────────────────────────────────\${NC}\n"
     fi
 
     printf "\${BOLD}Cleaning up...\${NC}\n"
