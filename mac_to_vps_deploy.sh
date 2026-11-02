@@ -81,7 +81,11 @@ ssh $VPS_USER@$VPS_IP << EOF
     docker compose -f docker-compose.prod.yml up -d
 
     # Run migrations if it's the backend
-    BACKEND_CONTAINER=\$(docker compose -f docker-compose.prod.yml ps -q | xargs -r docker inspect -f '{{.Name}}' | grep "backend" | sed 's/^\///' || true)
+    # Matched on the "api" service/container name, not "backend": the image repo is named
+    # aaram_inventory-backend, but the running compose service and container are both "api"
+    # (inventory-api-1) — matching "backend" here never found anything, so this whole block
+    # silently never ran.
+    BACKEND_CONTAINER=\$(docker compose -f docker-compose.prod.yml ps -q | xargs -r docker inspect -f '{{.Name}}' | grep "api" | sed 's/^\///' || true)
     if [ -n "\$BACKEND_CONTAINER" ]; then
         printf "\${BOLD}Running Alembic migrations...\${NC}\n"
         MIGRATION_OUTPUT=\$(docker exec "\$BACKEND_CONTAINER" alembic upgrade head 2>&1) && MIGRATION_STATUS=0 || MIGRATION_STATUS=\$?
