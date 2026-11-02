@@ -8,12 +8,17 @@ class InventoryBalanceRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
         
-    async def get_balance(self, warehouse_id: UUID, sku_id: UUID, session: AsyncSession = None) -> Optional[InventoryBalanceModel]:
+    async def get_balance(self, warehouse_id: UUID, sku_id: UUID, session: AsyncSession = None, for_update: bool = False) -> Optional[InventoryBalanceModel]:
         db_session = session or self.session
         stmt = select(InventoryBalanceModel).where(
             InventoryBalanceModel.warehouse_id == warehouse_id,
             InventoryBalanceModel.sku_id == sku_id
         )
+        if for_update:
+            # Blocks a concurrent recalculation for the same (warehouse, sku) until this
+            # transaction commits, so it re-sums movements against the post-commit state
+            # instead of racing on a stale read — see balance_calculator.recalculate_balance.
+            stmt = stmt.with_for_update()
         result = await db_session.execute(stmt)
         return result.scalars().first()
         

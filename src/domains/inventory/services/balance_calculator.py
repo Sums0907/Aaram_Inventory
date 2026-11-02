@@ -25,9 +25,17 @@ class BalanceCalculatorService:
         """
         Recalculates the projected balance from movements and runs the confidence engine.
         """
-        # 1. Recalculate quantity directly from posted movements
+        # 0. Lock the balance row first (if it exists) so a concurrent recalculation for the
+        # same (warehouse, sku) blocks here instead of racing: without this, two transactions
+        # can both sum movements before either commits, and whichever writes back last silently
+        # overwrites the other's movement out of quantity_on_hand.
+        balance = await self.balance_repository.get_balance(warehouse_id, sku_id, session=session, for_update=True)
+
+        # 1. Recalculate quantity directly from posted movements — safe to read now: any
+        # concurrent writer for this SKU/warehouse has either already committed (and this SUM
+        # sees it) or is blocked behind the lock above (and will see ours on its next attempt).
         projected_quantity = await self.movement_repository.get_balance(warehouse_id, sku_id, session=session)
-        
+
         # 1b. Catch Negative Inventory
         if projected_quantity < 0:
             exc = InventoryExceptionModel(
@@ -50,9 +58,7 @@ class BalanceCalculatorService:
         confidence_score = confidence_response.confidence_score
         confidence_reasons = confidence_response.positive_signals + confidence_response.negative_signals
         
-        # 3. Update or Create Balance Model
-        balance = await self.balance_repository.get_balance(warehouse_id, sku_id, session=session)
-        
+        # 3. Update or Create Balance Model (already locked/fetched in step 0)
         if not balance:
             balance = InventoryBalanceModel(
                 warehouse_id=warehouse_id,
