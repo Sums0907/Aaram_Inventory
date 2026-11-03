@@ -29,7 +29,10 @@ TestingSessionLocal = async_sessionmaker(bind=test_engine, class_=AsyncSession, 
 
 from src.foundation.database.session import Database
 app.core_container.db.override(
-    providers.Singleton(Database, db_url=TEST_DATABASE_URL, debug=False, pool_size=1, max_overflow=0)
+    providers.Singleton(
+        Database, db_url=TEST_DATABASE_URL, debug=False, pool_size=1, max_overflow=0,
+        connect_args={"prepared_statement_cache_size": 0},
+    )
 )
 
 @pytest_asyncio.fixture(scope="function", autouse=True)

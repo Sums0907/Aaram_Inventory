@@ -6,29 +6,23 @@ async def test_api_create_sku(async_client: AsyncClient):
     # Setup dependencies
     cat_res = await async_client.post("/api/v1/masters/categories", json={"category_code": "SKU-CAT", "category_name": "SKU Cat"})
     cat_id = cat_res.json()["data"]["id"]
-    
-    uom_res = await async_client.post("/api/v1/masters/units-of-measure", json={"unit_code": "SKU-UOM", "unit_name": "SKU UOM", "short_name": "skuuom"})
-    uom_id = uom_res.json()["data"]["id"]
-    
-    item_res = await async_client.post("/api/v1/masters/inventory-items", json={
-        "item_code": "SKU-ITEM",
-        "item_name": "SKU Item",
-        "category_id": cat_id,
-        "unit_of_measure_id": uom_id,
-        "gst_rate": 18.0
+
+    product_res = await async_client.post("/api/v1/masters/products", json={
+        "product_code": "SKU-PRODUCT",
+        "product_name": "SKU Product",
+        "category_id": cat_id
     })
-    item_id = item_res.json()["data"]["id"]
-    
+    product_id = product_res.json()["data"]["id"]
+
     payload = {
+        "item_code": "SKU-ITEM",
         "sku_code": "SKU-TEST-1",
-        "sku_name": "Test SKU 1",
-        "inventory_item_id": item_id,
-        "attribute_values": {"Color": "Red"},
-        "gst_rate": 18.0
+        "product_id": product_id,
+        "attribute_values": {"Color": "Red"}
     }
-    
+
     response = await async_client.post("/api/v1/masters/skus", json=payload)
-    
+
     assert response.status_code == 201
     data = response.json()["data"]
     assert data["sku_code"] == "SKU-TEST-1"

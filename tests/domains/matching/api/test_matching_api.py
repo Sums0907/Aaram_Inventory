@@ -8,12 +8,38 @@ from src.domains.operations.models.payment import PaymentModel
 from src.domains.operations.models.settlement import SettlementModel
 from src.domains.matching.models.job import MatchJobModel
 from src.domains.matching.models.relationship import MatchRelationshipModel
+from src.domains.accounting.models.ledger import LedgerModel
 from datetime import datetime, timezone
+
+# Canonical chart of accounts (matches scripts/reset_db.py) required by
+# PostingRuleProvider for the SALES_FULFILLMENT / SETTLEMENT_RECEIVED events
+# the matching engine posts journal entries against.
+LEDGER_NAMES = [
+    "Sales - ShopDeck",
+    "Sales Return - ShopDeck",
+    "Razorpay Receivable",
+    "ShopDeck Receivable",
+    "Output CGST",
+    "Output SGST",
+    "Output IGST",
+    "Round Off",
+    "Axis Bank Current Account",
+    "Payment Gateway Charges",
+    "Input CGST",
+    "Input SGST",
+]
 
 @pytest.fixture
 async def setup_test_data(db_session: AsyncSession):
     user_id = uuid4()
-    
+
+    ledgers = [
+        LedgerModel(ledger_code=name.upper().replace(" ", "_"), ledger_name=name, account_type="REVENUE" if "Sales" in name else "ASSET")
+        for name in LEDGER_NAMES
+    ]
+    db_session.add_all(ledgers)
+    await db_session.commit()
+
     # Create Unmatched Order and Invoice
     order = SalesOrderModel(
         id=uuid4(),

@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from sqlalchemy.orm import declarative_base
 from src.foundation.logging.context import get_request_id
 class Database:
-    def __init__(self, db_url: str, debug: bool, pool_size: int, max_overflow: int):
+    def __init__(self, db_url: str, debug: bool, pool_size: int, max_overflow: int, connect_args: dict | None = None):
         engine_kwargs = {"echo": debug}
         if not db_url.startswith("sqlite"):
             engine_kwargs["pool_size"] = pool_size
@@ -11,6 +11,8 @@ class Database:
             engine_kwargs["pool_pre_ping"] = True   # Detect and discard stale/zombie connections
             engine_kwargs["pool_recycle"] = 1800    # Recycle connections after 30 minutes
             engine_kwargs["pool_timeout"] = 10      # Fail fast (10s) instead of hanging for 30s
+        if connect_args:
+            engine_kwargs["connect_args"] = connect_args
 
         self._engine = create_async_engine(
             db_url,

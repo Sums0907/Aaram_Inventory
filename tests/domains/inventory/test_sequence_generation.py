@@ -1,3 +1,4 @@
+import os
 import pytest
 import pytest_asyncio
 from uuid import uuid4
@@ -7,6 +8,7 @@ from sqlalchemy import select
 
 from src.foundation.dependency_injection.container import CoreContainer
 from src.app.container import DomainsContainer
+from src.foundation.database.models import BaseModel
 from src.domains.inventory.schemas.goods_receipt import GoodsReceiptCreate, GoodsReceiptItemCreate
 from src.domains.inventory.schemas.purchase_return import PurchaseReturnCreate, PurchaseReturnItemCreate
 from src.domains.inventory.schemas.enums import GoodsReceiptType
@@ -14,6 +16,21 @@ from src.domains.masters.models.sku import SKUModel
 from src.domains.masters.models.product import ProductModel
 from src.domains.masters.models.warehouse import WarehouseModel
 from src.domains.masters.models.supplier import Supplier
+
+CERT_SQLITE_PATH = "./test_cert_inventory.db"
+
+@pytest_asyncio.fixture(autouse=True)
+async def _isolated_sqlite_db():
+    if os.path.exists(CERT_SQLITE_PATH):
+        os.remove(CERT_SQLITE_PATH)
+    core = CoreContainer()
+    core.config.from_dict({"DATABASE_URL": f"sqlite+aiosqlite:///{CERT_SQLITE_PATH}", "DEBUG": False})
+    async with core.db()._engine.begin() as conn:
+        await conn.run_sync(BaseModel.metadata.create_all)
+    await core.db()._engine.dispose()
+    yield
+    if os.path.exists(CERT_SQLITE_PATH):
+        os.remove(CERT_SQLITE_PATH)
 
 @pytest_asyncio.fixture
 async def setup_base_data(db_session: AsyncSession):

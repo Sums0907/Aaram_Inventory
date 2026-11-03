@@ -2,11 +2,30 @@ from typing import List
 from uuid import UUID
 from fastapi import APIRouter, Depends, status, Query
 from dependency_injector.wiring import Provide, inject
+from sqlalchemy import select
+from sqlalchemy.orm import joinedload, selectinload
 from src.foundation.authentication.dependencies import get_current_user, CurrentUser, require_permission
 from src.foundation.api.responses import SuccessResponse
 from src.domains.masters.schemas.sku import SKUCreate, SKUUpdate, SKUResponse
 from src.domains.masters.services.sku import SKUService
+from src.domains.masters.models.sku import SKUModel
 from src.domains.masters.dependency_injection import MastersContainer
+
+async def _reload_with_relationships(session, sku_id: UUID) -> SKUModel:
+    # SKUResponse serializes product/pricing/uom/images, which SQLAlchemy would
+    # otherwise lazy-load after the request's async context has ended, raising
+    # MissingGreenlet. Load them eagerly before handing the model to Pydantic.
+    result = await session.execute(
+        select(SKUModel)
+        .options(
+            joinedload(SKUModel.product),
+            joinedload(SKUModel.pricing),
+            joinedload(SKUModel.uom),
+            selectinload(SKUModel.images)
+        )
+        .filter(SKUModel.id == sku_id)
+    )
+    return result.scalars().first()
 
 router = APIRouter(prefix="/skus", tags=["SKU"])
 
@@ -42,7 +61,8 @@ async def create_sku(
     from uuid import UUID
     user_uuid = UUID(current_user.id)
     sku = await service.create_sku(schema, created_by=user_uuid)
-    return SuccessResponse(data=SKUResponse.model_validate(sku, from_attributes=True))
+    loaded_sku = await _reload_with_relationships(service.repository.session, sku.id)
+    return SuccessResponse(data=SKUResponse.model_validate(loaded_sku, from_attributes=True))
 
 @router.put("/{sku_id}", response_model=SuccessResponse[SKUResponse])
 @inject

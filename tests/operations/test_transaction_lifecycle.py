@@ -1,3 +1,4 @@
+import os
 import pytest
 import pytest_asyncio
 from uuid import uuid4
@@ -7,16 +8,40 @@ from sqlalchemy import select
 
 from src.foundation.dependency_injection.container import CoreContainer
 from src.app.container import DomainsContainer
+from src.foundation.database.models import BaseModel
 from src.domains.inventory.models.movement import InventoryMovementModel
 from src.domains.inventory.schemas.movement import InventoryMovementCreate
 from src.domains.operations.models.sales_order import SalesOrderModel
 from src.domains.masters.models.sku import SKUModel
+from src.domains.masters.models.product import ProductModel
 from src.domains.masters.models.warehouse import WarehouseModel
+
+CERT_SQLITE_PATH = "./test_cert_inventory.db"
+
+@pytest_asyncio.fixture(autouse=True)
+async def _isolated_sqlite_db():
+    # Each test below opens its own CoreContainer against a dedicated SQLite file
+    # to exercise the DI container's session lifecycle independently of the
+    # Postgres test DB. Bootstrap its schema fresh and remove the file afterward
+    # so tests don't depend on leftover local state between runs.
+    if os.path.exists(CERT_SQLITE_PATH):
+        os.remove(CERT_SQLITE_PATH)
+    core = CoreContainer()
+    core.config.from_dict({"DATABASE_URL": f"sqlite+aiosqlite:///{CERT_SQLITE_PATH}", "DEBUG": False, "DB_POOL_SIZE": 5, "DB_MAX_OVERFLOW": 10})
+    async with core.db()._engine.begin() as conn:
+        await conn.run_sync(BaseModel.metadata.create_all)
+    await core.db()._engine.dispose()
+    yield
+    if os.path.exists(CERT_SQLITE_PATH):
+        os.remove(CERT_SQLITE_PATH)
 
 @pytest_asyncio.fixture
 async def setup_base_data(db_session: AsyncSession):
     # Setup necessary baseline for pipeline orchestrator
-    sku = SKUModel(id=uuid4(), item_code=f"TEST-ITEM-{uuid4()}", sku_code=f"TEST-SKU-{uuid4()}", product_id=uuid4())
+    product = ProductModel(id=uuid4(), product_name="Test Product", product_code=f"PROD-{uuid4().hex[:6]}")
+    db_session.add(product)
+
+    sku = SKUModel(id=uuid4(), item_code=f"TEST-ITEM-{uuid4()}", sku_code=f"TEST-SKU-{uuid4()}", product_id=product.id)
     db_session.add(sku)
     
     warehouse = WarehouseModel(

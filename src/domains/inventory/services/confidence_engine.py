@@ -1,6 +1,7 @@
 from uuid import UUID
 from typing import Optional
 from decimal import Decimal
+from sqlalchemy.ext.asyncio import AsyncSession
 from src.domains.inventory.repositories.exception import InventoryExceptionRepository
 from src.domains.inventory.repositories.movement import InventoryMovementRepository
 from src.domains.inventory.schemas.enums import ExceptionSource
@@ -10,8 +11,8 @@ class ConfidenceEngine:
     def __init__(self, exception_repository: InventoryExceptionRepository, movement_repository: InventoryMovementRepository):
         self.exception_repository = exception_repository
         self.movement_repository = movement_repository
-        
-    async def calculate_confidence(self, sku_id: UUID, warehouse_id: Optional[UUID] = None) -> InventoryConfidenceResponse:
+
+    async def calculate_confidence(self, sku_id: UUID, warehouse_id: Optional[UUID] = None, session: AsyncSession = None) -> InventoryConfidenceResponse:
         """
         Determines the inventory confidence score based on open exceptions and movement verification.
         Evaluates at the SKU level, optionally filtered by warehouse.
@@ -19,9 +20,9 @@ class ConfidenceEngine:
         score = 100
         positive_signals = []
         negative_signals = []
-        
+
         # 1. Check open exceptions
-        open_exceptions = await self.exception_repository.get_open_exceptions_for_sku(sku_id)
+        open_exceptions = await self.exception_repository.get_open_exceptions_for_sku(sku_id, session=session)
         
         has_marketplace_exception = False
         has_accounting_exception = False
@@ -59,7 +60,7 @@ class ConfidenceEngine:
         # 2. Check for negative inventory
         # If the sku has no warehouse filter, we would normally sum all warehouses,
         # but here we can just sum all movements for the SKU.
-        movements = await self.movement_repository.get_movements_for_sku(sku_id)
+        movements = await self.movement_repository.get_movements_for_sku(sku_id, session=session)
         total_qty = Decimal('0')
         for mov in movements:
             if not warehouse_id or mov.warehouse_id == warehouse_id:

@@ -13,12 +13,13 @@ class InventoryExceptionRepository:
         result = await self.session.execute(stmt)
         return result.scalars().first()
         
-    async def get_open_exceptions_for_sku(self, sku_id: UUID) -> List[InventoryExceptionModel]:
+    async def get_open_exceptions_for_sku(self, sku_id: UUID, session: AsyncSession = None) -> List[InventoryExceptionModel]:
+        db_session = session or self.session
         stmt = select(InventoryExceptionModel).where(
             InventoryExceptionModel.sku_id == sku_id,
             InventoryExceptionModel.status == "OPEN"
         )
-        result = await self.session.execute(stmt)
+        result = await db_session.execute(stmt)
         return list(result.scalars().all())
 
     async def get_all_open_exceptions(self, limit: int = 50) -> List[InventoryExceptionModel]:

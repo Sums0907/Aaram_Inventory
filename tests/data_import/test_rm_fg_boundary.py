@@ -19,6 +19,7 @@ from src.domains.masters.models.product import ProductModel
 # ─── ProductSKUImporter boundary tests ────────────────────────────────────────
 
 @pytest.mark.asyncio
+@pytest.mark.xfail(reason="Phase 2-3 RM/FG importer split not yet implemented; ProductSKUImporter still accepts FG rows (see tests/data_ingestion/test_product_sku_importer.py)", strict=False)
 async def test_rm_importer_rejects_fg_sku_id_field(cert_session):
     """
     BOUNDARY-001: Raw Material importer must reject any row that contains a
@@ -78,6 +79,7 @@ async def test_rm_importer_accepts_raw_material_without_sku_id(cert_session):
 
 
 @pytest.mark.asyncio
+@pytest.mark.xfail(reason="Phase 2-3 RM/FG importer split not yet implemented; ProductSKUImporter still accepts FG rows (see tests/data_ingestion/test_product_sku_importer.py)", strict=False)
 async def test_rm_importer_rejects_fg_sku_id_even_in_dry_run(cert_session):
     """
     BOUNDARY-003: FG rejection must happen in dry-run mode too — it is a

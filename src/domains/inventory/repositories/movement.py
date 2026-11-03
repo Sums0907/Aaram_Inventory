@@ -67,7 +67,8 @@ class InventoryMovementRepository:
         return {str(row[0]): Decimal(str(row[1] or 0)) for row in result.all() if row[0] is not None}
 
 
-    async def get_movements_for_sku(self, sku_id: UUID) -> List[InventoryMovementModel]:
+    async def get_movements_for_sku(self, sku_id: UUID, session: AsyncSession = None) -> List[InventoryMovementModel]:
+        db_session = session or self.session
         stmt = (
             select(InventoryMovementModel)
             .where(
@@ -76,7 +77,7 @@ class InventoryMovementRepository:
             )
             .order_by(InventoryMovementModel.posting_date.asc(), InventoryMovementModel.created_on.asc())
         )
-        result = await self.session.execute(stmt)
+        result = await db_session.execute(stmt)
         return list(result.scalars().all())
 
     async def get_recent_movements(self, limit: int = 10) -> List[InventoryMovementModel]:

@@ -9,13 +9,17 @@ from sqlalchemy import select
 from src.domains.operations.models.sales_order import SalesOrderModel, SalesOrderItemModel
 from src.domains.inventory.models.movement import InventoryMovementModel
 from src.domains.masters.models.sku import SKUModel
+from src.domains.masters.models.product import ProductModel
 from src.domains.masters.models.warehouse import WarehouseModel
 from src.domains.operations.schemas.lifecycle import ShopDeckStatus
 from src.app.main import app
 
 @pytest_asyncio.fixture
 async def setup_d_data(db_session: AsyncSession):
-    sku = SKUModel(id=uuid4(), item_code=f"TEST-ITEM-{uuid4()}", sku_code=f"TEST-SKU-{uuid4()}", product_id=uuid4())
+    product = ProductModel(id=uuid4(), product_name="Test Product", product_code=f"PROD-{uuid4().hex[:6]}")
+    db_session.add(product)
+
+    sku = SKUModel(id=uuid4(), item_code=f"TEST-ITEM-{uuid4()}", sku_code=f"TEST-SKU-{uuid4()}", product_id=product.id)
     db_session.add(sku)
     
     warehouse = WarehouseModel(
@@ -169,7 +173,10 @@ async def test_multi_sku_quantities(setup_d_data, db_session):
     orchestrator = setup_d_data["orchestrator"]
     sku1 = setup_d_data["sku"]
     
-    sku2 = SKUModel(id=uuid4(), item_code=f"TEST-ITEM-2", sku_code=f"TEST-SKU-2", product_id=uuid4())
+    product2 = ProductModel(id=uuid4(), product_name="Test Product 2", product_code=f"PROD-{uuid4().hex[:6]}")
+    db_session.add(product2)
+
+    sku2 = SKUModel(id=uuid4(), item_code=f"TEST-ITEM-2", sku_code=f"TEST-SKU-2", product_id=product2.id)
     db_session.add(sku2)
     await db_session.commit()
     

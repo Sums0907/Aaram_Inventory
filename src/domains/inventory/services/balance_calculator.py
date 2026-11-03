@@ -54,7 +54,7 @@ class BalanceCalculatorService:
             await self.exception_repository.save(exc, session=session)
         
         # 2. Get Confidence Score
-        confidence_response = await self.confidence_engine.calculate_confidence(sku_id, warehouse_id)
+        confidence_response = await self.confidence_engine.calculate_confidence(sku_id, warehouse_id, session=session)
         confidence_score = confidence_response.confidence_score
         confidence_reasons = confidence_response.positive_signals + confidence_response.negative_signals
         
